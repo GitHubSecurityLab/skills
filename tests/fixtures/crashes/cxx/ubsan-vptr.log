@@ -1,0 +1,23 @@
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 1668248850
+INFO: Loaded 1 modules   (59 inline 8-bit counters): 59 [0xaaaab21830d8, 0xaaaab2183113), 
+INFO: Loaded 1 PC tables (59 PCs): 59 [0xaaaab2183118,0xaaaab21834c8), 
+out/fuzz_shapes: Running 1 inputs 1 time(s) each.
+Running: in-vptr
+src/shapes.cc:8:46: runtime error: downcast of address 0xfbffa0400020 which does not point to an object of type 'const shapes::Square'
+0xfbffa0400020: note: object is of type 'shapes::Circle'
+ ff ff 00 00  58 cb 17 b2 aa aa 00 00  01 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  00 00 00 00
+              ^~~~~~~~~~~~~~~~~~~~~~~
+              vptr for 'shapes::Circle'
+    #0 0xaaaab2129e1c in shapes::square_area(shapes::Shape const*) /work/my lab/src/shapes.cc:8:46
+    #1 0xaaaab2129e1c in shapes::measure(unsigned char const*, unsigned long) /work/my lab/src/shapes.cc:19:10
+    #2 0xaaaab2129e1c in LLVMFuzzerTestOneInput /work/my lab/src/shapes.cc:28:42
+    #3 0xaaaab2026c34 in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) (/work/my lab/out/fuzz_shapes+0x56c34) (BuildId: 2ed49d9b7c257632edb190c67722836fd787c33d)
+    #4 0xaaaab200ffd0 in fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long) (/work/my lab/out/fuzz_shapes+0x3ffd0) (BuildId: 2ed49d9b7c257632edb190c67722836fd787c33d)
+    #5 0xaaaab2015c28 in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long)) (/work/my lab/out/fuzz_shapes+0x45c28) (BuildId: 2ed49d9b7c257632edb190c67722836fd787c33d)
+    #6 0xaaaab20403f8 in main (/work/my lab/out/fuzz_shapes+0x703f8) (BuildId: 2ed49d9b7c257632edb190c67722836fd787c33d)
+    #7 0xffffa26b84c0  (/lib/aarch64-linux-gnu/libc.so.6+0x284c0) (BuildId: 27027b96e5b8c475fc327aa445bea1c71d37b4e2)
+    #8 0xffffa26b8594 in __libc_start_main (/lib/aarch64-linux-gnu/libc.so.6+0x28594) (BuildId: 27027b96e5b8c475fc327aa445bea1c71d37b4e2)
+    #9 0xaaaab200b5ac in _start (/work/my lab/out/fuzz_shapes+0x3b5ac) (BuildId: 2ed49d9b7c257632edb190c67722836fd787c33d)
+
+SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior src/shapes.cc:8:46 

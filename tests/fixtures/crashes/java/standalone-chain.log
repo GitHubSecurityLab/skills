@@ -1,0 +1,50 @@
+WARNING: A Java agent has been loaded dynamically (/tmp/byteBuddyAgent.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+INFO: Loaded 704 hooks from com.code_intelligence.jazzer.runtime.TraceCmpHooks
+INFO: Loaded 5 hooks from com.code_intelligence.jazzer.runtime.TraceDivHooks
+INFO: Loaded 2 hooks from com.code_intelligence.jazzer.runtime.TraceIndirHooks
+INFO: Loaded 4 hooks from com.code_intelligence.jazzer.runtime.NativeLibHooks
+INFO: Loaded 5 hooks from com.code_intelligence.jazzer.runtime.JazzerApiHooks
+INFO: Loaded 1 hooks from com.code_intelligence.jazzer.sanitizers.BigDecimal
+INFO: Loaded 2 hooks from com.code_intelligence.jazzer.sanitizers.ClojureLangHooks
+INFO: Loaded 5 hooks from com.code_intelligence.jazzer.sanitizers.Deserialization
+INFO: Loaded 24 hooks from com.code_intelligence.jazzer.sanitizers.ExpressionLanguageInjection
+INFO: Loaded 31 hooks from com.code_intelligence.jazzer.sanitizers.FilePathTraversal
+INFO: Loaded 70 hooks from com.code_intelligence.jazzer.sanitizers.LdapInjection
+INFO: Loaded 46 hooks from com.code_intelligence.jazzer.sanitizers.NamingContextLookup
+INFO: Loaded 1 hooks from com.code_intelligence.jazzer.sanitizers.OsCommandInjection
+INFO: Loaded 48 hooks from com.code_intelligence.jazzer.sanitizers.ReflectiveCall
+INFO: Loaded 8 hooks from com.code_intelligence.jazzer.sanitizers.RegexInjection
+INFO: Loaded 16 hooks from com.code_intelligence.jazzer.sanitizers.RegexRoadblocks
+INFO: Loaded 12 hooks from com.code_intelligence.jazzer.sanitizers.ScriptEngineInjection
+INFO: Loaded 3 hooks from com.code_intelligence.jazzer.sanitizers.ServerSideRequestForgery
+INFO: Loaded 19 hooks from com.code_intelligence.jazzer.sanitizers.SqlInjection
+INFO: Loaded 1 hooks from com.code_intelligence.jazzer.sanitizers.TemplateInjection
+INFO: Loaded 63 hooks from com.code_intelligence.jazzer.sanitizers.UnsafeSanitizer
+INFO: Loaded 6 hooks from com.code_intelligence.jazzer.sanitizers.XPathInjection
+INFO: Loaded 20 hooks from com.code_intelligence.jazzer.sanitizers.XmlParserSsrfGuidance
+INFO: Instrumented toy.Codec (took 25 ms, size +45%)
+INFO: using inputs from: crash-input
+INFO: found LLVMFuzzerCustomMutator (0x107124c20). Disabling -len_control by default.
+INFO: libFuzzer ignores flags that start with '--'
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 1038440525
+INFO: Loaded 1 modules   (512 inline 8-bit counters): 512 [0x7b23c00000, 0x7b23c00200), 
+INFO: Loaded 1 PC tables (512 PCs): 512 [0x7b29134000,0x7b29136000), 
+jazzer: Running 1 inputs 1 time(s) each.
+Running: crash-input
+
+== Java Exception: java.lang.IllegalStateException: decode failed
+	at toy.Codec.decode(Codec.java:13)
+	at toy.Codec.fuzzerTestOneInput(Codec.java:19)
+Caused by: java.lang.ArrayIndexOutOfBoundsException: Index 3 out of bounds for length 3
+	at toy.Codec.field(Codec.java:6)
+	at toy.Codec.decode(Codec.java:11)
+	... 1 more
+DEDUP_TOKEN: 2eb4c570498488a3
+== libFuzzer crashing input ==
+reproducer_path='.'; Java reproducer written to ./Crash_7e15c4207637237244f633b1f77d51b55203c608.java
+

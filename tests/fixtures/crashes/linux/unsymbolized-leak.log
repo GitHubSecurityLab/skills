@@ -1,0 +1,28 @@
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 608962731
+INFO: Loaded 1 modules   (56 inline 8-bit counters): 56 [0xaaaaba7d3038, 0xaaaaba7d3070), 
+INFO: Loaded 1 PC tables (56 PCs): 56 [0xaaaaba7d3070,0xaaaaba7d33f0), 
+out/fuzz_lib: Running 1 inputs 1 time(s) each.
+Running: in-leak
+
+=================================================================
+==23==ERROR: LeakSanitizer: detected memory leaks
+
+Direct leak of 3 byte(s) in 1 object(s) allocated from:
+    #0 0xaaaaba7335b4  (/work/my lab/out/fuzz_lib+0x1135b4) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311)
+    #1 0xaaaaba776714  (/work/my lab/out/fuzz_lib+0x156714) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311)
+    #2 0xaaaaba776d78  (/work/my lab/out/fuzz_lib+0x156d78) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311)
+    #3 0xaaaaba675bf4  (/work/my lab/out/fuzz_lib+0x55bf4) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311)
+    #4 0xaaaaba65ef90  (/work/my lab/out/fuzz_lib+0x3ef90) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311)
+    #5 0xaaaaba664be8  (/work/my lab/out/fuzz_lib+0x44be8) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311)
+    #6 0xaaaaba68f3b8  (/work/my lab/out/fuzz_lib+0x6f3b8) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311)
+    #7 0xffffa41584c0  (/lib/aarch64-linux-gnu/libc.so.6+0x284c0) (BuildId: 27027b96e5b8c475fc327aa445bea1c71d37b4e2)
+    #8 0xffffa4158594  (/lib/aarch64-linux-gnu/libc.so.6+0x28594) (BuildId: 27027b96e5b8c475fc327aa445bea1c71d37b4e2)
+    #9 0xaaaaba65a56c  (/work/my lab/out/fuzz_lib+0x3a56c) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311)
+
+SUMMARY: AddressSanitizer: 3 byte(s) leaked in 1 allocation(s).
+
+INFO: a leak has been found in the initial corpus.
+
+INFO: to ignore leaks on libFuzzer side use -detect_leaks=0.
+

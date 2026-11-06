@@ -1,0 +1,7 @@
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 1234
+==4242== Uncaught Exception: TypeError: Cannot read properties of undefined (reading 'length')
+    at parseHeader (/work/js/lib/parse.js:12:20)
+    at parse (/work/js/lib/parse.js:30:10)
+    at Object.fuzz (/work/js/fuzz/parse.fuzz.js:4:3)
+    at /work/js/node_modules/@jazzer.js/core/dist/core.js:100:5

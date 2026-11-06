@@ -1,0 +1,161 @@
+[.] Sanitizer coverage enabled. Counter map size: 65051, Cmp map size: 262144
+Note: Google Test filter = RecordTest.ParsesWithoutCrashing
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from RecordTest
+[ RUN      ] RecordTest.ParsesWithoutCrashing
+FUZZTEST_PRNG_SEED=iDtilAB0o2zG-xftEHs5TwhqWbDd7Q7ZLrpkahZei60
+[.] Replaying /work/c-fuzztest/repo/.seclab/fuzz/runs/r1-record/artifacts/copy-0/477e2d33109b7f70
+record_fuzz_test: /work/c-fuzztest/repo/src/record.cc:10: int ParseRecord(const std::string &, std::string *): Assertion `len <= data.size() - 5' failed.
+
+=================================================================
+=== Fuzzing stats
+
+Elapsed time: 380.125us
+Total runs: 1
+Edges covered: 0
+Total edges: 0
+Corpus size: 0
+Max stack used: 0
+
+=================================================================
+=== BUG FOUND!
+
+/work/c-fuzztest/repo/record_fuzz_test.cc:11: Counterexample found for RecordTest.ParsesWithoutCrashing.
+The test fails with input:
+argument 0: "REC1=\324\324\324\324\324\324\324\324\324"
+
+=================================================================
+=== Regression test draft
+
+TEST(RecordTest, ParsesWithoutCrashingRegression) {
+  ParsesWithoutCrashing(
+    "REC1=\324\324\324\324\324\324\324\324\324"
+  );
+}
+
+Please note that the code generated above is best effort and is intended
+to be used as a draft regression test.
+For reproducing findings please rely on file based reproduction.
+[.] No reproducer output location specified - not writing the reproducer file.
+
+=================================================================
+*** SIGABRT received at time=1793135172 on cpu 3 ***
+PC: @     0xffffb38774d8  (unknown)  (unknown)
+    @     0xaaaad13edc9c        192  absl::lts_20260526::AbslFailureSignalHandler()
+    @     0xaaaad12887a4        160  fuzztest::internal::HandleCrash()
+    @     0xffffb3da0800  511341024  (unknown)
+    @     0xffffb382cb3c         64  raise
+    @     0xffffb3817e00        192  abort
+    @     0xffffb3825cc0        112  (unknown)
+    @     0xffffb3825d30         64  __assert_fail
+    @     0xaaaad1261f40         48  ParseRecord()
+    @     0xaaaad1220d04         80  ParsesWithoutCrashing()
+    @     0xaaaad128aeec        176  fuzztest::internal::FuzzTestFuzzerImpl::RunOneInput()
+    @     0xaaaad128a7c8        128  fuzztest::internal::FuzzTestFuzzerImpl::ReplayInput()
+    @     0xaaaad1294cb0        192  absl::lts_20260526::functional_internal::InvokeObject<>()
+    @     0xaaaad12cb0ac        416  fuzztest::internal::ForEachSerializedInput()
+    @     0xaaaad128bd98        192  fuzztest::internal::FuzzTestFuzzerImpl::ReplayInputsIfAvailable()
+    @     0xaaaad1295d40        256  absl::lts_20260526::internal_any_invocable::LocalInvoker<>()
+    @     0xaaaad12922f8        160  fuzztest::internal::FuzzTestFuzzerImpl::RunInUnitTestMode()
+    @     0xaaaad1277c04        160  fuzztest::internal::GTest_TestAdaptor::TestBody()
+    @     0xaaaad134b904        176  testing::internal::HandleExceptionsInMethodIfSupported<>()
+    @     0xaaaad134b32c         96  testing::Test::Run()
+    @     0xaaaad134f490        112  testing::TestInfo::Run()
+    @     0xaaaad1354fd8        192  testing::TestSuite::Run()
+    @     0xaaaad1393ecc        384  testing::internal::UnitTestImpl::RunAllTests()
+    @     0xaaaad1391a80        160  testing::internal::HandleExceptionsInMethodIfSupported<>()
+    @     0xaaaad13913b4        160  testing::UnitTest::Run()
+    @     0xaaaad12621c4        128  main
+    @     0xffffb38184c4        336  (unknown)
+    @     0xffffb3818598         16  __libc_start_main
+AddressSanitizer:DEADLYSIGNAL
+=================================================================
+==3460==ERROR: AddressSanitizer: ABRT on unknown address 0x000000000d84 (pc 0xffffb38774d8 bp 0xffffd1985f20 sp 0xffffd1985f10 T0)
+SCARINESS: 10 (signal)
+    #0 0xffffb38774d8  (/lib/aarch64-linux-gnu/libc.so.6+0x874d8) (BuildId: 27027b96e5b8c475fc327aa445bea1c71d37b4e2)
+    #1 0xffffb382cb38 in raise (/lib/aarch64-linux-gnu/libc.so.6+0x3cb38) (BuildId: 27027b96e5b8c475fc327aa445bea1c71d37b4e2)
+    #2 0xffffb3817dfc in abort (/lib/aarch64-linux-gnu/libc.so.6+0x27dfc) (BuildId: 27027b96e5b8c475fc327aa445bea1c71d37b4e2)
+    #3 0xffffb3825cbc  (/lib/aarch64-linux-gnu/libc.so.6+0x35cbc) (BuildId: 27027b96e5b8c475fc327aa445bea1c71d37b4e2)
+    #4 0xffffb3825d2c in __assert_fail (/lib/aarch64-linux-gnu/libc.so.6+0x35d2c) (BuildId: 27027b96e5b8c475fc327aa445bea1c71d37b4e2)
+    #5 0xaaaad1261f3c in ParseRecord(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>*) /work/c-fuzztest/repo/src/record.cc:10:3
+    #6 0xaaaad1220d00 in ParsesWithoutCrashing(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const&) /work/c-fuzztest/repo/record_fuzz_test.cc:9:3
+    #7 0xaaaad128aee8 in fuzztest::internal::FuzzTestFuzzerImpl::RunOneInput(fuzztest::internal::FuzzTestFuzzerImpl::Input const&) /work/c-fuzztest/repo/.seclab/fuzz/build/fuzztest/_deps/fuzztest-src/fuzztest/internal/runtime.cc:1150:20
+    #8 0xaaaad128a7c4 in fuzztest::internal::FuzzTestFuzzerImpl::ReplayInput(std::basic_string_view<char, std::char_traits<char>>, std::optional<int>, fuzztest::internal::FuzzTestFuzzerImpl::Input const&) /work/c-fuzztest/repo/.seclab/fuzz/build/fuzztest/_deps/fuzztest-src/fuzztest/internal/runtime.cc:745:3
+    #9 0xaaaad1294cac in absl::lts_20260526::FunctionRef<void (std::basic_string_view<char, std::char_traits<char>>, std::optional<int>, fuzztest::internal::FuzzTestFuzzerImpl::Input)>::operator()(std::basic_string_view<char, std::char_traits<char>>, std::optional<int>, fuzztest::internal::FuzzTestFuzzerImpl::Input) const /work/c-fuzztest/repo/.seclab/fuzz/build/fuzztest/_deps/abseil-cpp-src/absl/functional/function_ref.h:165:12
+    #10 0xaaaad1294cac in fuzztest::internal::FuzzTestFuzzerImpl::ForEachInput(absl::lts_20260526::Span<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const>, absl::lts_20260526::FunctionRef<void (std::basic_string_view<char, std::char_traits<char>>, std::optional<int>, fuzztest::internal::FuzzTestFuzzerImpl::Input)>, absl::lts_20260526::Duration)::$_0::operator()(std::basic_string_view<char, std::char_traits<char>>, std::optional<int>, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>) const /work/c-fuzztest/repo/.seclab/fuzz/build/fuzztest/_deps/fuzztest-src/fuzztest/internal/runtime.cc:952:9
+    #11 0xaaaad1294cac in absl::lts_20260526::Status std::__invoke_impl<absl::lts_20260526::Status, fuzztest::internal::FuzzTestFuzzerImpl::ForEachInput(absl::lts_20260526::Span<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const>, absl::lts_20260526::FunctionRef<void (std::basic_string_view<char, std::char_traits<char>>, std::optional<int>, fuzztest::internal::FuzzTestFuzzerImpl::Input)>, absl::lts_20260526::Duration)::$_0&, std::basic_string_view<char, std::char_traits<char>>, std::optional<int>, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>>(std::__invoke_other, fuzztest::internal::FuzzTestFuzzerImpl::ForEachInput(absl::lts_20260526::Span<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const>, absl::lts_20260526::FunctionRef<void (std::basic_string_view<char, std::char_traits<char>>, std::optional<int>, fuzztest::internal::FuzzTestFuzzerImpl::Input)>, absl::lts_20260526::Duration)::$_0&, std::basic_string_view<char, std::char_traits<char>>&&, std::optional<int>&&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>&&) /usr/lib/gcc/aarch64-linux-gnu/13/../../../../include/c++/13/bits/invoke.h:61:14
+    #12 0xaaaad1294cac in std::__invoke_result<fuzztest::internal::FuzzTestFuzzerImpl::ForEachInput(absl::lts_20260526::Span<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const>, absl::lts_20260526::FunctionRef<void (std::basic_string_view<char, std::char_traits<char>>, std::optional<int>, fuzztest::internal::FuzzTestFuzzerImpl::Input)>, absl::lts_20260526::Duration)::$_0&, std::basic_string_view<char, std::char_traits<char>>, std::optional<int>, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>>::type std::__invoke<fuzztest::internal::FuzzTestFuzzerImpl::ForEachInput(absl::lts_20260526::Span<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const>, absl::lts_20260526::FunctionRef<void (std::basic_string_view<char, std::char_traits<char>>, std::optional<int>, fuzztest::internal::FuzzTestFuzzerImpl::Input)>, absl::lts_20260526::Duration)::$_0&, std::basic_string_view<char, std::char_traits<char>>, std::optional<int>, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>>(fuzztest::internal::FuzzTestFuzzerImpl::ForEachInput(absl::lts_20260526::Span<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const>, absl::lts_20260526::FunctionRef<void (std::basic_string_view<char, std::char_traits<char>>, std::optional<int>, fuzztest::internal::FuzzTestFuzzerImpl::Input)>, absl::lts_20260526::Duration)::$_0&, std::basic_string_view<char, std::char_traits<char>>&&, std::optional<int>&&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>&&) /usr/lib/gcc/aarch64-linux-gnu/13/../../../../include/c++/13/bits/invoke.h:96:14
+    #13 0xaaaad1294cac in std::invoke_result<fuzztest::internal::FuzzTestFuzzerImpl::ForEachInput(absl::lts_20260526::Span<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const>, absl::lts_20260526::FunctionRef<void (std::basic_string_view<char, std::char_traits<char>>, std::optional<int>, fuzztest::internal::FuzzTestFuzzerImpl::Input)>, absl::lts_20260526::Duration)::$_0&, std::basic_string_view<char, std::char_traits<char>>, std::optional<int>, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>>::type std::invoke<fuzztest::internal::FuzzTestFuzzerImpl::ForEachInput(absl::lts_20260526::Span<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const>, absl::lts_20260526::FunctionRef<void (std::basic_string_view<char, std::char_traits<char>>, std::optional<int>, fuzztest::internal::FuzzTestFuzzerImpl::Input)>, absl::lts_20260526::Duration)::$_0&, std::basic_string_view<char, std::char_traits<char>>, std::optional<int>, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>>(fuzztest::internal::FuzzTestFuzzerImpl::ForEachInput(absl::lts_20260526::Span<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const>, absl::lts_20260526::FunctionRef<void (std::basic_string_view<char, std::char_traits<char>>, std::optional<int>, fuzztest::internal::FuzzTestFuzzerImpl::Input)>, absl::lts_20260526::Duration)::$_0&, std::basic_string_view<char, std::char_traits<char>>&&, std::optional<int>&&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>&&) /usr/lib/gcc/aarch64-linux-gnu/13/../../../../include/c++/13/functional:113:14
+    #14 0xaaaad1294cac in absl::lts_20260526::Status absl::lts_20260526::functional_internal::InvokeObject<fuzztest::internal::FuzzTestFuzzerImpl::ForEachInput(absl::lts_20260526::Span<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const>, absl::lts_20260526::FunctionRef<void (std::basic_string_view<char, std::char_traits<char>>, std::optional<int>, fuzztest::internal::FuzzTestFuzzerImpl::Input)>, absl::lts_20260526::Duration)::$_0&, absl::lts_20260526::Status, std::basic_string_view<char, std::char_traits<char>>, std::optional<int>, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>>(absl::lts_20260526::functional_internal::VoidPtr, absl::lts_20260526::functional_internal::ForwardT<std::basic_string_view<char, std::char_traits<char>>>::type, absl::lts_20260526::functional_internal::ForwardT<std::optional<int>>::type, absl::lts_20260526::functional_internal::ForwardT<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>>::type) /work/c-fuzztest/repo/.seclab/fuzz/build/fuzztest/_deps/abseil-cpp-src/absl/functional/internal/function_ref.h:76:25
+    #15 0xaaaad12cb0a8 in absl::lts_20260526::FunctionRef<absl::lts_20260526::Status (std::basic_string_view<char, std::char_traits<char>>, std::optional<int>, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>)>::operator()(std::basic_string_view<char, std::char_traits<char>>, std::optional<int>, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>) const /work/c-fuzztest/repo/.seclab/fuzz/build/fuzztest/_deps/abseil-cpp-src/absl/functional/function_ref.h:165:12
+    #16 0xaaaad12cb0a8 in fuzztest::internal::ForEachSerializedInput(absl::lts_20260526::Span<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const>, absl::lts_20260526::FunctionRef<absl::lts_20260526::Status (std::basic_string_view<char, std::char_traits<char>>, std::optional<int>, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>)>, absl::lts_20260526::Duration) /work/c-fuzztest/repo/.seclab/fuzz/build/fuzztest/_deps/fuzztest-src/fuzztest/internal/io.cc:278:27
+    #17 0xaaaad128bd94 in fuzztest::internal::FuzzTestFuzzerImpl::ForEachInput(absl::lts_20260526::Span<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>> const>, absl::lts_20260526::FunctionRef<void (std::basic_string_view<char, std::char_traits<char>>, std::optional<int>, fuzztest::internal::FuzzTestFuzzerImpl::Input)>, absl::lts_20260526::Duration) /work/c-fuzztest/repo/.seclab/fuzz/build/fuzztest/_deps/fuzztest-src/fuzztest/internal/runtime.cc:946:3
+    #18 0xaaaad128bd94 in fuzztest::internal::FuzzTestFuzzerImpl::ReplayInputsIfAvailable(fuzztest::internal::Configuration const&) /work/c-fuzztest/repo/.seclab/fuzz/build/fuzztest/_deps/fuzztest-src/fuzztest/internal/runtime.cc:756:5
+    #19 0xaaaad1295d3c in fuzztest::internal::FuzzTestFuzzerImpl::RunInUnitTestMode(fuzztest::internal::Configuration const&)::$_0::operator()() const /work/c-fuzztest/repo/.seclab/fuzz/build/fuzztest/_deps/fuzztest-src/fuzztest/internal/runtime.cc:1065:9
+    #20 0xaaaad1295d3c in void std::__invoke_impl<void, fuzztest::internal::FuzzTestFuzzerImpl::RunInUnitTestMode(fuzztest::internal::Configuration const&)::$_0>(std::__invoke_other, fuzztest::internal::FuzzTestFuzzerImpl::RunInUnitTestMode(fuzztest::internal::Configuration const&)::$_0&&) /usr/lib/gcc/aarch64-linux-gnu/13/../../../../include/c++/13/bits/invoke.h:61:14
+    #21 0xaaaad1295d3c in std::__invoke_result<fuzztest::internal::FuzzTestFuzzerImpl::RunInUnitTestMode(fuzztest::internal::Configuration const&)::$_0>::type std::__invoke<fuzztest::internal::FuzzTestFuzzerImpl::RunInUnitTestMode(fuzztest::internal::Configuration const&)::$_0>(fuzztest::internal::FuzzTestFuzzerImpl::RunInUnitTestMode(fuzztest::internal::Configuration const&)::$_0&&) /usr/lib/gcc/aarch64-linux-gnu/13/../../../../include/c++/13/bits/invoke.h:96:14
+    #22 0xaaaad1295d3c in std::invoke_result<fuzztest::internal::FuzzTestFuzzerImpl::RunInUnitTestMode(fuzztest::internal::Configuration const&)::$_0>::type std::invoke<fuzztest::internal::FuzzTestFuzzerImpl::RunInUnitTestMode(fuzztest::internal::Configuration const&)::$_0>(fuzztest::internal::FuzzTestFuzzerImpl::RunInUnitTestMode(fuzztest::internal::Configuration const&)::$_0&&) /usr/lib/gcc/aarch64-linux-gnu/13/../../../../include/c++/13/functional:113:14
+    #23 0xaaaad1295d3c in void absl::lts_20260526::internal_any_invocable::InvokeR<void, fuzztest::internal::FuzzTestFuzzerImpl::RunInUnitTestMode(fuzztest::internal::Configuration const&)::$_0>(fuzztest::internal::FuzzTestFuzzerImpl::RunInUnitTestMode(fuzztest::internal::Configuration const&)::$_0&&) /work/c-fuzztest/repo/.seclab/fuzz/build/fuzztest/_deps/abseil-cpp-src/absl/functional/internal/any_invocable.h:121:5
+    #24 0xaaaad1295d3c in void absl::lts_20260526::internal_any_invocable::LocalInvoker<false, void, fuzztest::internal::FuzzTestFuzzerImpl::RunInUnitTestMode(fuzztest::internal::Configuration const&)::$_0&&>(absl::lts_20260526::internal_any_invocable::TypeErasedState*) /work/c-fuzztest/repo/.seclab/fuzz/build/fuzztest/_deps/abseil-cpp-src/absl/functional/internal/any_invocable.h:278:10
+    #25 0xaaaad12922f4 in fuzztest::internal::FuzzTestFuzzerImpl::RunInUnitTestMode(fuzztest::internal::Configuration const&) /work/c-fuzztest/repo/.seclab/fuzz/build/fuzztest/_deps/fuzztest-src/fuzztest/internal/runtime.cc:1050:20
+    #26 0xaaaad1277c00 in fuzztest::internal::GTest_TestAdaptor::TestBody() /work/c-fuzztest/repo/.seclab/fuzz/build/fuzztest/_deps/fuzztest-src/./fuzztest/internal/googletest_adaptor.h:88:9
+    #27 0xaaaad134b900 in void testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test, void>(testing::Test*, void (testing::Test::*)(), char const*) /work/c-fuzztest/repo/.seclab/fuzz/build/fuzztest/_deps/googletest-src/googletest/src/gtest.cc:2664:10
+    #28 0xaaaad134b900 in void testing::internal::HandleExceptionsInMethodIfSupported<testing::Test, void>(testing::Test*, void (testing::Test::*)(), char const*) /work/c-fuzztest/repo/.seclab/fuzz/build/fuzztest/_deps/googletest-src/googletest/src/gtest.cc:2700:14
+    #29 0xaaaad134b328 in testing::Test::Run() /work/c-fuzztest/repo/.seclab/fuzz/build/fuzztest/_deps/googletest-src/googletest/src/gtest.cc:2739:5
+    #30 0xaaaad134f48c in testing::TestInfo::Run() /work/c-fuzztest/repo/.seclab/fuzz/build/fuzztest/_deps/googletest-src/googletest/src/gtest.cc:2885:11
+    #31 0xaaaad1354fd4 in testing::TestSuite::Run() /work/c-fuzztest/repo/.seclab/fuzz/build/fuzztest/_deps/googletest-src/googletest/src/gtest.cc:3063:30
+    #32 0xaaaad1393ec8 in testing::internal::UnitTestImpl::RunAllTests() /work/c-fuzztest/repo/.seclab/fuzz/build/fuzztest/_deps/googletest-src/googletest/src/gtest.cc:6054:44
+    #33 0xaaaad1391a7c in bool testing::internal::HandleSehExceptionsInMethodIfSupported<testing::internal::UnitTestImpl, bool>(testing::internal::UnitTestImpl*, bool (testing::internal::UnitTestImpl::*)(), char const*) /work/c-fuzztest/repo/.seclab/fuzz/build/fuzztest/_deps/googletest-src/googletest/src/gtest.cc:2664:10
+    #34 0xaaaad1391a7c in bool testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl, bool>(testing::internal::UnitTestImpl*, bool (testing::internal::UnitTestImpl::*)(), char const*) /work/c-fuzztest/repo/.seclab/fuzz/build/fuzztest/_deps/googletest-src/googletest/src/gtest.cc:2700:14
+    #35 0xaaaad13913b0 in testing::UnitTest::Run() /work/c-fuzztest/repo/.seclab/fuzz/build/fuzztest/_deps/googletest-src/googletest/src/gtest.cc:5594:10
+    #36 0xaaaad12621c0 in RUN_ALL_TESTS() /work/c-fuzztest/repo/.seclab/fuzz/build/fuzztest/_deps/googletest-src/googletest/include/gtest/gtest.h:2334:73
+    #37 0xaaaad12621c0 in main /work/c-fuzztest/repo/.seclab/fuzz/build/fuzztest/_deps/fuzztest-src/fuzztest/fuzztest_gtest_main.cc:31:10
+    #38 0xffffb38184c0  (/lib/aarch64-linux-gnu/libc.so.6+0x284c0) (BuildId: 27027b96e5b8c475fc327aa445bea1c71d37b4e2)
+    #39 0xffffb3818594 in __libc_start_main (/lib/aarch64-linux-gnu/libc.so.6+0x28594) (BuildId: 27027b96e5b8c475fc327aa445bea1c71d37b4e2)
+    #40 0xaaaad1137e2c in _start (/work/c-fuzztest/repo/.seclab/fuzz/build/fuzztest/record_fuzz_test+0x177e2c) (BuildId: e532303f69efee2b8344f13cc870a25bed7b32af)
+
+==3460==Register values:
+ x0 = 0x0000000000000000   x1 = 0x0000000000000d84   x2 = 0x0000000000000006   x3 = 0x0000ffffb3d93020  
+ x4 = 0x0000ffffb3da3b50   x5 = 0x0000000000000001   x6 = 0x0000000000000020   x7 = 0x0000000000000001  
+ x8 = 0x0000000000000083   x9 = 0x0000000000017e26  x10 = 0x0000000000017d8b  x11 = 0x00000000000001c1  
+x12 = 0xffffffffffffffff  x13 = 0x0000000000000000  x14 = 0x0000ffffffffffff  x15 = 0x0000ffffffffffff  
+x16 = 0x0000000000000001  x17 = 0x0000ffffb3876fd0  x18 = 0x0000000000000007  x19 = 0x0000000000000d84  
+x20 = 0x0000ffffb3d93020  x21 = 0x0000000000000006  x22 = 0x000000000000000a  x23 = 0x0000aaaad17344e0  
+x24 = 0x00001f8ff62c3890  x25 = 0x0000fbffb161c4b0  x26 = 0x0000fd2fb29e0078  x27 = 0x0000fbffb1736780  
+x28 = 0x0000fcefb29e0040   fp = 0x0000ffffd1985f20   lr = 0x0000ffffb38774c4   sp = 0x0000ffffd1985f10  
+AddressSanitizer can not provide additional info.
+==3460==ABORTING
+
+=================================================================
+=== Fuzzing stats
+
+Elapsed time: 200.662833ms
+Total runs: 1
+Edges covered: 0
+Total edges: 0
+Corpus size: 0
+Max stack used: 0
+
+=================================================================
+=== BUG FOUND!
+
+/work/c-fuzztest/repo/record_fuzz_test.cc:11: Counterexample found for RecordTest.ParsesWithoutCrashing.
+The test fails with input:
+argument 0: "REC1=\324\324\324\324\324\324\324\324\324"
+
+=================================================================
+=== Regression test draft
+
+TEST(RecordTest, ParsesWithoutCrashingRegression) {
+  ParsesWithoutCrashing(
+    "REC1=\324\324\324\324\324\324\324\324\324"
+  );
+}
+
+Please note that the code generated above is best effort and is intended
+to be used as a draft regression test.
+For reproducing findings please rely on file based reproduction.
+[.] No reproducer output location specified - not writing the reproducer file.
+
+=================================================================

@@ -1,0 +1,26 @@
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 3817004392
+INFO: Loaded 1 modules   (56 inline 8-bit counters): 56 [0xaaaad6f83038, 0xaaaad6f83070), 
+INFO: Loaded 1 PC tables (56 PCs): 56 [0xaaaad6f83070,0xaaaad6f833f0), 
+out/fuzz_lib: Running 1 inputs 1 time(s) each.
+Running: in-spin-s
+ALARM: working on the last Unit for 1 seconds
+       and the timeout value is 1 (use -timeout=N to change)
+==57== ERROR: libFuzzer: timeout after 1 seconds
+/usr/bin/llvm-symbolizer-20: error: 'linux-vdso.so.1': No such file or directory
+    #0 0xaaaad6ef001c in __sanitizer_print_stack_trace (/work/my lab/out/fuzz_lib+0x12001c) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311)
+    #1 0xaaaad6e3e888 in fuzzer::PrintStackTrace() (/work/my lab/out/fuzz_lib+0x6e888) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311)
+    #2 0xaaaad6e245a4 in fuzzer::Fuzzer::AlarmCallback() (/work/my lab/out/fuzz_lib+0x545a4) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311)
+    #3 0xffffb0b5e7fc  (linux-vdso.so.1+0x7fc) (BuildId: fd0ce9d0de507a05fbe412a5f54dcad786034452)
+    #4 0xaaaad6f26860 in spin_spaces /work/my lab/src/lib.c:64:17
+    #5 0xaaaad6f26860 in dispatch /work/my lab/src/lib.c:78:13
+    #6 0xaaaad6f26d78 in LLVMFuzzerTestOneInput /work/my lab/fuzz/harness.c:5:3
+    #7 0xaaaad6e25bf4 in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) (/work/my lab/out/fuzz_lib+0x55bf4) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311)
+    #8 0xaaaad6e0ef90 in fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long) (/work/my lab/out/fuzz_lib+0x3ef90) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311)
+    #9 0xaaaad6e14be8 in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long)) (/work/my lab/out/fuzz_lib+0x44be8) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311)
+    #10 0xaaaad6e3f3b8 in main (/work/my lab/out/fuzz_lib+0x6f3b8) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311)
+    #11 0xffffb05d84c0  (/lib/aarch64-linux-gnu/libc.so.6+0x284c0) (BuildId: 27027b96e5b8c475fc327aa445bea1c71d37b4e2)
+    #12 0xffffb05d8594 in __libc_start_main (/lib/aarch64-linux-gnu/libc.so.6+0x28594) (BuildId: 27027b96e5b8c475fc327aa445bea1c71d37b4e2)
+    #13 0xaaaad6e0a56c in _start (/work/my lab/out/fuzz_lib+0x3a56c) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311)
+
+SUMMARY: libFuzzer: timeout

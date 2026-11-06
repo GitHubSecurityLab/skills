@@ -1,0 +1,38 @@
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 251030548
+INFO: Loaded 1 modules   (33 inline 8-bit counters): 33 [0x10462c000, 0x10462c021), 
+INFO: Loaded 1 PC tables (33 PCs): 33 [0x10462c028,0x10462c238), 
+./out/fuzz_config: Running 1 inputs 1 time(s) each.
+Running: in-throw
+libc++abi: terminating due to uncaught exception of type std::runtime_error: bad value
+AddressSanitizer:DEADLYSIGNAL
+=================================================================
+==52536==ERROR: AddressSanitizer: ABRT on unknown address 0x00018283c650 (pc 0x00018283c650 bp 0x00016b81a1b0 sp 0x00016b81a190 T0)
+    #0 0x00018283c650 in __pthread_kill+0x8 (libsystem_kernel.dylib:arm64e+0x9650)
+    #1 0x00018290c47c in abort+0x90 (libsystem_c.dylib:arm64e+0x7b47c)
+    #2 0x000186fa1300 in __abort_message+0x80 (libc++abi.dylib:arm64e+0x16300)
+    #3 0x000186f8e65c in demangling_terminate_handler()+0x10c (libc++abi.dylib:arm64e+0x365c)
+    #4 0x00018271219c in _objc_terminate()+0xa8 (libobjc.A.dylib:arm64e+0x2219c)
+    #5 0x000186f9e2ac in std::__terminate(void (*)())+0xc (libc++abi.dylib:arm64e+0x132ac)
+    #6 0x000186fa07b8 in __cxxabiv1::failed_throw(__cxxabiv1::__cxa_exception*)+0x54 (libc++abi.dylib:arm64e+0x157b8)
+    #7 0x000186f8d188 in __cxa_throw+0x58 (libc++abi.dylib:arm64e+0x2188)
+    #8 0x0001045e5050 in config::parse_value(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&) config.cc:7
+    #9 0x0001045e5050 in LLVMFuzzerTestOneInput config.cc:12
+    #10 0x0001045ffccc in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) FuzzerLoop.cpp:619
+    #11 0x0001045ead64 in fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long) FuzzerDriver.cpp:335
+    #12 0x0001045eff3c in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long)) FuzzerDriver.cpp:871
+    #13 0x00010461e5d8 in main FuzzerMain.cpp:20
+    #14 0x0001827a4d78 in start+0x19f8 (dyld:arm64e+0x31d78)
+
+==52536==Register values:
+ x[0] = 0x0000000000000000   x[1] = 0x0000000000000000   x[2] = 0x0000000000000000   x[3] = 0x0000000000000000  
+ x[4] = 0x000060c000000508   x[5] = 0x000000016b81a240   x[6] = 0x0000000000000065   x[7] = 0x0000000000000001  
+ x[8] = 0x32cb12843d60ceb8   x[9] = 0x32cb1285d2d2ddb8  x[10] = 0x000000802d72343b  x[11] = 0x000000002d70343b  
+x[12] = 0x000000002d70343b  x[13] = 0x0000000000000000  x[14] = 0x0000000000000000  x[15] = 0x0000000000000000  
+x[16] = 0x0000000000000148  x[17] = 0x00000001e43f3380  x[18] = 0x0000000000000000  x[19] = 0x0000000000000006  
+x[20] = 0x0000000000000103  x[21] = 0x00000001efb213e0  x[22] = 0x000060e0000001a0  x[23] = 0x0000000000000002  
+x[24] = 0x000000802d723460  x[25] = 0x000000016b81a300  x[26] = 0x000000016b81a320  x[27] = 0x0000008000020000  
+x[28] = 0x0000000000000064     fp = 0x000000016b81a1b0     lr = 0x0000000182878960     sp = 0x000000016b81a190  
+AddressSanitizer can not provide additional info.
+SUMMARY: AddressSanitizer: ABRT (libsystem_kernel.dylib:arm64e+0x9650) in __pthread_kill+0x8
+==52536==ABORTING

@@ -1,0 +1,19 @@
+==2731==ERROR: AddressSanitizer: ABRT on unknown address 0x03e800000aab (pc 0x7f8a1b4969fc bp 0x7f8a1b5b4588 sp 0x7ffd6c2e5d10 T0)
+    #0 0x7f8a1b4969fc  (/lib/x86_64-linux-gnu/libc.so.6+0x969fc) (BuildId: 490fef8403240c91833978d494d39e537409b92e)
+    #1 0x7f8a1b442475 in raise (/lib/x86_64-linux-gnu/libc.so.6+0x42475) (BuildId: 490fef8403240c91833978d494d39e537409b92e)
+    #2 0x7f8a1b4287f2 in abort (/lib/x86_64-linux-gnu/libc.so.6+0x287f2) (BuildId: 490fef8403240c91833978d494d39e537409b92e)
+    #3 0x7f8a1b42871a  (/lib/x86_64-linux-gnu/libc.so.6+0x2871a) (BuildId: 490fef8403240c91833978d494d39e537409b92e)
+    #4 0x7f8a1b439e95 in __assert_fail (/lib/x86_64-linux-gnu/libc.so.6+0x39e95) (BuildId: 490fef8403240c91833978d494d39e537409b92e)
+    #5 0x55d0c1a2b3c4 in parse_record /src/proj/parse.c:12:3
+    #6 0x55d0c1a2b5e6 in parse /src/proj/parse.c:60:10
+    #7 0x55d0c1a2b7a8 in LLVMFuzzerTestOneInput /src/proj/fuzz/parse_fuzzer.c:8:3
+    #8 0x55d0c19f1234 in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) (/out/parse_fuzzer+0x45234) (BuildId: 7c1e0d33a1f2b4c5d6e7f8091a2b3c4d5e6f7081)
+    #9 0x55d0c19dc0b2 in fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long) (/out/parse_fuzzer+0x300b2) (BuildId: 7c1e0d33a1f2b4c5d6e7f8091a2b3c4d5e6f7081)
+    #10 0x7f8a1b429d8f  (/lib/x86_64-linux-gnu/libc.so.6+0x29d8f) (BuildId: 490fef8403240c91833978d494d39e537409b92e)
+    #11 0x55d0c19d1b44 in _start (/out/parse_fuzzer+0x25b44) (BuildId: 7c1e0d33a1f2b4c5d6e7f8091a2b3c4d5e6f7081)
+
+==2731==Register values:
+rax = 0x0000000000000000  rbx = 0x00007f8a1b3c8740  rcx = 0x00007f8a1b4969fc
+AddressSanitizer can not provide additional info.
+SUMMARY: AddressSanitizer: ABRT (/lib/x86_64-linux-gnu/libc.so.6+0x969fc) (BuildId: 490fef8403240c91833978d494d39e537409b92e)
+==2731==ABORTING

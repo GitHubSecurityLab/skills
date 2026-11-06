@@ -1,0 +1,18 @@
+INFO: Using generated seed: 837996466
+INFO: using inputs from: esm-input
+Dictionary: 4 entries
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 837996466
+INFO: Loaded 2 modules   (513 inline 8-bit counters): 512 [0x7a2b544000, 0x7a2b544200), 1 [0x7a2ae34b50, 0x7a2ae34b51), 
+INFO: Loaded 2 PC tables (513 PCs): 512 [0x7a2b0ea000,0x7a2b0ec000), 1 [0x7a2b05a1f0,0x7a2b05a200), 
+unused_arg0_report_a_bug_if_you_see_this: Running 1 inputs 1 time(s) each.
+Running: esm-input
+==50465== Uncaught Exception: TypeError: Cannot read properties of null (reading 'length')
+    at decode (/work/toy/node_modules/fast-thing/index.js:2:57)
+    at fuzz (file:///work/toy/fuzz/thing.mjs:6:3)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+Executed esm-input in 0 ms
+***
+*** NOTE: fuzzing was not performed, you have only
+***       executed the target code on a fixed set of inputs.
+***

@@ -1,0 +1,20 @@
+INFO: Using generated seed: 215924859
+INFO: using inputs from: crash-short
+(node:26479) Warning: Accessing non-existent property 'default' of module exports inside circular dependency
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:26479) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+Dictionary: 4 entries
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 215924859
+INFO: Loaded 3 modules   (517 inline 8-bit counters): 512 [0x79bb544000, 0x79bb544200), 1 [0x79bbf2caf0, 0x79bbf2caf1), 4 [0x79bbf2c520, 0x79bbf2c524), 
+INFO: Loaded 3 PC tables (517 PCs): 512 [0x79baca0000,0x79baca2000), 1 [0x79bae04200,0x79bae04210), 4 [0x79bac1e400,0x79bac1e440), 
+unused_arg0_report_a_bug_if_you_see_this: Running 1 inputs 1 time(s) each.
+Running: crash-short
+==26479== Uncaught Exception: TypeError: Cannot read properties of null (reading 'name')
+    at parse (file:///work/my%20pkg/src/parse.js:12:19)
+    at fuzz (file:///work/my%20pkg/fuzz/parse.fuzz.js:10:3)
+Executed crash-short in 0 ms
+***
+*** NOTE: fuzzing was not performed, you have only
+***       executed the target code on a fixed set of inputs.
+***

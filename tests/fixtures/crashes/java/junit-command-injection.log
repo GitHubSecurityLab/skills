@@ -1,0 +1,51 @@
+artifact_prefix='/work/toy/src/test/resources/com/example/ToolsFuzzTestInputs/run/'; Test unit written to /work/toy/src/test/resources/com/example/ToolsFuzzTestInputs/run/crash-d78d870541f3296d02d15055060b5318ea64ba26
+Base64: amF6emU=
+Done 3762 runs in 7 second(s)
+DEDUP_TOKEN: 2eb0364e74ac7008
+[ERROR] Tests run: 2, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 8.204 s <<< FAILURE! -- in com.example.ToolsFuzzTest
+[ERROR] com.example.ToolsFuzzTest.run(String)[2] -- Time elapsed: 7.210 s <<< ERROR!
+com.code_intelligence.jazzer.junit.FuzzTestFindingException: 
+com.code_intelligence.jazzer.api.FuzzerSecurityIssueCritical: OS Command Injection
+Executing OS commands with attacker-controlled data can lead to remote code execution.
+	at com.code_intelligence.jazzer.junit.FuzzTestExecutor.execute(FuzzTestExecutor.java:342)
+	at com.code_intelligence.jazzer.junit.FuzzTestExtensions.startFuzzing(FuzzTestExtensions.java:140)
+	at com.code_intelligence.jazzer.junit.FuzzTestExtensions.interceptTestTemplateMethod(FuzzTestExtensions.java:71)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.stream.ReferencePipeline$2$1.accept(ReferencePipeline.java:179)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.stream.Streams$StreamBuilderImpl.forEachRemaining(Streams.java:411)
+	at java.base/java.util.stream.ReferencePipeline$Head.forEach(ReferencePipeline.java:762)
+	at java.base/java.util.stream.ReferencePipeline$7$1.accept(ReferencePipeline.java:276)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base/java.util.ArrayList$ArrayListSpliterator.forEachRemaining(ArrayList.java:1708)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+	at java.base/java.util.stream.ReferencePipeline$7$1.accept(ReferencePipeline.java:276)
+	at java.base/java.util.ArrayList$ArrayListSpliterator.forEachRemaining(ArrayList.java:1708)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+Caused by: com.code_intelligence.jazzer.api.FuzzerSecurityIssueCritical: OS Command Injection
+Executing OS commands with attacker-controlled data can lead to remote code execution.
+	at com.code_intelligence.jazzer.sanitizers.OsCommandInjection.processImplStartHook(OsCommandInjection.kt:60)
+	at java.base/java.lang.ProcessBuilder.start(ProcessBuilder.java:1126)
+	at java.base/java.lang.ProcessBuilder.start(ProcessBuilder.java:1089)
+	at com.example.Tools.run(Tools.java:5)
+	at com.example.ToolsFuzzTest.run(ToolsFuzzTest.java:6)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+
+[INFO] 

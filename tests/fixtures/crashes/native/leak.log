@@ -1,0 +1,35 @@
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 1930811350
+INFO: Loaded 1 modules   (27 inline 8-bit counters): 27 [0x100bd81d8, 0x100bd81f3), 
+INFO: Loaded 1 PC tables (27 PCs): 27 [0x100bd81f8,0x100bd83a8), 
+./fuzz: Running 1 inputs 1 time(s) each.
+Running: in-leak
+Executed in-leak in 0 ms
+***
+*** NOTE: fuzzing was not performed, you have only
+***       executed the target code on a fixed set of inputs.
+***
+
+=================================================================
+==17688==ERROR: LeakSanitizer: detected memory leaks
+
+Direct leak of 8 byte(s) in 1 object(s) allocated from:
+    #0 0x0001012d545c in _Znwm+0x6c (libclang_rt.asan_osx_dynamic.dylib:arm64+0x6545c)
+    #1 0x000100b96958 in std::__1::thread::thread[abi:nqn230103]<void (&)(fuzzer::Fuzzer*, unsigned long), fuzzer::Fuzzer*&, unsigned long&, 0>(void (&)(fuzzer::Fuzzer*, unsigned long), fuzzer::Fuzzer*&, unsigned long&) thread.h:224
+    #2 0x000100b96958 in std::__1::thread::thread[abi:nqn230103]<void (&)(fuzzer::Fuzzer*, unsigned long), fuzzer::Fuzzer*&, unsigned long&, 0>(void (&)(fuzzer::Fuzzer*, unsigned long), fuzzer::Fuzzer*&, unsigned long&) thread.h:218
+    #3 0x000100b96958 in fuzzer::StartRssThread(fuzzer::Fuzzer*, unsigned long) FuzzerDriver.cpp:326
+    #4 0x000100b9b5c8 in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long)) FuzzerDriver.cpp:832
+    #5 0x000100bca358 in main FuzzerMain.cpp:20
+    #6 0x00018e5d3e7c in start+0x1a1c (dyld:arm64e+0x31e7c)
+
+Indirect leak of 48 byte(s) in 1 object(s) allocated from:
+    #0 0x0001012d545c in _Znwm+0x6c (libclang_rt.asan_osx_dynamic.dylib:arm64+0x6545c)
+    #1 0x00018e8ba698 in std::__1::__thread_struct::__thread_struct()+0x28 (libc++.1.dylib:arm64e+0x6698)
+    #2 0x000100b96960 in std::__1::thread::thread[abi:nqn230103]<void (&)(fuzzer::Fuzzer*, unsigned long), fuzzer::Fuzzer*&, unsigned long&, 0>(void (&)(fuzzer::Fuzzer*, unsigned long), fuzzer::Fuzzer*&, unsigned long&) thread.h:224
+    #3 0x000100b96960 in std::__1::thread::thread[abi:nqn230103]<void (&)(fuzzer::Fuzzer*, unsigned long), fuzzer::Fuzzer*&, unsigned long&, 0>(void (&)(fuzzer::Fuzzer*, unsigned long), fuzzer::Fuzzer*&, unsigned long&) thread.h:218
+    #4 0x000100b96960 in fuzzer::StartRssThread(fuzzer::Fuzzer*, unsigned long) FuzzerDriver.cpp:326
+    #5 0x000100b9b5c8 in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long)) FuzzerDriver.cpp:832
+    #6 0x000100bca358 in main FuzzerMain.cpp:20
+    #7 0x00018e5d3e7c in start+0x1a1c (dyld:arm64e+0x31e7c)
+
+SUMMARY: AddressSanitizer: 56 byte(s) leaked in 2 allocation(s).

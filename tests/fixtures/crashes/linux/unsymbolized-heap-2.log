@@ -1,0 +1,66 @@
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 625164986
+INFO: Loaded 1 modules   (56 inline 8-bit counters): 56 [0xaaaae0383038, 0xaaaae0383070), 
+INFO: Loaded 1 PC tables (56 PCs): 56 [0xaaaae0383070,0xaaaae03833f0), 
+out/fuzz_lib: Running 1 inputs 1 time(s) each.
+Running: in-b
+=================================================================
+==28==ERROR: AddressSanitizer: heap-buffer-overflow on address 0xfc1fa8fe0062 at pc 0xaaaae0326920 bp 0xffffd171a620 sp 0xffffd171a618
+READ of size 1 at 0xfc1fa8fe0062 thread T0
+SCARINESS: 22 (1-byte-read-heap-buffer-overflow-far-from-bounds)
+    #0 0xaaaae032691c  (/work/my lab/out/fuzz_lib+0x15691c) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311)
+    #1 0xaaaae0326d78  (/work/my lab/out/fuzz_lib+0x156d78) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311)
+    #2 0xaaaae0225bf4  (/work/my lab/out/fuzz_lib+0x55bf4) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311)
+    #3 0xaaaae020ef90  (/work/my lab/out/fuzz_lib+0x3ef90) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311)
+    #4 0xaaaae0214be8  (/work/my lab/out/fuzz_lib+0x44be8) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311)
+    #5 0xaaaae023f3b8  (/work/my lab/out/fuzz_lib+0x6f3b8) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311)
+    #6 0xffffa9f984c0  (/lib/aarch64-linux-gnu/libc.so.6+0x284c0) (BuildId: 27027b96e5b8c475fc327aa445bea1c71d37b4e2)
+    #7 0xffffa9f98594  (/lib/aarch64-linux-gnu/libc.so.6+0x28594) (BuildId: 27027b96e5b8c475fc327aa445bea1c71d37b4e2)
+    #8 0xaaaae020a56c  (/work/my lab/out/fuzz_lib+0x3a56c) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311)
+
+0xfc1fa8fe0062 is located 10 bytes after 8-byte region [0xfc1fa8fe0050,0xfc1fa8fe0058)
+allocated by thread T0 here:
+    #0 0xaaaae02e35b4  (/work/my lab/out/fuzz_lib+0x1135b4) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311)
+    #1 0xaaaae03266cc  (/work/my lab/out/fuzz_lib+0x1566cc) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311)
+    #2 0xaaaae0326d78  (/work/my lab/out/fuzz_lib+0x156d78) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311)
+    #3 0xaaaae0225bf4  (/work/my lab/out/fuzz_lib+0x55bf4) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311)
+    #4 0xaaaae020ef90  (/work/my lab/out/fuzz_lib+0x3ef90) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311)
+    #5 0xaaaae0214be8  (/work/my lab/out/fuzz_lib+0x44be8) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311)
+    #6 0xaaaae023f3b8  (/work/my lab/out/fuzz_lib+0x6f3b8) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311)
+    #7 0xffffa9f984c0  (/lib/aarch64-linux-gnu/libc.so.6+0x284c0) (BuildId: 27027b96e5b8c475fc327aa445bea1c71d37b4e2)
+    #8 0xffffa9f98594  (/lib/aarch64-linux-gnu/libc.so.6+0x28594) (BuildId: 27027b96e5b8c475fc327aa445bea1c71d37b4e2)
+    #9 0xaaaae020a56c  (/work/my lab/out/fuzz_lib+0x3a56c) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311)
+
+SUMMARY: AddressSanitizer: heap-buffer-overflow (/work/my lab/out/fuzz_lib+0x15691c) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311) 
+Shadow bytes around the buggy address:
+  0xfc1fa8fdfd80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0xfc1fa8fdfe00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0xfc1fa8fdfe80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0xfc1fa8fdff00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0xfc1fa8fdff80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+=>0xfc1fa8fe0000: fa fa 00 02 fa fa 00 02 fa fa 00 fa[fa]fa fa fa
+  0xfc1fa8fe0080: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0xfc1fa8fe0100: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0xfc1fa8fe0180: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0xfc1fa8fe0200: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0xfc1fa8fe0280: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+Shadow byte legend (one shadow byte represents 8 application bytes):
+  Addressable:           00
+  Partially addressable: 01 02 03 04 05 06 07 
+  Heap left redzone:       fa
+  Freed heap region:       fd
+  Stack left redzone:      f1
+  Stack mid redzone:       f2
+  Stack right redzone:     f3
+  Stack after return:      f5
+  Stack use after scope:   f8
+  Global redzone:          f9
+  Global init order:       f6
+  Poisoned by user:        f7
+  Container overflow:      fc
+  Array cookie:            ac
+  Intra object redzone:    bb
+  ASan internal:           fe
+  Left alloca redzone:     ca
+  Right alloca redzone:    cb
+==28==ABORTING

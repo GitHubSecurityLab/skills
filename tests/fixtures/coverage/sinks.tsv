@@ -1,0 +1,6 @@
+# id	file	line	group	kind	note
+id	file	line	group	kind	note
+s1	src/parse.c	9	hdr.len	bounds	length check
+s2	src/parse.c	11	hdr.len	loop	loop bound
+s3	src/parse.c	19	body.tag	switch	default branch
+s4	src/missing.c	5	other	copy	not compiled

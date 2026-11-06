@@ -1,0 +1,54 @@
+=================================================================
+==52==ERROR: AddressSanitizer: heap-buffer-overflow on address 0xfc1f8d5e0016 at pc 0xaaaab0b5c4cc bp 0xfffff0331d80 sp 0xfffff0331d78
+READ of size 1 at 0xfc1f8d5e0016 thread T0
+SCARINESS: 12 (1-byte-read-heap-buffer-overflow)
+    #0 0xaaaab0b5c4c8 in read_first /work/my lab/src/lib.c:18:15
+    #1 0xaaaab0b5c4c8 in dispatch /work/my lab/src/lib.c:71:26
+    #2 0xaaaab0b5c5d8 in main /work/my lab/fuzz/main.c:9:3
+    #3 0xffff8e5384c0  (/lib/aarch64-linux-gnu/libc.so.6+0x284c0) (BuildId: 27027b96e5b8c475fc327aa445bea1c71d37b4e2)
+    #4 0xffff8e538594 in __libc_start_main (/lib/aarch64-linux-gnu/libc.so.6+0x28594) (BuildId: 27027b96e5b8c475fc327aa445bea1c71d37b4e2)
+    #5 0xaaaab0a750ec in _start (/work/my lab/out/main_lib+0x350ec) (BuildId: 68031f380f3e6c2d1329829de78796938eccc4c8)
+
+0xfc1f8d5e0016 is located 2 bytes after 4-byte region [0xfc1f8d5e0010,0xfc1f8d5e0014)
+allocated by thread T0 here:
+    #0 0xaaaab0b193c0 in malloc (/work/my lab/out/main_lib+0xd93c0) (BuildId: 68031f380f3e6c2d1329829de78796938eccc4c8)
+    #1 0xaaaab0b5c27c in read_first /work/my lab/src/lib.c:16:16
+    #2 0xaaaab0b5c27c in dispatch /work/my lab/src/lib.c:71:26
+    #3 0xaaaab0b5c5d8 in main /work/my lab/fuzz/main.c:9:3
+    #4 0xffff8e5384c0  (/lib/aarch64-linux-gnu/libc.so.6+0x284c0) (BuildId: 27027b96e5b8c475fc327aa445bea1c71d37b4e2)
+    #5 0xffff8e538594 in __libc_start_main (/lib/aarch64-linux-gnu/libc.so.6+0x28594) (BuildId: 27027b96e5b8c475fc327aa445bea1c71d37b4e2)
+    #6 0xaaaab0a750ec in _start (/work/my lab/out/main_lib+0x350ec) (BuildId: 68031f380f3e6c2d1329829de78796938eccc4c8)
+
+SUMMARY: AddressSanitizer: heap-buffer-overflow /work/my lab/src/lib.c:18:15 in read_first
+Shadow bytes around the buggy address:
+  0xfc1f8d5dfd80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0xfc1f8d5dfe00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0xfc1f8d5dfe80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0xfc1f8d5dff00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0xfc1f8d5dff80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+=>0xfc1f8d5e0000: fa fa[04]fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0xfc1f8d5e0080: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0xfc1f8d5e0100: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0xfc1f8d5e0180: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0xfc1f8d5e0200: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0xfc1f8d5e0280: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+Shadow byte legend (one shadow byte represents 8 application bytes):
+  Addressable:           00
+  Partially addressable: 01 02 03 04 05 06 07 
+  Heap left redzone:       fa
+  Freed heap region:       fd
+  Stack left redzone:      f1
+  Stack mid redzone:       f2
+  Stack right redzone:     f3
+  Stack after return:      f5
+  Stack use after scope:   f8
+  Global redzone:          f9
+  Global init order:       f6
+  Poisoned by user:        f7
+  Container overflow:      fc
+  Array cookie:            ac
+  Intra object redzone:    bb
+  ASan internal:           fe
+  Left alloca redzone:     ca
+  Right alloca redzone:    cb
+==52==ABORTING

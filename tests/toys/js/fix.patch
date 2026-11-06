@@ -1,0 +1,10 @@
+--- a/src/record.js
++++ b/src/record.js
+@@ -4,6 +4,7 @@ function parseRecord(buf) {
+   if (buf.length < 5 || buf.toString("latin1", 0, 4) !== "REC1") return null;
+   const index = buf[4];
+   const fields = buf.toString("latin1", 5).split(",");
++  if (index >= fields.length) return null;
+   return fields[index].trim();
+ }
+ 

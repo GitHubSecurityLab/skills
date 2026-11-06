@@ -1,0 +1,12 @@
+==4242==WARNING: MemorySanitizer: use-of-uninitialized-value
+    #0 0x55d0c1a2b3c4 in parse_header /src/proj/header.c:31:7
+    #1 0x55d0c1a2b5e6 in LLVMFuzzerTestOneInput /src/proj/fuzz/header_fuzzer.c:9:3
+    #2 0x55d0c19f1234 in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) (/out/header_fuzzer+0x45234) (BuildId: 7c1e0d33a1f2b4c5d6e7f8091a2b3c4d5e6f7081)
+    #3 0x55d0c19dc0b2 in fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long) (/out/header_fuzzer+0x300b2) (BuildId: 7c1e0d33a1f2b4c5d6e7f8091a2b3c4d5e6f7081)
+
+  Uninitialized value was created by a heap allocation
+    #0 0x55d0c1a01111 in malloc (/out/header_fuzzer+0x55111) (BuildId: 7c1e0d33a1f2b4c5d6e7f8091a2b3c4d5e6f7081)
+    #1 0x55d0c1a2b222 in read_header /src/proj/header.c:12:15
+
+SUMMARY: MemorySanitizer: use-of-uninitialized-value /src/proj/header.c:31:7 in parse_header
+Exiting

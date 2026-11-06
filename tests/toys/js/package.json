@@ -1,0 +1,12 @@
+{
+  "name": "record-toy",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Toy project for the fuzzing skills' CI scenarios",
+  "devDependencies": {
+    "@jazzer.js/core": "4.0.0",
+    "@jazzer.js/jest-runner": "4.0.0",
+    "jest": "29.7.0",
+    "light-my-request": "6.8.0"
+  }
+}

@@ -1,0 +1,10 @@
+--- a/src/record.c
++++ b/src/record.c
+@@ -11,6 +11,7 @@ int parse_record(const unsigned char *data, size_t size, char *name, size_t name_size) {
+   if (size < 5 || memcmp(data, "REC1", 4) != 0) return -1;
+   len = data[4];
+   if (len >= name_size) return -1;
++  if (len > size - 5) return -2;
+   assert(len <= size - 5);
+   memcpy(name, data + 5, len);
+   name[len] = '\0';

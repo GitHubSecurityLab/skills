@@ -1,0 +1,33 @@
+{
+  "name": "seclab-skills",
+  "version": "0.1.0",
+  "description": "Security research and vulnerability discovery skills from GitHub Security Lab. First topic: fuzzing campaigns for C/C++, Java and JavaScript/TypeScript.",
+  "author": {
+    "name": "GitHub Security Lab",
+    "url": "https://securitylab.github.com"
+  },
+  "homepage": "https://github.com/GitHubSecurityLab/skills",
+  "repository": "https://github.com/GitHubSecurityLab/skills",
+  "license": "MIT",
+  "keywords": [
+    "security",
+    "fuzzing",
+    "vulnerability-research",
+    "threat-modeling",
+    "libfuzzer",
+    "aflplusplus",
+    "fuzztest",
+    "jazzer",
+    "jazzer.js"
+  ],
+  "skills": [
+    "./skills/shared/security-threat-model",
+    "./skills/fuzzing/fuzz-c-cpp",
+    "./skills/fuzzing/fuzz-campaign",
+    "./skills/fuzzing/fuzz-coverage",
+    "./skills/fuzzing/fuzz-harness",
+    "./skills/fuzzing/fuzz-java",
+    "./skills/fuzzing/fuzz-js",
+    "./skills/fuzzing/fuzz-triage"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "name": "record-ts-toy",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "ESM TypeScript toy for the fuzzing skills' CI scenarios",
+  "devDependencies": {
+    "@jazzer.js/core": "4.0.0",
+    "typescript": "5.9.3"
+  }
+}

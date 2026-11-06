@@ -1,0 +1,19 @@
+INFO: Using generated seed: 1520765173
+INFO: using inputs from: in1
+(node:32695) Warning: Accessing non-existent property 'default' of module exports inside circular dependency
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:32695) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+Dictionary: 4 entries
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 1520765173
+INFO: Loaded 1 modules   (512 inline 8-bit counters): 512 [0x74c1800000, 0x74c1800200), 
+INFO: Loaded 1 PC tables (512 PCs): 512 [0x74c0e04000,0x74c0e06000), 
+unused_arg0_report_a_bug_if_you_see_this: Running 1 inputs 1 time(s) each.
+Running: in1
+==32695== Prototype Pollution
+    Prototype of Object changed. Additional properties in object1: { 'polluted': yes }
+Executed in1 in 0 ms
+***
+*** NOTE: fuzzing was not performed, you have only
+***       executed the target code on a fixed set of inputs.
+***

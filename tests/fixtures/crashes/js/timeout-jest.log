@@ -1,0 +1,20 @@
+INFO: Using generated seed: 872923783
+INFO: using inputs from: /work/toy/.cifuzz-corpus/trim.fuzz/trim/newlines/
+INFO: using inputs from: /work/toy/src/trim.fuzz/trim/newlines/
+(node:19719) Warning: Accessing non-existent property 'default' of module exports inside circular dependency
+(Use `node --trace-warnings ...` to show where the warning was created)
+Dictionary: 4 entries
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 872923783
+INFO: Loaded 1 modules   (512 inline 8-bit counters): 512 [0x7ac95d4000, 0x7ac95d4200), 
+INFO: Loaded 1 PC tables (512 PCs): 512 [0x7ac90e4000,0x7ac90e6000), 
+INFO:        1 files found in /work/toy/.cifuzz-corpus/trim.fuzz/trim/newlines/
+INFO:        0 files found in /work/toy/src/trim.fuzz/trim/newlines/
+INFO: -max_len is not provided; libFuzzer will not generate inputs larger than 200001 bytes
+INFO: seed corpus: files: 1 min: 200001b max: 200001b total: 200001b rss: 200Mb
+ALARM: working on the last Unit for 1 seconds
+       and the timeout value is 1 (use -timeout=N to change)
+MS: 0 ; base unit: 0000000000000000000000000000000000000000
+artifact_prefix='/work/toy/src/trim.fuzz/trim/newlines/'; Test unit written to finding
+==19719== ERROR: libFuzzer: timeout after 1 seconds
+SUMMARY: libFuzzer: timeout

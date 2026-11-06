@@ -1,0 +1,11 @@
+==40== ERROR: libFuzzer: out-of-memory (malloc(4294967295))
+   To change the out-of-memory limit use -rss_limit_mb=<N>
+
+    #0 0x52 in __sanitizer_print_stack_trace /src/llvm-project/compiler-rt/lib/asan/asan_stack.cpp:87:3
+    #1 0x53 in fuzzer::PrintStackTrace() /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerUtil.cpp:210:5
+    #2 0x54 in fuzzer::Fuzzer::HandleMalloc(unsigned long) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:131:3
+    #3 0x55 in malloc /src/llvm-project/compiler-rt/lib/asan/asan_malloc_linux.cpp:69:3
+    #4 0x56 in xmlBufCreateSize /src/libxml2/buf.c:200:30
+    #5 0x57 in LLVMFuzzerTestOneInput /src/libxml2/fuzz/xml.c:40:5
+
+SUMMARY: libFuzzer: out-of-memory

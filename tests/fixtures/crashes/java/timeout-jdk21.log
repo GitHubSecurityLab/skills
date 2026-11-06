@@ -1,0 +1,241 @@
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+INFO: Loaded 740 hooks from com.code_intelligence.jazzer.runtime.TraceCmpHooks
+INFO: Loaded 5 hooks from com.code_intelligence.jazzer.runtime.TraceDivHooks
+INFO: Loaded 2 hooks from com.code_intelligence.jazzer.runtime.TraceIndirHooks
+INFO: Loaded 4 hooks from com.code_intelligence.jazzer.runtime.NativeLibHooks
+INFO: Loaded 5 hooks from com.code_intelligence.jazzer.runtime.JazzerApiHooks
+INFO: Loaded 1 hooks from com.code_intelligence.jazzer.sanitizers.BigDecimal
+INFO: Loaded 2 hooks from com.code_intelligence.jazzer.sanitizers.ClojureLangHooks
+INFO: Loaded 5 hooks from com.code_intelligence.jazzer.sanitizers.Deserialization
+INFO: Loaded 24 hooks from com.code_intelligence.jazzer.sanitizers.ExpressionLanguageInjection
+INFO: Loaded 31 hooks from com.code_intelligence.jazzer.sanitizers.FilePathTraversal
+INFO: Loaded 70 hooks from com.code_intelligence.jazzer.sanitizers.LdapInjection
+INFO: Loaded 46 hooks from com.code_intelligence.jazzer.sanitizers.NamingContextLookup
+INFO: Loaded 1 hooks from com.code_intelligence.jazzer.sanitizers.OsCommandInjection
+INFO: Loaded 48 hooks from com.code_intelligence.jazzer.sanitizers.ReflectiveCall
+INFO: Loaded 8 hooks from com.code_intelligence.jazzer.sanitizers.RegexInjection
+INFO: Loaded 16 hooks from com.code_intelligence.jazzer.sanitizers.RegexRoadblocks
+INFO: Loaded 12 hooks from com.code_intelligence.jazzer.sanitizers.ScriptEngineInjection
+INFO: Loaded 3 hooks from com.code_intelligence.jazzer.sanitizers.ServerSideRequestForgery
+INFO: Loaded 19 hooks from com.code_intelligence.jazzer.sanitizers.SqlInjection
+INFO: Loaded 1 hooks from com.code_intelligence.jazzer.sanitizers.TemplateInjection
+INFO: Loaded 63 hooks from com.code_intelligence.jazzer.sanitizers.UnsafeSanitizer
+INFO: Loaded 6 hooks from com.code_intelligence.jazzer.sanitizers.XPathInjection
+INFO: Loaded 20 hooks from com.code_intelligence.jazzer.sanitizers.XmlParserSsrfGuidance
+INFO: Instrumented toy.SlowFuzzTest (took 16 ms, size +24%)
+INFO: using inputs from: in1
+INFO: found LLVMFuzzerCustomMutator (0x10500cc20). Disabling -len_control by default.
+INFO: libFuzzer ignores flags that start with '--'
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 1825871767
+INFO: Loaded 1 modules   (512 inline 8-bit counters): 512 [0x7c12dcc000, 0x7c12dcc200), 
+INFO: Loaded 1 PC tables (512 PCs): 512 [0x7c14d40000,0x7c14d42000), 
+jazzer: Running 1 inputs 1 time(s) each.
+Running: in1
+INFO: Instrumented toy.SlowParser (took 4 ms, size +78%)
+ALARM: working on the last Unit for 2 seconds
+       and the timeout value is 2 (use -timeout=N to change)
+==33708== ERROR: libFuzzer: timeout after 2 seconds
+
+Stack traces of all JVM threads:
+Thread[#9,Reference Handler,10,system]
+	at java.base@21.0.12.1/java.lang.ref.Reference.waitForReferencePendingList(Native Method)
+	at java.base@21.0.12.1/java.lang.ref.Reference.processPendingReferences(Reference.java:246)
+	at java.base@21.0.12.1/java.lang.ref.Reference$ReferenceHandler.run(Reference.java:208)
+
+Thread[#30,Attach Listener,9,system]
+
+Thread[#1,main,5,main]
+	at com.code_intelligence.jazzer.runtime.TraceDataFlowNativeCallbacks.traceCmpInt(Native Method)
+	at app//toy.SlowParser.spin(SlowParser.java:3)
+	at app//toy.SlowParser.parse(SlowParser.java:4)
+	at app//toy.SlowFuzzTest.slow(SlowFuzzTest.java:5)
+	at java.base@21.0.12.1/java.lang.invoke.DirectMethodHandle$Holder.invokeVirtual(DirectMethodHandle$Holder)
+	at java.base@21.0.12.1/java.lang.invoke.LambdaForm$MH/0x000000e801111000.invoke(LambdaForm$MH)
+	at java.base@21.0.12.1/java.lang.invoke.LambdaForm$MH/0x000000e8011ac400.invoke_MT(LambdaForm$MH)
+	at app//com.code_intelligence.jazzer.driver.FuzzTargetRunner.runOne(FuzzTargetRunner.java:239)
+	at com.code_intelligence.jazzer.runtime.FuzzTargetRunnerNatives.startLibFuzzer(Native Method)
+	at app//com.code_intelligence.jazzer.driver.FuzzTargetRunner.startLibFuzzer(FuzzTargetRunner.java:564)
+	at app//com.code_intelligence.jazzer.driver.FuzzTargetRunner.startLibFuzzer(FuzzTargetRunner.java:454)
+	at app//com.code_intelligence.jazzer.junit.FuzzTestExecutor.execute(FuzzTestExecutor.java:334)
+	at app//com.code_intelligence.jazzer.junit.FuzzTestExtensions.startFuzzing(FuzzTestExtensions.java:140)
+	at app//com.code_intelligence.jazzer.junit.FuzzTestExtensions.interceptTestTemplateMethod(FuzzTestExtensions.java:71)
+	at app//org.junit.jupiter.engine.descriptor.TestTemplateInvocationTestDescriptor$$Lambda/0x000000e80119da60.apply(Unknown Source)
+	at app//org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(InterceptingExecutableInvoker.java:103)
+	at app//org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall$$Lambda/0x000000e80119d830.apply(Unknown Source)
+	at app//org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:93)
+	at app//org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$$Lambda/0x000000e80119b3c0.apply(Unknown Source)
+	at app//org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:106)
+	at app//org.junit.jupiter.engine.extension.TimeoutExtension.intercept(TimeoutExtension.java:156)
+	at app//org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestableMethod(TimeoutExtension.java:147)
+	at app//org.junit.jupiter.engine.extension.TimeoutExtension.interceptTestTemplateMethod(TimeoutExtension.java:94)
+	at app//org.junit.jupiter.engine.descriptor.TestTemplateInvocationTestDescriptor$$Lambda/0x000000e80119da60.apply(Unknown Source)
+	at app//org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall.lambda$ofVoidMethod$0(InterceptingExecutableInvoker.java:103)
+	at app//org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$ReflectiveInterceptorCall$$Lambda/0x000000e80119d830.apply(Unknown Source)
+	at app//org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.lambda$invoke$0(InterceptingExecutableInvoker.java:93)
+	at app//org.junit.jupiter.engine.execution.InterceptingExecutableInvoker$$Lambda/0x000000e80119b3c0.apply(Unknown Source)
+	at app//org.junit.jupiter.engine.execution.InvocationInterceptorChain$InterceptedInvocation.proceed(InvocationInterceptorChain.java:106)
+	at app//org.junit.jupiter.engine.execution.InvocationInterceptorChain.proceed(InvocationInterceptorChain.java:64)
+	at app//org.junit.jupiter.engine.execution.InvocationInterceptorChain.chainAndInvoke(InvocationInterceptorChain.java:45)
+	at app//org.junit.jupiter.engine.execution.InvocationInterceptorChain.invoke(InvocationInterceptorChain.java:37)
+	at app//org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:92)
+	at app//org.junit.jupiter.engine.execution.InterceptingExecutableInvoker.invoke(InterceptingExecutableInvoker.java:86)
+	at app//org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.lambda$invokeTestMethod$8(TestMethodTestDescriptor.java:217)
+	at app//org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor$$Lambda/0x000000e8011a5158.execute(Unknown Source)
+	at app//org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at app//org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.invokeTestMethod(TestMethodTestDescriptor.java:213)
+	at app//org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:138)
+	at app//org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor.execute(TestMethodTestDescriptor.java:68)
+	at app//org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:156)
+	at app//org.junit.platform.engine.support.hierarchical.NodeTestTask$$Lambda/0x000000e8010a9848.execute(Unknown Source)
+	at app//org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at app//org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at app//org.junit.platform.engine.support.hierarchical.NodeTestTask$$Lambda/0x000000e8010a9618.invoke(Unknown Source)
+	at app//org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at app//org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at app//org.junit.platform.engine.support.hierarchical.NodeTestTask$$Lambda/0x000000e8010a93e8.execute(Unknown Source)
+	at app//org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at app//org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at app//org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at app//org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:35)
+	at app//org.junit.platform.engine.support.hierarchical.NodeTestTask$DefaultDynamicTestExecutor.execute(NodeTestTask.java:231)
+	at app//org.junit.platform.engine.support.hierarchical.NodeTestTask$DefaultDynamicTestExecutor.execute(NodeTestTask.java:209)
+	at app//org.junit.jupiter.engine.descriptor.TestTemplateTestDescriptor.execute(TestTemplateTestDescriptor.java:141)
+	at app//org.junit.jupiter.engine.descriptor.TestTemplateTestDescriptor.lambda$execute$3(TestTemplateTestDescriptor.java:109)
+	at app//org.junit.jupiter.engine.descriptor.TestTemplateTestDescriptor$$Lambda/0x000000e8010bedb8.accept(Unknown Source)
+	at java.base@21.0.12.1/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+	at java.base@21.0.12.1/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base@21.0.12.1/java.util.stream.ReferencePipeline$2$1.accept(ReferencePipeline.java:179)
+	at java.base@21.0.12.1/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base@21.0.12.1/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:184)
+	at java.base@21.0.12.1/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base@21.0.12.1/java.util.stream.Streams$StreamBuilderImpl.forEachRemaining(Streams.java:411)
+	at java.base@21.0.12.1/java.util.stream.ReferencePipeline$Head.forEach(ReferencePipeline.java:762)
+	at java.base@21.0.12.1/java.util.stream.ReferencePipeline$7$1.accept(ReferencePipeline.java:276)
+	at java.base@21.0.12.1/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base@21.0.12.1/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base@21.0.12.1/java.util.stream.ReferencePipeline$3$1.accept(ReferencePipeline.java:197)
+	at java.base@21.0.12.1/java.util.ArrayList$ArrayListSpliterator.forEachRemaining(ArrayList.java:1708)
+	at java.base@21.0.12.1/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base@21.0.12.1/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base@21.0.12.1/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base@21.0.12.1/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base@21.0.12.1/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base@21.0.12.1/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+	at java.base@21.0.12.1/java.util.stream.ReferencePipeline$7$1.accept(ReferencePipeline.java:276)
+	at java.base@21.0.12.1/java.util.ArrayList$ArrayListSpliterator.forEachRemaining(ArrayList.java:1708)
+	at java.base@21.0.12.1/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:509)
+	at java.base@21.0.12.1/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:499)
+	at java.base@21.0.12.1/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:151)
+	at java.base@21.0.12.1/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:174)
+	at java.base@21.0.12.1/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:234)
+	at java.base@21.0.12.1/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:596)
+	at app//org.junit.jupiter.engine.descriptor.TestTemplateTestDescriptor.execute(TestTemplateTestDescriptor.java:109)
+	at app//org.junit.jupiter.engine.descriptor.TestTemplateTestDescriptor.execute(TestTemplateTestDescriptor.java:43)
+	at app//org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:156)
+	at app//org.junit.platform.engine.support.hierarchical.NodeTestTask$$Lambda/0x000000e8010a9848.execute(Unknown Source)
+	at app//org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at app//org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at app//org.junit.platform.engine.support.hierarchical.NodeTestTask$$Lambda/0x000000e8010a9618.invoke(Unknown Source)
+	at app//org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at app//org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at app//org.junit.platform.engine.support.hierarchical.NodeTestTask$$Lambda/0x000000e8010a93e8.execute(Unknown Source)
+	at app//org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at app//org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at app//org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at app//org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService$$Lambda/0x000000e8010aa388.accept(Unknown Source)
+	at java.base@21.0.12.1/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at app//org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at app//org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at app//org.junit.platform.engine.support.hierarchical.NodeTestTask$$Lambda/0x000000e8010a9848.execute(Unknown Source)
+	at app//org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at app//org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at app//org.junit.platform.engine.support.hierarchical.NodeTestTask$$Lambda/0x000000e8010a9618.invoke(Unknown Source)
+	at app//org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at app//org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at app//org.junit.platform.engine.support.hierarchical.NodeTestTask$$Lambda/0x000000e8010a93e8.execute(Unknown Source)
+	at app//org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at app//org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at app//org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at app//org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService$$Lambda/0x000000e8010aa388.accept(Unknown Source)
+	at java.base@21.0.12.1/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at app//org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.invokeAll(SameThreadHierarchicalTestExecutorService.java:41)
+	at app//org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$6(NodeTestTask.java:160)
+	at app//org.junit.platform.engine.support.hierarchical.NodeTestTask$$Lambda/0x000000e8010a9848.execute(Unknown Source)
+	at app//org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at app//org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$8(NodeTestTask.java:146)
+	at app//org.junit.platform.engine.support.hierarchical.NodeTestTask$$Lambda/0x000000e8010a9618.invoke(Unknown Source)
+	at app//org.junit.platform.engine.support.hierarchical.Node.around(Node.java:137)
+	at app//org.junit.platform.engine.support.hierarchical.NodeTestTask.lambda$executeRecursively$9(NodeTestTask.java:144)
+	at app//org.junit.platform.engine.support.hierarchical.NodeTestTask$$Lambda/0x000000e8010a93e8.execute(Unknown Source)
+	at app//org.junit.platform.engine.support.hierarchical.ThrowableCollector.execute(ThrowableCollector.java:73)
+	at app//org.junit.platform.engine.support.hierarchical.NodeTestTask.executeRecursively(NodeTestTask.java:143)
+	at app//org.junit.platform.engine.support.hierarchical.NodeTestTask.execute(NodeTestTask.java:100)
+	at app//org.junit.platform.engine.support.hierarchical.SameThreadHierarchicalTestExecutorService.submit(SameThreadHierarchicalTestExecutorService.java:35)
+	at app//org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutor.execute(HierarchicalTestExecutor.java:57)
+	at app//org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine.execute(HierarchicalTestEngine.java:54)
+	at app//org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:198)
+	at app//org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:169)
+	at app//org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:93)
+	at app//org.junit.platform.launcher.core.EngineExecutionOrchestrator.lambda$execute$0(EngineExecutionOrchestrator.java:58)
+	at app//org.junit.platform.launcher.core.EngineExecutionOrchestrator$$Lambda/0x000000e801097cc8.accept(Unknown Source)
+	at app//org.junit.platform.launcher.core.EngineExecutionOrchestrator.withInterceptedStreams(EngineExecutionOrchestrator.java:141)
+	at app//org.junit.platform.launcher.core.EngineExecutionOrchestrator.execute(EngineExecutionOrchestrator.java:57)
+	at app//org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:103)
+	at app//org.junit.platform.launcher.core.DefaultLauncher.execute(DefaultLauncher.java:94)
+	at app//org.junit.platform.launcher.core.DelegatingLauncher.execute(DelegatingLauncher.java:52)
+	at app//org.junit.platform.launcher.core.SessionPerRequestLauncher.execute(SessionPerRequestLauncher.java:70)
+	at app//com.code_intelligence.jazzer.driver.junit.JUnitRunner.run(JUnitRunner.java:143)
+	at app//com.code_intelligence.jazzer.driver.Driver.start(Driver.java:159)
+	at app//com.code_intelligence.jazzer.Jazzer.start(Jazzer.java:118)
+	at app//com.code_intelligence.jazzer.Jazzer.main(Jazzer.java:71)
+
+Thread[#29,process reaper,10,InnocuousThreadGroup]
+	at java.base@21.0.12.1/jdk.internal.misc.Unsafe.park(Native Method)
+	at java.base@21.0.12.1/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:410)
+	at java.base@21.0.12.1/java.util.concurrent.LinkedTransferQueue$DualNode.await(LinkedTransferQueue.java:452)
+	at java.base@21.0.12.1/java.util.concurrent.SynchronousQueue$Transferer.xferLifo(SynchronousQueue.java:194)
+	at java.base@21.0.12.1/java.util.concurrent.SynchronousQueue.xfer(SynchronousQueue.java:235)
+	at java.base@21.0.12.1/java.util.concurrent.SynchronousQueue.poll(SynchronousQueue.java:338)
+	at java.base@21.0.12.1/java.util.concurrent.ThreadPoolExecutor.getTask(ThreadPoolExecutor.java:1069)
+	at java.base@21.0.12.1/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1130)
+	at java.base@21.0.12.1/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base@21.0.12.1/java.lang.Thread.runWith(Thread.java:1596)
+	at java.base@21.0.12.1/java.lang.Thread.run(Thread.java:1583)
+	at java.base@21.0.12.1/jdk.internal.misc.InnocuousThread.run(InnocuousThread.java:186)
+
+Thread[#668,Thread-3,5,main]
+	at app//com.code_intelligence.jazzer.driver.FuzzTargetRunner.dumpAllStackTraces(FuzzTargetRunner.java:547)
+
+Thread[#26,Notification Thread,9,system]
+
+Thread[#10,Finalizer,8,system]
+	at java.base@21.0.12.1/java.lang.Object.wait0(Native Method)
+	at java.base@21.0.12.1/java.lang.Object.wait(Object.java:366)
+	at java.base@21.0.12.1/java.lang.Object.wait(Object.java:339)
+	at java.base@21.0.12.1/java.lang.ref.NativeReferenceQueue.await(NativeReferenceQueue.java:48)
+	at java.base@21.0.12.1/java.lang.ref.ReferenceQueue.remove0(ReferenceQueue.java:158)
+	at java.base@21.0.12.1/java.lang.ref.NativeReferenceQueue.remove(NativeReferenceQueue.java:89)
+	at java.base@21.0.12.1/java.lang.ref.Finalizer$FinalizerThread.run(Finalizer.java:173)
+
+Thread[#11,Signal Dispatcher,9,system]
+
+Thread[#27,Common-Cleaner,8,InnocuousThreadGroup]
+	at java.base@21.0.12.1/jdk.internal.misc.Unsafe.park(Native Method)
+	at java.base@21.0.12.1/java.util.concurrent.locks.LockSupport.parkNanos(LockSupport.java:269)
+	at java.base@21.0.12.1/java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject.await(AbstractQueuedSynchronizer.java:1886)
+	at java.base@21.0.12.1/java.lang.ref.ReferenceQueue.await(ReferenceQueue.java:71)
+	at java.base@21.0.12.1/java.lang.ref.ReferenceQueue.remove0(ReferenceQueue.java:143)
+	at java.base@21.0.12.1/java.lang.ref.ReferenceQueue.remove(ReferenceQueue.java:218)
+	at java.base@21.0.12.1/jdk.internal.ref.CleanerImpl.run(CleanerImpl.java:140)
+	at java.base@21.0.12.1/java.lang.Thread.runWith(Thread.java:1596)
+	at java.base@21.0.12.1/java.lang.Thread.run(Thread.java:1583)
+	at java.base@21.0.12.1/jdk.internal.misc.InnocuousThread.run(InnocuousThread.java:186)
+
+Garbage collector stats:
+
+G1 Young Generation: 7 collections took 27ms
+G1 Concurrent GC: 0 collections took 0ms
+G1 Old Generation: 0 collections took 0ms
+
+SUMMARY: libFuzzer: timeout

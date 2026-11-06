@@ -1,0 +1,22 @@
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 1931169500
+INFO: Loaded 1 modules   (27 inline 8-bit counters): 27 [0x1021c01d8, 0x1021c01f3), 
+INFO: Loaded 1 PC tables (27 PCs): 27 [0x1021c01f8,0x1021c03a8), 
+./fuzz: Running 1 inputs 1 time(s) each.
+Running: in-timeout
+ALARM: working on the last Unit for 2 seconds
+       and the timeout value is 2 (use -timeout=N to change)
+==17721== ERROR: libFuzzer: timeout after 2 seconds
+    #0 0x0001028553a8 in __sanitizer_print_stack_trace+0x28 (libclang_rt.asan_osx_dynamic.dylib:arm64+0x613a8)
+    #1 0x0001021b169c in fuzzer::PrintStackTrace() FuzzerUtil.cpp:210
+    #2 0x000102192048 in fuzzer::Fuzzer::AlarmCallback() FuzzerLoop.cpp:304
+    #3 0x00018e9b4140 in _sigtramp+0x34 (libsystem_platform.dylib:arm64e+0x4140)
+    #4 0x000102178cc8 in parse_record lib.c:15
+    #5 0x000102178fc8 in LLVMFuzzerTestOneInput harness.c:4
+    #6 0x000102193a4c in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) FuzzerLoop.cpp:619
+    #7 0x00010217eae4 in fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long) FuzzerDriver.cpp:335
+    #8 0x000102183cbc in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long)) FuzzerDriver.cpp:871
+    #9 0x0001021b2358 in main FuzzerMain.cpp:20
+    #10 0x00018e5d3e7c in start+0x1a1c (dyld:arm64e+0x31e7c)
+
+SUMMARY: libFuzzer: timeout

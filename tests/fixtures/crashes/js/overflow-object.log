@@ -1,0 +1,67 @@
+INFO: Using generated seed: 1211370176
+INFO: using inputs from: in/object-deep
+(node:59453) Warning: Accessing non-existent property 'default' of module exports inside circular dependency
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:59453) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+Dictionary: 4 entries
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 1211370176
+INFO: Loaded 1 modules   (512 inline 8-bit counters): 512 [0x7b3b544000, 0x7b3b544200), 
+INFO: Loaded 1 PC tables (512 PCs): 512 [0x7b3af40000,0x7b3af42000), 
+unused_arg0_report_a_bug_if_you_see_this: Running 1 inputs 1 time(s) each.
+Running: in/object-deep
+==59453== Uncaught Exception: RangeError: Maximum call stack size exceeded
+    at parseObject (/work/my pkg/src/nested.js:22:35)
+    at parseValue (/work/my pkg/src/nested.js:6:12)
+    at parseArray (/work/my pkg/src/nested.js:16:16)
+    at parseValue (/work/my pkg/src/nested.js:3:12)
+    at parseObject (/work/my pkg/src/nested.js:26:25)
+    at parseValue (/work/my pkg/src/nested.js:6:12)
+    at parseArray (/work/my pkg/src/nested.js:16:16)
+    at parseValue (/work/my pkg/src/nested.js:3:12)
+    at parseObject (/work/my pkg/src/nested.js:26:25)
+    at parseValue (/work/my pkg/src/nested.js:6:12)
+    at parseArray (/work/my pkg/src/nested.js:16:16)
+    at parseValue (/work/my pkg/src/nested.js:3:12)
+    at parseObject (/work/my pkg/src/nested.js:26:25)
+    at parseValue (/work/my pkg/src/nested.js:6:12)
+    at parseArray (/work/my pkg/src/nested.js:16:16)
+    at parseValue (/work/my pkg/src/nested.js:3:12)
+    at parseObject (/work/my pkg/src/nested.js:26:25)
+    at parseValue (/work/my pkg/src/nested.js:6:12)
+    at parseArray (/work/my pkg/src/nested.js:16:16)
+    at parseValue (/work/my pkg/src/nested.js:3:12)
+    at parseObject (/work/my pkg/src/nested.js:26:25)
+    at parseValue (/work/my pkg/src/nested.js:6:12)
+    at parseArray (/work/my pkg/src/nested.js:16:16)
+    at parseValue (/work/my pkg/src/nested.js:3:12)
+    at parseObject (/work/my pkg/src/nested.js:26:25)
+    at parseValue (/work/my pkg/src/nested.js:6:12)
+    at parseArray (/work/my pkg/src/nested.js:16:16)
+    at parseValue (/work/my pkg/src/nested.js:3:12)
+    at parseObject (/work/my pkg/src/nested.js:26:25)
+    at parseValue (/work/my pkg/src/nested.js:6:12)
+    at parseArray (/work/my pkg/src/nested.js:16:16)
+    at parseValue (/work/my pkg/src/nested.js:3:12)
+    at parseObject (/work/my pkg/src/nested.js:26:25)
+    at parseValue (/work/my pkg/src/nested.js:6:12)
+    at parseArray (/work/my pkg/src/nested.js:16:16)
+    at parseValue (/work/my pkg/src/nested.js:3:12)
+    at parseObject (/work/my pkg/src/nested.js:26:25)
+    at parseValue (/work/my pkg/src/nested.js:6:12)
+    at parseArray (/work/my pkg/src/nested.js:16:16)
+    at parseValue (/work/my pkg/src/nested.js:3:12)
+    at parseObject (/work/my pkg/src/nested.js:26:25)
+    at parseValue (/work/my pkg/src/nested.js:6:12)
+    at parseArray (/work/my pkg/src/nested.js:16:16)
+    at parseValue (/work/my pkg/src/nested.js:3:12)
+    at parseObject (/work/my pkg/src/nested.js:26:25)
+    at parseValue (/work/my pkg/src/nested.js:6:12)
+    at parseArray (/work/my pkg/src/nested.js:16:16)
+    at parseValue (/work/my pkg/src/nested.js:3:12)
+    at parseObject (/work/my pkg/src/nested.js:26:25)
+Executed in/object-deep in 8 ms
+***
+*** NOTE: fuzzing was not performed, you have only
+***       executed the target code on a fixed set of inputs.
+***

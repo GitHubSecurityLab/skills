@@ -1,0 +1,53 @@
+[.] Sanitizer coverage enabled. Counter map size: 65351, Cmp map size: 262144
+Note: Google Test filter = RecordTest.SpinsOnS
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from RecordTest
+[ RUN      ] RecordTest.SpinsOnS
+FUZZTEST_PRNG_SEED=TvpII9ztpiLlX6VSrtEWZQzfR0K2TYaFI7xJRefGKoU
+[!] Per-input timeout exceeded: 1.0100145s > 1s - aborting
+
+=================================================================
+=== Fuzzing stats
+
+Elapsed time: 1.011272209s
+Total runs: 1
+Edges covered: 0
+Total edges: 65351
+Corpus size: 0
+Max stack used: 0
+
+=================================================================
+=== BUG FOUND!
+
+/work/c-fuzztest/repo/record_fuzz_test.cc:21: Counterexample found for RecordTest.SpinsOnS.
+The test fails with input:
+argument 0: "S"
+
+=================================================================
+=== Regression test draft
+
+TEST(RecordTest, SpinsOnSRegression) {
+  SpinsOnS(
+    "S"
+  );
+}
+
+Please note that the code generated above is best effort and is intended
+to be used as a draft regression test.
+For reproducing findings please rely on file based reproduction.
+[.] No reproducer output location specified - not writing the reproducer file.
+
+=================================================================
+*** SIGABRT received at time=1793135498 on cpu 0 ***
+PC: @     0xffff8d3274d8  (unknown)  (unknown)
+    @     0xaaaabc193ed8        192  absl::lts_20260526::AbslFailureSignalHandler()
+    @     0xaaaabc02e9e0        160  fuzztest::internal::HandleCrash()
+    @     0xffff8d84e800       4784  (unknown)
+    @     0xffff8d3274c4  (unknown)  (unknown)
+    @     0xffff8d2dcb3c         64  raise
+    @     0xffff8d2c7e00        192  abort
+    @     0xaaaabc02da1c        128  fuzztest::internal::Runtime::CheckWatchdogLimits()
+    @     0xaaaabc044604         96  fuzztest::internal::Runtime::Watchdog::WatchdogLoop()
+    @     0xffff8d661ae0         80  (unknown)
+    @     0xaaaabbf7afa0        528  asan_thread_start()

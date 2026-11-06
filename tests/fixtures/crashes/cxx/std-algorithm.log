@@ -1,0 +1,74 @@
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 3287473578
+INFO: Loaded 1 modules   (230 inline 8-bit counters): 230 [0x100bcc000, 0x100bcc0e6), 
+INFO: Loaded 1 PC tables (230 PCs): 230 [0x100bcc0e8,0x100bccf48), 
+./fuzz: Running 1 inputs 1 time(s) each.
+Running: srt
+=================================================================
+==33956==ERROR: AddressSanitizer: heap-buffer-overflow on address 0x607000000234 at pc 0x000100b851b8 bp 0x00016f27e1f0 sp 0x00016f27e1e8
+READ of size 4 at 0x607000000234 thread T0
+    #0 0x000100b851b4 in Table::at(unsigned long) const lib.cc:18
+    #1 0x000100b851b4 in sort_rows(Table&, unsigned long)::$_0::operator()(int, int) const lib.cc:16
+    #2 0x000100b851b4 in void std::__1::__insertion_sort[abi:nqe230103]<std::__1::_ClassicAlgPolicy, sort_rows(Table&, unsigned long)::$_0&, int*>(int*, int*, sort_rows(Table&, unsigned long)::$_0&) sort.h:254
+    #3 0x000100b851b4 in void std::__1::__introsort[abi:nqe230103]<std::__1::_ClassicAlgPolicy, sort_rows(Table&, unsigned long)::$_0&, int*, false>(int*, int*, sort_rows(Table&, unsigned long)::$_0&, std::__1::iterator_traits<int*>::difference_type, bool) sort.h:759
+    #4 0x000100b80f0c in void std::__1::__sort_dispatch[abi:nqe230103]<std::__1::_ClassicAlgPolicy, int*, sort_rows(Table&, unsigned long)::$_0>(int*, int*, sort_rows(Table&, unsigned long)::$_0&) sort.h:874
+    #5 0x000100b80f0c in void std::__1::__sort_impl[abi:nqe230103]<std::__1::_ClassicAlgPolicy, std::__1::__wrap_iter<int*>, sort_rows(Table&, unsigned long)::$_0>(std::__1::__wrap_iter<int*>, std::__1::__wrap_iter<int*>, sort_rows(Table&, unsigned long)::$_0&) sort.h:939
+    #6 0x000100b80f0c in void std::__1::sort[abi:nqe230103]<std::__1::__wrap_iter<int*>, sort_rows(Table&, unsigned long)::$_0>(std::__1::__wrap_iter<int*>, std::__1::__wrap_iter<int*>, sort_rows(Table&, unsigned long)::$_0) sort.h:947
+    #7 0x000100b80f0c in sort_rows(Table&, unsigned long) lib.cc:16
+    #8 0x000100b87f34 in LLVMFuzzerTestOneInput fuzz.cc:9
+    #9 0x000100ba2b8c in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) FuzzerLoop.cpp:619
+    #10 0x000100b8dc24 in fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long) FuzzerDriver.cpp:335
+    #11 0x000100b92dfc in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long)) FuzzerDriver.cpp:871
+    #12 0x000100bc1498 in main FuzzerMain.cpp:20
+    #13 0x0001827a4d78 in start+0x19f8 (dyld:arm64e+0x31d78)
+
+0x607000000234 is located 352 bytes after 68-byte region [0x607000000090,0x6070000000d4)
+allocated by thread T0 here:
+    #0 0x0001013a545c in _Znwm+0x6c (libclang_rt.asan_osx_dynamic.dylib:arm64+0x6545c)
+    #1 0x000100b87e08 in int* std::__1::__libcpp_allocate[abi:nqe230103]<int>(std::__1::__element_count, unsigned long) allocate.h:42
+    #2 0x000100b87e08 in std::__1::allocator<int>::allocate[abi:nqe230103](unsigned long) allocator.h:92
+    #3 0x000100b87e08 in std::__1::__allocation_result<std::__1::allocator_traits<std::__1::allocator<int>>::pointer, std::__1::allocator_traits<std::__1::allocator<int>>::size_type> std::__1::__allocate_at_least[abi:nqe230103]<std::__1::allocator<int>, std::__1::allocator_traits<std::__1::allocator<int>>>(std::__1::allocator<int>&, unsigned long) allocate_at_least.h:46
+    #4 0x000100b87e08 in std::__1::vector<int, std::__1::allocator<int>>::__vallocate[abi:nqe230103](unsigned long) vector.h:607
+    #5 0x000100b87e08 in void std::__1::vector<int, std::__1::allocator<int>>::__init_with_size[abi:nqe230103]<int const*, int const*>(int const*, int const*, unsigned long) vector.h:623
+    #6 0x000100b87e08 in std::__1::vector<int, std::__1::allocator<int>>::vector[abi:nqe230103](std::initializer_list<int>) vector.h:276
+    #7 0x000100b87e08 in std::__1::vector<int, std::__1::allocator<int>>::vector[abi:nqe230103](std::initializer_list<int>) vector.h:275
+    #8 0x000100b87e08 in LLVMFuzzerTestOneInput fuzz.cc:9
+    #9 0x000100ba2b8c in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) FuzzerLoop.cpp:619
+    #10 0x000100b8dc24 in fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long) FuzzerDriver.cpp:335
+    #11 0x000100b92dfc in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long)) FuzzerDriver.cpp:871
+    #12 0x000100bc1498 in main FuzzerMain.cpp:20
+    #13 0x0001827a4d78 in start+0x19f8 (dyld:arm64e+0x31d78)
+
+SUMMARY: AddressSanitizer: heap-buffer-overflow lib.cc:18 in Table::at(unsigned long) const
+Shadow bytes around the buggy address:
+  0x606fffffff80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x607000000000: fa fa fa fa 00 00 00 00 00 00 00 00 00 fa fa fa
+  0x607000000080: fa fa 00 00 00 00 00 00 00 00 04 fa fa fa fa fa
+  0x607000000100: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x607000000180: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+=>0x607000000200: fa fa fa fa fa fa[fa]fa fa fa fa fa fa fa fa fa
+  0x607000000280: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x607000000300: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x607000000380: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x607000000400: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x607000000480: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+Shadow byte legend (one shadow byte represents 8 application bytes):
+  Addressable:           00
+  Partially addressable: 01 02 03 04 05 06 07 
+  Heap left redzone:       fa
+  Freed heap region:       fd
+  Stack left redzone:      f1
+  Stack mid redzone:       f2
+  Stack right redzone:     f3
+  Stack after return:      f5
+  Stack use after scope:   f8
+  Global redzone:          f9
+  Global init order:       f6
+  Poisoned by user:        f7
+  Container overflow:      fc
+  Array cookie:            ac
+  Intra object redzone:    bb
+  ASan internal:           fe
+  Left alloca redzone:     ca
+  Right alloca redzone:    cb
+==33956==ABORTING

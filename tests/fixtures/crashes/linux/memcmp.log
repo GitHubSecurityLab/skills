@@ -1,0 +1,70 @@
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 1380605257
+INFO: Loaded 1 modules   (56 inline 8-bit counters): 56 [0xaaaacc953038, 0xaaaacc953070), 
+INFO: Loaded 1 PC tables (56 PCs): 56 [0xaaaacc953070,0xaaaacc9533f0), 
+out/fuzz_lib: Running 1 inputs 1 time(s) each.
+Running: in-memcmp
+=================================================================
+==49==ERROR: AddressSanitizer: heap-buffer-overflow on address 0xfc1f9f3e0054 at pc 0xaaaacc82bd28 bp 0xffffe6f230e0 sp 0xffffe6f228c8
+READ of size 10 at 0xfc1f9f3e0054 thread T0
+SCARINESS: 26 (multi-byte-read-heap-buffer-overflow)
+    #0 0xaaaacc82bd24 in MemcmpInterceptorCommon(void*, int (*)(void const*, void const*, unsigned long), void const*, void const*, unsigned long) (/work/my lab/out/fuzz_lib+0x8bd24) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311)
+    #1 0xaaaacc82c160 in memcmp (/work/my lab/out/fuzz_lib+0x8c160) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311)
+    #2 0xaaaacc8f6848 in compare_tag /work/my lab/src/lib.c:52:14
+    #3 0xaaaacc8f6848 in dispatch /work/my lab/src/lib.c:76:26
+    #4 0xaaaacc8f6d78 in LLVMFuzzerTestOneInput /work/my lab/fuzz/harness.c:5:3
+    #5 0xaaaacc7f5bf4 in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) (/work/my lab/out/fuzz_lib+0x55bf4) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311)
+    #6 0xaaaacc7def90 in fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long) (/work/my lab/out/fuzz_lib+0x3ef90) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311)
+    #7 0xaaaacc7e4be8 in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long)) (/work/my lab/out/fuzz_lib+0x44be8) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311)
+    #8 0xaaaacc80f3b8 in main (/work/my lab/out/fuzz_lib+0x6f3b8) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311)
+    #9 0xffffa03884c0  (/lib/aarch64-linux-gnu/libc.so.6+0x284c0) (BuildId: 27027b96e5b8c475fc327aa445bea1c71d37b4e2)
+    #10 0xffffa0388594 in __libc_start_main (/lib/aarch64-linux-gnu/libc.so.6+0x28594) (BuildId: 27027b96e5b8c475fc327aa445bea1c71d37b4e2)
+    #11 0xaaaacc7da56c in _start (/work/my lab/out/fuzz_lib+0x3a56c) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311)
+
+0xfc1f9f3e0054 is located 0 bytes after 4-byte region [0xfc1f9f3e0050,0xfc1f9f3e0054)
+allocated by thread T0 here:
+    #0 0xaaaacc8b35b4 in malloc (/work/my lab/out/fuzz_lib+0x1135b4) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311)
+    #1 0xaaaacc8f680c in compare_tag /work/my lab/src/lib.c:50:15
+    #2 0xaaaacc8f680c in dispatch /work/my lab/src/lib.c:76:26
+    #3 0xaaaacc8f6d78 in LLVMFuzzerTestOneInput /work/my lab/fuzz/harness.c:5:3
+    #4 0xaaaacc7f5bf4 in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) (/work/my lab/out/fuzz_lib+0x55bf4) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311)
+    #5 0xaaaacc7def90 in fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long) (/work/my lab/out/fuzz_lib+0x3ef90) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311)
+    #6 0xaaaacc7e4be8 in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long)) (/work/my lab/out/fuzz_lib+0x44be8) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311)
+    #7 0xaaaacc80f3b8 in main (/work/my lab/out/fuzz_lib+0x6f3b8) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311)
+    #8 0xffffa03884c0  (/lib/aarch64-linux-gnu/libc.so.6+0x284c0) (BuildId: 27027b96e5b8c475fc327aa445bea1c71d37b4e2)
+    #9 0xffffa0388594 in __libc_start_main (/lib/aarch64-linux-gnu/libc.so.6+0x28594) (BuildId: 27027b96e5b8c475fc327aa445bea1c71d37b4e2)
+    #10 0xaaaacc7da56c in _start (/work/my lab/out/fuzz_lib+0x3a56c) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311)
+
+SUMMARY: AddressSanitizer: heap-buffer-overflow (/work/my lab/out/fuzz_lib+0x8bd24) (BuildId: d4e0c675c7c1b5a9754d0cab39ab3e6fbfc17311) in MemcmpInterceptorCommon(void*, int (*)(void const*, void const*, unsigned long), void const*, void const*, unsigned long)
+Shadow bytes around the buggy address:
+  0xfc1f9f3dfd80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0xfc1f9f3dfe00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0xfc1f9f3dfe80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0xfc1f9f3dff00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0xfc1f9f3dff80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+=>0xfc1f9f3e0000: fa fa 00 02 fa fa 00 02 fa fa[04]fa fa fa fa fa
+  0xfc1f9f3e0080: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0xfc1f9f3e0100: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0xfc1f9f3e0180: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0xfc1f9f3e0200: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0xfc1f9f3e0280: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+Shadow byte legend (one shadow byte represents 8 application bytes):
+  Addressable:           00
+  Partially addressable: 01 02 03 04 05 06 07 
+  Heap left redzone:       fa
+  Freed heap region:       fd
+  Stack left redzone:      f1
+  Stack mid redzone:       f2
+  Stack right redzone:     f3
+  Stack after return:      f5
+  Stack use after scope:   f8
+  Global redzone:          f9
+  Global init order:       f6
+  Poisoned by user:        f7
+  Container overflow:      fc
+  Array cookie:            ac
+  Intra object redzone:    bb
+  ASan internal:           fe
+  Left alloca redzone:     ca
+  Right alloca redzone:    cb
+==49==ABORTING

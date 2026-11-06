@@ -1,0 +1,6 @@
+==4243== Command Injection
+    in exec(): called with 'jaz_zer'
+    at Hook.hookFunction (/work/js/node_modules/@jazzer.js/bug-detectors/dist/internal/command-injection.js:40:13)
+    at Object.exec (/work/js/node_modules/@jazzer.js/hooking/dist/hook.js:20:9)
+    at runTool (/work/js/lib/tools.js:8:3)
+    at Object.fuzz (/work/js/fuzz/tools.fuzz.js:5:3)

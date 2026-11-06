@@ -1,0 +1,33 @@
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 25952936
+INFO: Loaded 1 modules   (56 inline 8-bit counters): 56 [0x104698200, 0x104698238), 
+INFO: Loaded 1 PC tables (56 PCs): 56 [0x104698238,0x1046985b8), 
+./out/fuzz_lib: Running 1 inputs 1 time(s) each.
+Running: in-null-write
+AddressSanitizer:DEADLYSIGNAL
+=================================================================
+==50256==ERROR: AddressSanitizer: SEGV on unknown address 0x000000000008 (pc 0x000104651668 bp 0x00016b7ae2f0 sp 0x00016b7ae2c0 T0)
+==50256==The signal is caused by a WRITE memory access.
+==50256==HINT: address points to the zero page.
+SCARINESS: 10 (null-deref)
+    #0 0x000104651668 in write_null /Users/me/src/my lab/src/lib.c:40:8
+    #1 0x000104651668 in dispatch /Users/me/src/my lab/src/lib.c:74:26
+    #2 0x000104651920 in LLVMFuzzerTestOneInput /Users/me/src/my lab/fuzz/harness.c:5:3
+    #3 0x00010466c38c in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) .build/runtimes/runtimes-bins/.compiler-rt/lib/fuzzer/FuzzerLoop.cpp:619:13
+    #4 0x000104657424 in fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long) .build/runtimes/runtimes-bins/.compiler-rt/lib/fuzzer/FuzzerDriver.cpp:335:6
+    #5 0x00010465c5fc in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long)) .build/runtimes/runtimes-bins/.compiler-rt/lib/fuzzer/FuzzerDriver.cpp:871:9
+    #6 0x00010468ac98 in main .build/runtimes/runtimes-bins/.compiler-rt/lib/fuzzer/FuzzerMain.cpp:20:10
+    #7 0x0001827a4d78 in start (/usr/lib/dyld:arm64e+0x31d78)
+
+==50256==Register values:
+ x[0] = 0x0000000000000008   x[1] = 0x0000000000000002   x[2] = 0x0000000000000000   x[3] = 0x0000000104698238  
+ x[4] = 0x00000001046ca680   x[5] = 0x0000000000000001   x[6] = 0x0000000000000078   x[7] = 0x0000000000000001  
+ x[8] = 0x0000000000000001   x[9] = 0x0000000000000003  x[10] = 0x00000001046ca600  x[11] = 0x0000000000000000  
+x[12] = 0x0000000000000058  x[13] = 0x0000000000000000  x[14] = 0x0000000000000001  x[15] = 0xffffffffffffffff  
+x[16] = 0x0000000187841a90  x[17] = 0x00000001e43f3228  x[18] = 0x0000000000000000  x[19] = 0x0000000000000002  
+x[20] = 0x0000000000000000  x[21] = 0x0000000000000057  x[22] = 0x0000008000020000  x[23] = 0x0000000104698e00  
+x[24] = 0x0000000104698c48  x[25] = 0x0000000104698980  x[26] = 0x0000000104698000  x[27] = 0x0000000000000001  
+x[28] = 0x0000000000000064     fp = 0x000000016b7ae2f0     lr = 0x000000010465122c     sp = 0x000000016b7ae2c0  
+AddressSanitizer can not provide additional info.
+SUMMARY: AddressSanitizer: SEGV /Users/me/src/my lab/src/lib.c:40:8 in write_null
+==50256==ABORTING

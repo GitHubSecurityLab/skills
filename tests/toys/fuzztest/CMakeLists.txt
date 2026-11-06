@@ -1,0 +1,15 @@
+cmake_minimum_required(VERSION 3.19)
+project(record CXX)
+set(CMAKE_CXX_STANDARD 17)
+
+include(FetchContent)
+FetchContent_Declare(fuzztest GIT_REPOSITORY https://github.com/google/fuzztest.git GIT_TAG 2026-06-29 GIT_SHALLOW TRUE)
+FetchContent_MakeAvailable(fuzztest)
+fuzztest_setup_fuzzing_flags()
+enable_testing()
+include(GoogleTest)
+
+add_library(record src/record.cc)
+add_executable(record_fuzz_test record_fuzz_test.cc)
+target_link_libraries(record_fuzz_test PRIVATE record)
+link_fuzztest(record_fuzz_test)

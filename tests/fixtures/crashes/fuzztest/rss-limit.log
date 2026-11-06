@@ -1,0 +1,66 @@
+[.] Sanitizer coverage enabled. Counter map size: 65351, Cmp map size: 262144
+Note: Google Test filter = RecordTest.HoardsOnH
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from RecordTest
+[ RUN      ] RecordTest.HoardsOnH
+FUZZTEST_PRNG_SEED=rBx9ciu6jHqrvUO_fMZB2wq8plpuJ5YevPhij5fcJK8
+[!] RSS limit exceeded: 2186522624 > 1073741824 (bytes) - aborting
+
+=================================================================
+=== Fuzzing stats
+
+Elapsed time: 221.379625ms
+Total runs: 1
+Edges covered: 0
+Total edges: 65351
+Corpus size: 0
+Max stack used: 208
+
+=================================================================
+=== BUG FOUND!
+
+/work/c-fuzztest/repo/record_fuzz_test.cc:27: Counterexample found for RecordTest.HoardsOnH.
+The test fails with input:
+argument 0: "H"
+
+=================================================================
+=== Regression test draft
+
+TEST(RecordTest, HoardsOnHRegression) {
+  HoardsOnH(
+    "H"
+  );
+}
+
+Please note that the code generated above is best effort and is intended
+to be used as a draft regression test.
+For reproducing findings please rely on file based reproduction.
+[.] No reproducer output location specified - not writing the reproducer file.
+
+=================================================================
+*** SIGABRT received at time=1793135498 on cpu 0 ***
+PC: @     0xffff936574d8  (unknown)  (unknown)
+    @     0xaaaab28d3ed8        192  absl::lts_20260526::AbslFailureSignalHandler()
+    @     0xaaaab276e9e0        160  fuzztest::internal::HandleCrash()
+    @     0xffff93b74800  1493815600  (unknown)
+    @     0xffff9360cb3c         64  raise
+    @     0xffff935f7e00        192  abort
+    @     0xaaaab276d908        112  fuzztest::internal::Runtime::CheckWatchdogLimits()
+    @     0xaaaab2771478        192  fuzztest::internal::FuzzTestFuzzerImpl::RunOneInput()
+    @     0xaaaab2775c20        224  fuzztest::internal::FuzzTestFuzzerImpl::TrySample()
+    @     0xaaaab27769fc        112  fuzztest::internal::FuzzTestFuzzerImpl::TrySampleAndUpdateInMemoryCorpus()
+    @     0xaaaab2777e98        144  fuzztest::internal::FuzzTestFuzzerImpl::PopulateFromSeeds()
+    @     0xaaaab277e720        384  absl::lts_20260526::internal_any_invocable::RemoteInvoker<>()
+    @     0xaaaab2779ac0        160  fuzztest::internal::FuzzTestFuzzerImpl::RunInFuzzingMode()
+    @     0xaaaab275d954        160  fuzztest::internal::GTest_TestAdaptor::TestBody()
+    @     0xaaaab2831b40        176  testing::internal::HandleExceptionsInMethodIfSupported<>()
+    @     0xaaaab2831568         96  testing::Test::Run()
+    @     0xaaaab28356cc        112  testing::TestInfo::Run()
+    @     0xaaaab283b214        192  testing::TestSuite::Run()
+    @     0xaaaab287a108        384  testing::internal::UnitTestImpl::RunAllTests()
+    @     0xaaaab2877cbc        160  testing::internal::HandleExceptionsInMethodIfSupported<>()
+    @     0xaaaab28775f0        160  testing::UnitTest::Run()
+    @     0xaaaab2748400        112  main
+    @     0xffff935f84c4        336  (unknown)
+    @     0xffff935f8598         16  __libc_start_main

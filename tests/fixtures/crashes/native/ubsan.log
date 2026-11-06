@@ -1,0 +1,39 @@
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 1930681772
+INFO: Loaded 1 modules   (27 inline 8-bit counters): 27 [0x104ea01d8, 0x104ea01f3), 
+INFO: Loaded 1 PC tables (27 PCs): 27 [0x104ea01f8,0x104ea03a8), 
+./fuzz: Running 1 inputs 1 time(s) each.
+Running: in-ubsan
+src/lib.c:13:50: runtime error: signed integer overflow: 2147483647 + 5 cannot be represented in type 'int'
+    #0 0x000104e58f08 in parse_record lib.c:13
+    #1 0x000104e58fc8 in LLVMFuzzerTestOneInput harness.c:4
+    #2 0x000104e73a4c in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) FuzzerLoop.cpp:619
+    #3 0x000104e5eae4 in fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long) FuzzerDriver.cpp:335
+    #4 0x000104e63cbc in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long)) FuzzerDriver.cpp:871
+    #5 0x000104e92358 in main FuzzerMain.cpp:20
+    #6 0x00018e5d3e7c in start+0x1a1c (dyld:arm64e+0x31e7c)
+
+SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior src/lib.c:13:50 
+==17680== ERROR: libFuzzer: deadly signal
+    #0 0x0001056e13a8 in __sanitizer_print_stack_trace+0x28 (libclang_rt.asan_osx_dynamic.dylib:arm64+0x613a8)
+    #1 0x000104e9169c in fuzzer::PrintStackTrace() FuzzerUtil.cpp:210
+    #2 0x000104e720c8 in fuzzer::Fuzzer::CrashCallback() FuzzerLoop.cpp:231
+    #3 0x00018e9b4140 in _sigtramp+0x34 (libsystem_platform.dylib:arm64e+0x4140)
+    #4 0x00018e9a9978 in pthread_kill+0x124 (libsystem_pthread.dylib:arm64e+0x6978)
+    #5 0x00018e8ac454 in abort+0x90 (libsystem_c.dylib:arm64e+0x7b454)
+    #6 0x0001056fc808 in __sanitizer::Abort()+0x4c (libclang_rt.asan_osx_dynamic.dylib:arm64+0x7c808)
+    #7 0x0001056fbd44 in __sanitizer::Die()+0x60 (libclang_rt.asan_osx_dynamic.dylib:arm64+0x7bd44)
+    #8 0x00010571249c in __ubsan::ScopedReport::~ScopedReport()+0x19c (libclang_rt.asan_osx_dynamic.dylib:arm64+0x9249c)
+    #9 0x0001057133b8 in void handleIntegerOverflowImpl<__ubsan::Value>(__ubsan::OverflowData*, unsigned long, char const*, __ubsan::Value, __ubsan::ReportOptions)+0x164 (libclang_rt.asan_osx_dynamic.dylib:arm64+0x933b8)
+    #10 0x000105713454 in __ubsan_handle_add_overflow_abort+0x34 (libclang_rt.asan_osx_dynamic.dylib:arm64+0x93454)
+    #11 0x000104e58f08 in parse_record lib.c:13
+    #12 0x000104e58fc8 in LLVMFuzzerTestOneInput harness.c:4
+    #13 0x000104e73a4c in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) FuzzerLoop.cpp:619
+    #14 0x000104e5eae4 in fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long) FuzzerDriver.cpp:335
+    #15 0x000104e63cbc in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long)) FuzzerDriver.cpp:871
+    #16 0x000104e92358 in main FuzzerMain.cpp:20
+    #17 0x00018e5d3e7c in start+0x1a1c (dyld:arm64e+0x31e7c)
+
+NOTE: libFuzzer has rudimentary signal handlers.
+      Combine libFuzzer with AddressSanitizer or similar for better crash reports.
+SUMMARY: libFuzzer: deadly signal

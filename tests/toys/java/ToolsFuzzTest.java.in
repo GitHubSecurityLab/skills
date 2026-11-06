@@ -1,0 +1,12 @@
+package toy;
+
+import com.code_intelligence.jazzer.junit.FuzzTest;
+import java.nio.charset.StandardCharsets;
+
+// The java scenario copies this into record/ for its detector-gap step.
+class ToolsFuzzTest {
+  @FuzzTest
+  void greet(byte[] data) throws Exception {
+    Tools.greet(new String(data, StandardCharsets.UTF_8));
+  }
+}

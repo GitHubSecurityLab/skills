@@ -1,0 +1,10 @@
+==31==ERROR: AddressSanitizer: SEGV on unknown address 0x000000000008 (pc 0x55f0 bp 0x7ffd sp 0x7ffd T0)
+==31==The signal is caused by a READ memory access.
+==31==Hint: address points to the zero page.
+    #0 0x55f0 in tiff_dir_entry (/out/tiff_fuzzer+0x4f1a2)
+    #1 0x55f1 in TIFFReadDirectory /src/libtiff/libtiff/tif_dirread.c:4100:12
+    #2 0x55f2 in LLVMFuzzerTestOneInput /src/tiff_fuzzer.cc:60:5
+    #3 0x55f3 in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:614:13
+
+AddressSanitizer can not provide additional info.
+SUMMARY: AddressSanitizer: SEGV (/out/tiff_fuzzer+0x4f1a2) in tiff_dir_entry

@@ -1,0 +1,20 @@
+INFO: Using generated seed: 708015801
+INFO: using inputs from: in/name
+(node:59441) Warning: Accessing non-existent property 'default' of module exports inside circular dependency
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:59441) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+Dictionary: 4 entries
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 708015801
+INFO: Loaded 1 modules   (512 inline 8-bit counters): 512 [0x771f544000, 0x771f544200), 
+INFO: Loaded 1 PC tables (512 PCs): 512 [0x771ecca000,0x771eccc000), 
+unused_arg0_report_a_bug_if_you_see_this: Running 1 inputs 1 time(s) each.
+Running: in/name
+==59441== Uncaught Exception: TypeError: Cannot read properties of undefined (reading 'trim')
+    at parseName (/work/my pkg/src/record.js:2:20)
+    at module.exports.fuzz (/work/my pkg/fuzz/record.js:9:5)
+Executed in/name in 0 ms
+***
+*** NOTE: fuzzing was not performed, you have only
+***       executed the target code on a fixed set of inputs.
+***

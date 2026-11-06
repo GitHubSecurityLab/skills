@@ -1,0 +1,19 @@
+INFO: Running with entropic power schedule (0xFF, 100).
+Running: /work/crashes/crash-1
+=================================================================
+==12==ERROR: AddressSanitizer: heap-use-after-free on address 0x602000000010 at pc 0x55e2c1a0 bp 0x7ffd1000 sp 0x7ffd0ff8
+READ of size 1 at 0x602000000010 thread T0
+    #0 0x55e2c1a0 in png_read_chunk /src/libpng/pngread.c:120:7
+    #1 0x55e2c2b0 in png_read_info /src/libpng/pngread.c:200:3
+    #2 0x55e2c3c0 in LLVMFuzzerTestOneInput /src/libpng/fuzz/read_fuzzer.cc:150:3
+    #3 0x55e2c4d0 in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerLoop.cpp:614:13
+    #4 0x55e2c5e0 in fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long) /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerDriver.cpp:327:6
+    #5 0x55e2c6f0 in main /src/llvm-project/compiler-rt/lib/fuzzer/FuzzerMain.cpp:20:10
+    #6 0x7f0000a0 in __libc_start_main (/lib/x86_64-linux-gnu/libc.so.6+0x29d90)
+
+0x602000000010 is located 0 bytes inside of 16-byte region [0x602000000010,0x602000000020)
+freed by thread T0 here:
+    #0 0x52a0 in free /src/llvm-project/compiler-rt/lib/asan/asan_malloc_linux.cpp:52:3
+    #1 0x55e2c7f0 in png_free_chunk /src/libpng/pngmem.c:40:3
+
+SUMMARY: AddressSanitizer: heap-use-after-free /src/libpng/pngread.c:120:7 in png_read_chunk

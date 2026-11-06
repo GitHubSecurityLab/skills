@@ -1,0 +1,12 @@
+--- a/record/src/main/java/toy/Record.java
++++ b/record/src/main/java/toy/Record.java
+@@ -11,6 +11,9 @@ public final class Record {
+       return null;
+     }
+     int len = data[4] & 0xff;
++    if (len > data.length - 5) {
++      return null;
++    }
+     return new String(data, 5, len, StandardCharsets.ISO_8859_1);
+   }
+ }

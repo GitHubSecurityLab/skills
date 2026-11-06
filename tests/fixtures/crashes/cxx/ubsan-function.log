@@ -1,0 +1,19 @@
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 1814367103
+INFO: Loaded 1 modules   (59 inline 8-bit counters): 59 [0xaaaae00430d8, 0xaaaae0043113), 
+INFO: Loaded 1 PC tables (59 PCs): 59 [0xaaaae0043118,0xaaaae00434c8), 
+out/fuzz_shapes: Running 1 inputs 1 time(s) each.
+Running: in-function
+src/shapes.cc:24:10: runtime error: call to function shapes::scale(int*) through pointer to incorrect function type 'int (*)(const void *)'
+/work/my lab/src/shapes.cc:9: note: shapes::scale(int*) defined here
+    #0 0xaaaadffe9eb8 in shapes::convert(unsigned char const*, unsigned long) /work/my lab/src/shapes.cc:24:10
+    #1 0xaaaadffe9eb8 in LLVMFuzzerTestOneInput /work/my lab/src/shapes.cc:29:42
+    #2 0xaaaadfee6c34 in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) (/work/my lab/out/fuzz_shapes+0x56c34) (BuildId: 2ed49d9b7c257632edb190c67722836fd787c33d)
+    #3 0xaaaadfecffd0 in fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long) (/work/my lab/out/fuzz_shapes+0x3ffd0) (BuildId: 2ed49d9b7c257632edb190c67722836fd787c33d)
+    #4 0xaaaadfed5c28 in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long)) (/work/my lab/out/fuzz_shapes+0x45c28) (BuildId: 2ed49d9b7c257632edb190c67722836fd787c33d)
+    #5 0xaaaadff003f8 in main (/work/my lab/out/fuzz_shapes+0x703f8) (BuildId: 2ed49d9b7c257632edb190c67722836fd787c33d)
+    #6 0xffff918384c0  (/lib/aarch64-linux-gnu/libc.so.6+0x284c0) (BuildId: 27027b96e5b8c475fc327aa445bea1c71d37b4e2)
+    #7 0xffff91838594 in __libc_start_main (/lib/aarch64-linux-gnu/libc.so.6+0x28594) (BuildId: 27027b96e5b8c475fc327aa445bea1c71d37b4e2)
+    #8 0xaaaadfecb5ac in _start (/work/my lab/out/fuzz_shapes+0x3b5ac) (BuildId: 2ed49d9b7c257632edb190c67722836fd787c33d)
+
+SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior src/shapes.cc:24:10 

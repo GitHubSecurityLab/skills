@@ -1,0 +1,59 @@
+INFO: Running with entropic power schedule (0xFF, 100).
+INFO: Seed: 1929974299
+INFO: Loaded 1 modules   (27 inline 8-bit counters): 27 [0x1008341d8, 0x1008341f3), 
+INFO: Loaded 1 PC tables (27 PCs): 27 [0x1008341f8,0x1008343a8), 
+./fuzz: Running 1 inputs 1 time(s) each.
+Running: in-stack
+=================================================================
+==17647==ERROR: AddressSanitizer: stack-buffer-overflow on address 0x00016f612448 at pc 0x000100dd21e4 bp 0x00016f612410 sp 0x00016f611bc0
+WRITE of size 16 at 0x00016f612448 thread T0
+    #0 0x000100dd21e0 in __asan_memcpy+0x4b8 (libclang_rt.asan_osx_dynamic.dylib:arm64+0x521e0)
+    #1 0x0001007eca78 in copy_field lib.c:7
+    #2 0x0001007eca78 in parse_record lib.c:11
+    #3 0x0001007ecfc8 in LLVMFuzzerTestOneInput harness.c:4
+    #4 0x000100807a4c in fuzzer::Fuzzer::ExecuteCallback(unsigned char const*, unsigned long) FuzzerLoop.cpp:619
+    #5 0x0001007f2ae4 in fuzzer::RunOneTest(fuzzer::Fuzzer*, char const*, unsigned long) FuzzerDriver.cpp:335
+    #6 0x0001007f7cbc in fuzzer::FuzzerDriver(int*, char***, int (*)(unsigned char const*, unsigned long)) FuzzerDriver.cpp:871
+    #7 0x000100826358 in main FuzzerMain.cpp:20
+    #8 0x00018e5d3e7c in start+0x1a1c (dyld:arm64e+0x31e7c)
+
+Address 0x00016f612448 is located in stack of thread T0 at offset 40 in frame
+    #0 0x0001007ec954 in parse_record lib.c:10
+
+  This frame has 1 object(s):
+    [32, 40) 'buf.sroa.0.i' (line 6) <== Memory access at offset 40 overflows this variable
+HINT: this may be a false positive if your program uses some custom stack unwind mechanism, swapcontext or vfork
+      (longjmp and C++ exceptions *are* supported)
+SUMMARY: AddressSanitizer: stack-buffer-overflow lib.c:7 in copy_field
+Shadow bytes around the buggy address:
+  0x00016f612180: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x00016f612200: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x00016f612280: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x00016f612300: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x00016f612380: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+=>0x00016f612400: 00 00 00 00 f1 f1 f1 f1 00[f3]f3 f3 00 00 00 00
+  0x00016f612480: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x00016f612500: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x00016f612580: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x00016f612600: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0x00016f612680: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+Shadow byte legend (one shadow byte represents 8 application bytes):
+  Addressable:           00
+  Partially addressable: 01 02 03 04 05 06 07 
+  Heap left redzone:       fa
+  Freed heap region:       fd
+  Stack left redzone:      f1
+  Stack mid redzone:       f2
+  Stack right redzone:     f3
+  Stack after return:      f5
+  Stack use after scope:   f8
+  Global redzone:          f9
+  Global init order:       f6
+  Poisoned by user:        f7
+  Container overflow:      fc
+  Array cookie:            ac
+  Intra object redzone:    bb
+  ASan internal:           fe
+  Left alloca redzone:     ca
+  Right alloca redzone:    cb
+==17647==ABORTING

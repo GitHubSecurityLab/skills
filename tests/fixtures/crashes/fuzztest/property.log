@@ -1,0 +1,35 @@
+[*] Corpus size:     8 | Edges covered:    146 | Fuzzing time:    500.398497ms | Total runs:  2.77e+04 | Runs/secs: 27741 | Max stack usage:      512
+parser_fuzz_test.cc:31: Failure
+Expected equality of these values:
+  *again
+    Which is: Document(2 nodes)
+  *d
+    Which is: Document(1 node)
+
+=================================================================
+=== Fuzzing stats
+
+Elapsed time: 1.2s
+Total runs: 48213
+Edges covered: 512
+Total edges: 900
+Corpus size: 37
+Max stack used: 2048
+
+=================================================================
+=== BUG FOUND!
+
+parser_fuzz_test.cc:40: Counterexample found for ParserTest.ParseSerializeRoundTrips.
+The test fails with input:
+argument 0: "\x01<a"
+argument 1: 2
+
+=================================================================
+=== Regression test draft
+
+TEST(ParserTest, ParseSerializeRoundTripsRegression) {
+  ParseSerializeRoundTrips(
+    "\x01<a",
+    2
+  );
+}

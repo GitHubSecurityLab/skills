@@ -1,0 +1,250 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "17 6 * * 1" # weekly, for links and agent releases that broke without a change here
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scripts:
+    name: Scripts and skill rules (${{ matrix.os }}, Python ${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # 24.04: setup-python has no 3.9 for ubuntu-latest (26.04).
+          - { os: ubuntu-24.04, python: "3.9" }
+          - { os: ubuntu-latest, python: "3.x" }
+          # macOS's own /usr/bin/python3 (3.9), which the scripts target.
+          - { os: macos-latest, python: system }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        if: matrix.python != 'system'
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Python
+        run: |
+          if [ "${{ matrix.python }}" = system ]; then
+            echo PY=/usr/bin/python3 >> "$GITHUB_ENV"
+            /usr/bin/python3 -c 'import sys; assert sys.version_info[:2] == (3, 9), sys.version'
+          else
+            echo PY=python3 >> "$GITHUB_ENV"
+          fi
+      - name: Script tests
+        run: $PY -VV && $PY -m unittest discover -s tests -v
+      - name: Skill writing rules (description budget, names, links, sizes)
+        run: $PY tools/check_skills.py
+      - name: Marked doc blocks match the end-to-end scenarios
+        run: $PY tools/run_doc_blocks.py check
+
+  skills-ref:
+    name: Agent Skills spec
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.x"
+      - name: Install skills-ref
+        run: pip install "skills-ref @ git+https://github.com/agentskills/agentskills.git@69ef37e9424c0a7ea9dd2293b559e43ec8176379#subdirectory=skills-ref"
+      - name: Validate every skill
+        run: |
+          status=0
+          for dir in $(find skills -name SKILL.md -exec dirname {} \; | sort); do
+            skills-ref validate "$dir" || status=1
+          done
+          exit $status
+
+  plugin:
+    name: Plugin manifests and loading
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: lts/*
+      - name: Install the agents (the weekly run takes their latest releases)
+        run: |
+          if [ "${{ github.event_name }}" = schedule ]; then
+            npm install --global @anthropic-ai/claude-code@latest @github/copilot@latest @openai/codex@latest
+          else
+            npm install --global @anthropic-ai/claude-code@2.1.306 @github/copilot@1.0.105 @openai/codex@0.165.0
+          fi
+      - name: claude plugin validate
+        run: claude plugin validate . --strict
+      - name: Every agent loads every skill (no login)
+        run: |
+          export HOME="$RUNNER_TEMP/home" COPILOT_HOME="$RUNNER_TEMP/copilot" \
+            CLAUDE_CONFIG_DIR="$RUNNER_TEMP/claude" CODEX_HOME="$RUNNER_TEMP/codex"
+          mkdir -p "$HOME" "$COPILOT_HOME" "$CLAUDE_CONFIG_DIR" "$CODEX_HOME"
+          copilot --no-auto-update plugin marketplace add "$PWD"
+          copilot --no-auto-update plugin install seclab-skills@seclab
+          claude plugin marketplace add "$PWD"
+          claude plugin install seclab-skills@seclab
+          codex plugin marketplace add "$PWD"
+          codex plugin add seclab-skills@seclab
+          copilot --no-auto-update skill list --json > "$RUNNER_TEMP/copilot.json"
+          claude plugin details seclab-skills > "$RUNNER_TEMP/claude.txt"
+          codex debug prompt-input > "$RUNNER_TEMP/codex.txt"
+          status=0
+          for skill in $(find skills -name SKILL.md -exec dirname {} \; | xargs -n1 basename); do
+            grep -q "\"$skill\"" "$RUNNER_TEMP/copilot.json" || { echo "Copilot CLI doesn't list $skill"; status=1; }
+            grep -qw -- "$skill" "$RUNNER_TEMP/claude.txt" || { echo "Claude Code doesn't list $skill"; status=1; }
+            grep -q "seclab-skills:$skill" "$RUNNER_TEMP/codex.txt" || { echo "Codex doesn't list $skill"; status=1; }
+          done
+          exit $status
+
+  links:
+    name: Links
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
+        with:
+          args: >-
+            --no-progress --scheme https --scheme http --accept '200..=204, 429'
+            'skills/**/*.md' 'docs/**/*.md' README.md CONTRIBUTING.md
+          fail: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # End-to-end: the skills' marked engine commands, run on toy projects with
+  # planted bugs (tools/run_doc_blocks.py). Not on the weekly schedule.
+  e2e-c-libfuzzer:
+    name: E2E C/C++ libFuzzer (${{ matrix.os }})
+    if: github.event_name != 'schedule'
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-latest]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: LLVM
+        run: |
+          if [ "$RUNNER_OS" = Linux ]; then
+            sudo apt-get update && sudo apt-get install -y --no-install-recommends clang-20 lld-20 llvm-20 libclang-rt-20-dev
+            echo LLVM_BIN=/usr/lib/llvm-20/bin >> "$GITHUB_ENV"
+          else
+            brew install llvm
+            echo "LLVM_BIN=$(brew --prefix llvm)/bin" >> "$GITHUB_ENV"
+          fi
+      - run: python3 tools/run_doc_blocks.py run c-libfuzzer
+      - run: python3 tools/run_doc_blocks.py run c-cmake
+
+  e2e-c-aflpp:
+    name: E2E C/C++ AFL++
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      AFLPP_VERSION: v5.03c
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: LLVM
+        run: |
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends clang-20 llvm-20 llvm-20-dev lld-20 libclang-rt-20-dev
+          echo LLVM_BIN=/usr/lib/llvm-20/bin >> "$GITHUB_ENV"
+          echo "AFLPP_BIN=$HOME/aflpp/bin" >> "$GITHUB_ENV"
+      - id: cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/aflpp
+          key: aflpp-${{ env.AFLPP_VERSION }}-llvm20-${{ runner.os }}-${{ runner.arch }}
+      - name: AFL++
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          git clone --depth 1 --branch "$AFLPP_VERSION" https://github.com/AFLplusplus/AFLplusplus /tmp/aflpp
+          LLVM_CONFIG=llvm-config-20 make -C /tmp/aflpp all PREFIX="$HOME/aflpp" -j"$(nproc)"
+          make -C /tmp/aflpp install PREFIX="$HOME/aflpp"
+          test -x "$HOME/aflpp/bin/afl-clang-lto"
+      - run: python3 tools/run_doc_blocks.py run c-aflpp
+
+  e2e-c-fuzztest:
+    name: E2E C/C++ FuzzTest
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      # same build paths on every run, so ccache hits (run_doc_blocks.py)
+      DOCBLOCKS_WORKDIR: /tmp/docblocks
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: LLVM 20, CMake, Ninja, ccache
+        run: |
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends clang-20 lld-20 llvm-20 libclang-rt-20-dev cmake ninja-build ccache
+          echo LLVM_BIN=/usr/lib/llvm-20/bin >> "$GITHUB_ENV"
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ccache
+          key: ccache-fuzztest-${{ hashFiles('tests/toys/fuzztest/CMakeLists.txt') }}-${{ github.sha }}
+          restore-keys: ccache-fuzztest-${{ hashFiles('tests/toys/fuzztest/CMakeLists.txt') }}-
+      - run: python3 tools/run_doc_blocks.py run c-fuzztest
+
+  e2e-java:
+    name: E2E Java (JDK ${{ matrix.java }}, ${{ matrix.os }})
+    if: github.event_name != 'schedule'
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04]
+        java: ["21", "25"]  # the supported JDKs (fuzz-java, tested versions)
+        include:
+          - { os: macos-latest, java: "21" }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+          cache: maven
+          cache-dependency-path: tests/toys/java/record/pom.xml
+      - name: Gradle
+        if: matrix.java == '21' && runner.os == 'Linux'
+        run: |
+          curl -fsSLo /tmp/gradle.zip https://services.gradle.org/distributions/gradle-9.8.2-bin.zip
+          unzip -q /tmp/gradle.zip -d "$HOME" && echo "$HOME/gradle-9.8.2/bin" >> "$GITHUB_PATH"
+      - run: python3 tools/run_doc_blocks.py run java
+      - if: matrix.java == '21' && runner.os == 'Linux'
+        run: python3 tools/run_doc_blocks.py run java-gradle
+      - if: matrix.java == '21' && runner.os == 'Linux'
+        run: python3 tools/run_doc_blocks.py run java-gradle-single
+
+  e2e-js-glibc:
+    name: E2E Jazzer.js glibc check (Debian 12)
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    container: python:3.12-slim-bookworm
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: apt-get update && apt-get install -y --no-install-recommends git
+      - run: python3 tools/run_doc_blocks.py run js-glibc
+
+  e2e-js:
+    name: E2E Jazzer.js (${{ matrix.os }})
+    if: github.event_name != 'schedule'
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-latest]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+      - run: python3 tools/run_doc_blocks.py run js
+      - run: python3 tools/run_doc_blocks.py run js-ts

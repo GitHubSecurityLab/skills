@@ -1,0 +1,27 @@
+{
+  "name": "seclab",
+  "owner": {
+    "name": "GitHub Security Lab",
+    "url": "https://securitylab.github.com"
+  },
+  "description": "GitHub Security Lab's skills for security research and vulnerability discovery.",
+  "plugins": [
+    {
+      "name": "seclab-skills",
+      "source": "./",
+      "description": "Security research and vulnerability discovery skills from GitHub Security Lab. First topic: fuzzing campaigns for C/C++, Java and JavaScript/TypeScript.",
+      "category": "security",
+      "keywords": [
+        "security",
+        "fuzzing",
+        "vulnerability-research",
+        "threat-modeling",
+        "libfuzzer",
+        "aflplusplus",
+        "fuzztest",
+        "jazzer",
+        "jazzer.js"
+      ]
+    }
+  ]
+}
