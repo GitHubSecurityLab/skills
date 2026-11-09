@@ -4,7 +4,8 @@ Every command below executes the target: run it through the launcher as a
 self-ending run (`$L start --id repro-<h>-<n> --harness <h> --timeout <s>
 --env ... -- <command>`), with the environment from `run.md` next to this
 file. A reproduction that reproduces ends `exited <code>`; its log holds
-the report.
+the report. `<build>` is `$F/build`; for a long run's finding (analysis,
+phase 1), the run's `<tree_build>` (`run.md`, "Long runs").
 
 ## Reproduce
 
@@ -14,7 +15,7 @@ A finding of a libFuzzer harness, from libFuzzer or AFL++:
 ```sh
 $L start --id repro-$H-<n> --harness $H --timeout <timeout_s> \
   --env ASAN_OPTIONS="$ASAN_OPTIONS" --env UBSAN_OPTIONS="$UBSAN_OPTIONS" --env PATH="$RUN_PATH" -- \
-  "$F/build/libfuzzer/<binary>" -rss_limit_mb=<memory_mb> -timeout=<input_timeout_s> "<finding>"
+  "<build>/libfuzzer/<binary>" -rss_limit_mb=<memory_mb> -timeout=<input_timeout_s> "<finding>"
 ```
 
 | Crash from | Command |
@@ -56,7 +57,7 @@ $L start --id repro-$H-<n> --harness $H --timeout <timeout_s> \
   ```sh
   $L start --id repro-$H-<n> --harness $H --timeout <timeout_s> --env FUZZTEST_REPLAY="<finding>" \
     --env ASAN_OPTIONS="$ASAN_OPTIONS" --env UBSAN_OPTIONS="$UBSAN_OPTIONS" --env PATH="$RUN_PATH" -- \
-    "$F/build/fuzztest/<test_binary>" --gtest_filter=<fuzz_test> \
+    "<build>/fuzztest/<test_binary>" --gtest_filter=<fuzz_test> \
     --time_limit_per_input=<input_timeout_s>s --rss_limit_mb=<memory_mb>
   ```
 
@@ -71,7 +72,7 @@ frames shift with the depth.
 mkdir -p "$F/crashes/<bucket>"
 $L start --id min-$H-<n> --harness $H --timeout <timeout_s> --env PATH="$RUN_PATH" \
   --env ASAN_OPTIONS="$ASAN_OPTIONS:dedup_token_length=3" --env UBSAN_OPTIONS="$UBSAN_OPTIONS:dedup_token_length=3" -- \
-  "$F/build/libfuzzer/<binary>" -minimize_crash=1 -runs=10000 -rss_limit_mb=<memory_mb> \
+  "<build>/libfuzzer/<binary>" -minimize_crash=1 -runs=10000 -rss_limit_mb=<memory_mb> \
   -timeout=<input_timeout_s> -exact_artifact_path="$F/crashes/<bucket>/minimized" "<finding>"
 ```
 
@@ -96,7 +97,7 @@ $L start --id min-$H-<n> --harness $H --timeout <timeout_s> --env PATH="$RUN_PAT
     $L start --id min-$H-<n>-$i --harness $H --timeout <timeout_s> --env FUZZTEST_MINIMIZE_REPRODUCER="$m" \
       --env FUZZTEST_REPRODUCERS_OUT_DIR="$out" --env ASAN_OPTIONS="$ASAN_OPTIONS" \
       --env UBSAN_OPTIONS="$UBSAN_OPTIONS" --env PATH="$RUN_PATH" -- \
-      "$F/build/fuzztest/<test_binary>" --fuzz=<fuzz_test> \
+      "<build>/fuzztest/<test_binary>" --fuzz=<fuzz_test> \
       --time_limit_per_input=<input_timeout_s>s --rss_limit_mb=<memory_mb> > /dev/null || :  # 134: smaller crash
     next=$(ls -S "$out" | tail -n 1)
     [ -n "$next" ] && [ "$(wc -c < "$out/$next")" -lt "$(wc -c < "$m")" ] || break

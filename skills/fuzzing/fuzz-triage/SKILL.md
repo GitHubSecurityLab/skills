@@ -74,6 +74,10 @@ another copy.
    `continuous` run keeps an input per new crashing path, often dozens per
    bug): a rare bug can hide among a frequent one's. Its log is
    `runs/repro-<h>-<n>/copy-0/log`, whose kept tail holds the report.
+   A long run's finding is reproduced and minimized on that run's
+   build, from its worktree (`trees` in its `meta.json`): add
+   `--tree "<tree>"` to `$L start`, and pick the build as the language
+   skill's triage.md says.
    A bucket whose inputs don't crash in 3 attempts, one of them 100 runs
    in one process (some bugs need state an earlier run left), gets State
    `non-reproducible`; note what might make it flaky (threads, time,

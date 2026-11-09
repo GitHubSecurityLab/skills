@@ -456,7 +456,7 @@ def c_libfuzzer(ctx: Context) -> None:
                "messages, format strings, non-ASCII or escapes libFuzzer rejects (%s)" % " ".join(entries))
     ctx.block("dict-literals", harness="none", scope_files="src/record.h")
     ctx.say("   ok: scope files without literals add none, and the pipeline succeeds")
-    common = dict(binary="fuzz_record", memory_mb=2048, input_timeout_s=10, max_len=4096)
+    common = dict(binary="fuzz_record", memory_mb=2048, input_timeout_s=10, max_len=4096, build="$F/build")
     # The gate's seeds-only snapshot (gate.md, step 0), which check 2 compares after fuzzing.
     ctx.block("c-cov-replay", n=0, timeout_s=120, **common)
     ctx.block("c-cov-export", n=0, round=0, binary="fuzz_record")
@@ -1462,7 +1462,7 @@ def c_fuzztest(ctx: Context) -> None:
     ctx.sh('mkdir -p "$F/corpus/$H"')
     # FuzzTest 2026-06-29 reads macOS's peak RSS (bytes) as KiB: no limit there (fuzztest.md).
     common = dict(test_binary="record_fuzz_test", fuzz_test="RecordTest.ParsesWithoutCrashing",
-                  memory_mb=2048 if linux else 0, input_timeout_s=10)
+                  memory_mb=2048 if linux else 0, input_timeout_s=10, build="$F/build")
 
     # A first round without a finding fills the flat corpus; then the planted bug.
     ctx.block("fuzztest-develop", round=1, run_s=120, **common)

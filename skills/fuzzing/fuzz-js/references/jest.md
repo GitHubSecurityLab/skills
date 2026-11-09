@@ -276,6 +276,8 @@ name.
 
 ## Triage
 
+A long run's finding: `P` set to `<tree_package>` (`run.md`, "CLI target").
+
 **Reproduce:** copy the finding into the regression directory under a
 name of its own, run Jest in regression mode (without `JAZZER_FUZZ`) for
 just that file, and remove the copy again right after. Regression mode

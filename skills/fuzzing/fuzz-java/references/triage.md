@@ -2,7 +2,8 @@
 
 Every command below runs project code: run it through the launcher
 (`repro-<h>-<n>`), with `L`, `F`, `H` and the environment as in `run.md`
-next to this file.
+next to this file. A long run's finding: `CP` from the run's worktree
+classpath file (`run.md`, "Long runs").
 
 ## Reproduce
 
