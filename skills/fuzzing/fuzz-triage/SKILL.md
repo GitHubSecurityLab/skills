@@ -135,18 +135,18 @@ another copy.
    without it, with a valid checksum or signature: reproduce with a
    fixed-up input before assigning a verdict. Two buckets with the same
    root cause become one (State `duplicate of <bucket>`).
-6. **Assign a verdict** with confidence and evidence, using
-   [references/verdicts.md](references/verdicts.md). The threat model
-   decides reachability: can an attacker trigger this through a real entry
-   point in a real deployment?
-7. **Write the reproducer** for every real bug, right away, on the build
-   that found it (the language skill's regression.md, "The bug's
-   reproducer"): a small program in
+6. **Write the reproducer** for every real bug (its root cause is in the
+   target, not our harness), right away, on the build that found it (the
+   language skill's regression.md, "The bug's reproducer"): a small program in
    `crashes/<bucket>/` that calls the project's API with the concrete
    values the harness derived from the input, including the check that
    caught the bug. It must fail now. It doesn't depend on the harness,
    whose input layout may change; the raw inputs stay in the bucket for
    deduplication and for reproducing on the build that found it.
+7. **Assign a verdict** with confidence and evidence, using
+   [references/verdicts.md](references/verdicts.md). The threat model
+   decides reachability: can an attacker trigger this through a real entry
+   point in a real deployment?
 8. **Rule out our own fixes** once the campaign has one (before the first
    fix, the current build is `base`: skip this step). Run the reproducer
    on the `base` build, which has none of our `fuzz(fix)` commits
