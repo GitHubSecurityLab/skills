@@ -71,10 +71,10 @@ language skill's run.md). The steps below read its log and statistics.
 Check the instrumentation in the target library itself, not only in the
 fuzz binary: the language skill's build.md, "Instrumentation checks".
 
-## 5. No instant crash
+## 5. No crash in the gate
 
-A crash on the seeds or within the run's first seconds goes to
-`fuzz-triage`. In code that was never fuzzed, shallow real bugs are common.
+A crash on the seeds or anywhere in the gate run goes to `fuzz-triage`.
+In code that was never fuzzed, shallow real bugs are common.
 A `harness_bug` is fixed here; a real bug in the target is **blocking**,
 fixed or filtered as `fuzz-triage`'s blocking-bug rule says. Then start the
 gate again.

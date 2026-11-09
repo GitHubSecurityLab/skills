@@ -22,7 +22,7 @@ noise. Most false reports come from skipping one of these steps.
 
 ## When to use
 
-- New crash files after any run, including the gate's instant crashes.
+- New crash files after any run, including the gate's.
 - "Triage these crashes", "is this crash real?", a crash file or a report
   from OSS-Fuzz, CI or another fuzzer.
 - "Fix this crash": a triaged real bug gets a tested fix

@@ -145,8 +145,8 @@ another copy.
    (standalone: its light gate) before any other run: only the gate shows
    that the target is instrumented and reached. A failing check means
    fixing the harness (or build) and running the gate again.
-   - If the gate finds an instant crash: it goes to `fuzz-triage` first
-     (gate.md, "No instant crash").
+   - If the gate finds a crash: it goes to `fuzz-triage` first
+     (gate.md, "No crash in the gate").
 7. **Record and commit.** Write the workflow into `targets/<id>.md`
    (Harness) and the Harnesses table, the gate result into Gate, and commit
    the harness as `fuzz(harness): <target>`.
