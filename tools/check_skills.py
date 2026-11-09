@@ -196,7 +196,7 @@ QUALIFIED_PHRASES = {
 
 # One meaning per term: a phrase of another use (case-insensitive, outside HTML comments) -> what to write instead.
 TERMS = {
-    r"(?<!state-)\bleak[- ]check": "state-leak check (gate check 4; LeakSanitizer finds leaks)",
+    r"(?<!state-)\bleak[- ]check": "state-leak check (gate.md, \"No state leaking between inputs\"; LeakSanitizer finds leaks)",
     r"\bits target\b|\btarget (?:becomes|became) covered": "aim (what an action should cover; a target is an entry point)",
 }
 

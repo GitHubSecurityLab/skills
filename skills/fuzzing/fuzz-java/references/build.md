@@ -122,7 +122,8 @@ The fuzzer gets coverage feedback only from instrumented classes.
 
 ## Instrumentation checks
 
-The gate's first check, on a run's log: each
+The gate's instrumentation check, on a run's log (the replay's or the
+gate run's): each
 target class needs a plain `INFO: Instrumented <class> (took ...)` line.
 With `F` as in `run.md`:
 

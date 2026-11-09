@@ -457,7 +457,7 @@ def c_libfuzzer(ctx: Context) -> None:
     ctx.block("dict-literals", harness="none", scope_files="src/record.h")
     ctx.say("   ok: scope files without literals add none, and the pipeline succeeds")
     common = dict(binary="fuzz_record", memory_mb=2048, input_timeout_s=10, max_len=4096, build="$F/build")
-    # The gate's seeds-only snapshot (gate.md, step 0), which check 2 compares after fuzzing.
+    # The gate's seeds-only snapshot (gate.md, "Prepare"), which "Fuzzing gets past the seeds" compares after fuzzing.
     ctx.block("c-cov-replay", n=0, timeout_s=120, **common)
     ctx.block("c-cov-export", n=0, round=0, binary="fuzz_record")
 
