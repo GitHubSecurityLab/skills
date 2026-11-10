@@ -2,6 +2,17 @@
 
 ## Reading an annotated function
 
+**First, rule out a fuzzer that got no feedback.** If the corpus is small
+for how long it was fuzzed (e.g. tens of inputs after hours) and covers
+little beyond what its seeds reach, with gaps at many guards at once, the
+build or options that fuzzed it probably instrumented only the harness,
+not the library (Java: `with custom hooks only`, or narrow
+`--instrumentation_includes`; JS: `dryRun`, or `includes` that miss the
+files). Check the instrumentation of the build that fuzzed it (the
+language skill's build.md, "Instrumentation checks"; without that build,
+its build flags and run logs): if it's blind, fixing it is the action,
+before any seeds or harness change.
+
 Classify each top gap by the shape its annotation shows. `coverage.py show`
 prints each line with its hit count, `!` for lines never run, and
 `<-- k/m branches not taken`. Typical shapes:
