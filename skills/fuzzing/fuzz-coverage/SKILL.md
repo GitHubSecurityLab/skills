@@ -74,7 +74,10 @@ the toolchain with the language skill's install.md, then build the
 variant (`fuzz-harness`'s build.md). If the target file has no gate
 result for the harness: run the light gate (`fuzz-harness`'s gate.md,
 "Light gate") before the first round; step 4 needs its executions per
-second. Without a sink list, step 7 only reads the gaps' code.
+second. If the harness has a corpus elsewhere (its own fuzzing output,
+OSS-Fuzz's, a CI artifact): copy only that corpus into `corpus/<h>/`
+first (Jest: the test's directory in `.cifuzz-corpus/`), so the replay
+measures it. Without a sink list, step 7 only reads the gaps' code.
 
 1. **Run a round.** Each round is one develop run: how to run it in
    `fuzz-harness`'s runs.md, its command and environment in the
