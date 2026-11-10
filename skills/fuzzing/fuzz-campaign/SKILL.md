@@ -88,6 +88,16 @@ rules. Then:
 The ledger format is in [references/ledger.md](references/ledger.md). Update
 it after every step.
 
+## Resume
+
+1. Read only the index.
+2. Check the state: the branch and base commit match (`init.py` refuses a
+   checkout that doesn't: ask the user); `launcher.py status`
+   for running and ended runs (update the Long runs table); stale or
+   missing builds are rebuilt (`fuzz-harness`'s build.md, "Before
+   reusing builds").
+3. Continue from **Next actions**.
+
 ## Reads
 
 - `.seclab/fuzz/CAMPAIGN.md` (all sections), `.seclab/threat-model.md`.
@@ -259,16 +269,6 @@ the end: it leads to long runs and their analysis.
 - **Autonomous:** only when the user asks for it. Read
   [references/autonomous.md](references/autonomous.md) first and follow it
   for the whole campaign: the agent needs full permissions.
-
-## Resume
-
-1. Read only the index.
-2. Check the state: the branch and base commit match (`init.py` refuses a
-   checkout that doesn't: ask the user); `launcher.py status`
-   for running and ended runs (update the Long runs table); stale or
-   missing builds are rebuilt (`fuzz-harness`'s build.md, "Before
-   reusing builds").
-3. Continue from **Next actions**.
 
 ## Safety rules (every step)
 
