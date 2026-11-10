@@ -56,16 +56,17 @@ a coverage build variant change.
    C="$F/coverage/$H"; mkdir -p "$C"
    cp "$F/runs/cov-$H-<n>/jacoco.exec" "$C/r<round>.exec"
    "$JAVA_HOME/bin/java" -jar "$F/build/jacoco/jacococli.jar" report "$C/r<round>.exec" --classfiles <module>/target/classes \
-     --xml "$C/r<round>.xml" 2>&1 | tee "$C/r<round>.report.log"
-   ! grep -q 'not match' "$C/r<round>.report.log"
-   python3 "$F/bin/coverage.py" from-jacoco "$C/r<round>.xml" --source-root <module>/src/main/java \
-     -o "$C/r<round>.lcov"
-   rm "$C/r<round>.xml" "$C/r<round>.report.log"
+     --xml "$C/r<round>.xml" 2>&1 | tee "$C/r<round>.report.log" &&
+     ! grep -q 'not match' "$C/r<round>.report.log" &&
+     python3 "$F/bin/coverage.py" from-jacoco "$C/r<round>.xml" --source-root <module>/src/main/java \
+       -o "$C/r<round>.lcov" &&
+     rm "$C/r<round>.xml" "$C/r<round>.report.log"
    ```
    - **"does not match" is an error.** If the class files differ from the
      ones that ran (a rebuild in between), `jacococli` warns "Execution
      data for class … does not match", still exits 0, and reports those
-     classes as uncovered. Rebuild or replay again with the same classes.
+     classes as uncovered. The block stops there and keeps the report log.
+     Rebuild or replay again with the same classes.
    - **Keep the `.exec` files.** They're the only data that can be combined
      correctly.
    - The lcov file has line and branch records per source file, with paths
