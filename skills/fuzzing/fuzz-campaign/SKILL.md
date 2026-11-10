@@ -147,9 +147,15 @@ it after every step.
 4. **Recon and ranking.** Follow
    [references/targets.md](references/targets.md). Before ranking, wait
    for the replays (`launcher.py wait`) and show their progress
-   (`launcher.py status`), so ranking uses measured coverage. Rank on
-   partial results only if the user says so; harnesses still replaying
-   are marked pending.
+   (`launcher.py status`). Then merge their snapshots into the next
+   `coverage/merged/<n>.lcov`, which ranking reads:
+   - C/C++ and JS: `coverage.py merge` on the lcov snapshots;
+   - Java: merge the `.exec` files, then convert the result to lcov
+     (`fuzz-java`'s coverage.md, "Combining Java coverage"); JaCoCo's lcov
+     files can't be combined.
+
+   Rank on partial results only if the user says so: merge the finished
+   snapshots, and mark the harnesses still replaying as pending.
 5. **Targets checkpoint.** Show the threat model summary and the ranked
    targets with their checks and scope, and propose where develop stops:
    at the candidates whose uncovered attack surface (the ranking's

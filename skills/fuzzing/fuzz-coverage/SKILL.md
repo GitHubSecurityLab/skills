@@ -67,7 +67,7 @@ Which steps run depends on the request:
 |---|---|
 | The inner loop: a campaign, or a request to improve coverage, such as "improve coverage of this fuzzer" | 1–11 |
 | A diagnosis, such as "why is coverage stuck?" or "what does this harness not reach?", on a harness with a corpus | 2–3, then 5–8; stop after step 8 with the diagnosis and the proposed action, without applying it |
-| **Measure only:** a baseline, combined coverage, or another skill asks for a number | 2–3 on the current corpus, without a round; return the number |
+| **Measure only:** a baseline, combined coverage, or another skill asks for a number | 2–3 on the current corpus, without a round; return the number. Before any target exists (a campaign's baseline): `summary` without `--scope`, and no Coverage rounds row |
 | Inputs for a branch, a corpus merge or minimization, such as "find inputs for this branch" | [references/corpus.md](references/corpus.md) |
 
 **If it's standalone use without a target file:** write the minimal one
