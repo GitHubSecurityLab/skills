@@ -59,19 +59,22 @@ another copy.
 
 ## Steps
 
+Which steps run depends on the request:
+
+| Request | Steps |
+|---|---|
+| The inner loop: a campaign, or a request to improve coverage, such as "improve coverage of this fuzzer" | 1–11 |
+| A diagnosis, such as "why is coverage stuck?" or "what does this harness not reach?", on a harness with a corpus | 2–3, then 5–8; stop after step 8 with the diagnosis and the proposed action, without applying it |
+| **Measure only:** a baseline, combined coverage, or another skill asks for a number | 2–3 on the current corpus, without a round; return the number |
+| Inputs for a branch, a corpus merge or minimization, such as "find inputs for this branch" | [references/corpus.md](references/corpus.md) |
+
 **If it's standalone use without a target file:** write the minimal one
 first (`fuzz-harness`, Reads). If the coverage variant is missing, check
 the toolchain with the language skill's install.md, then build the
 variant (`fuzz-harness`'s build.md). If the target file has no gate
 result for the harness: run the light gate (`fuzz-harness`'s gate.md,
 "Light gate") before the first round; step 4 needs its executions per
-second. "Why is coverage stuck?" on a harness that has a corpus: take a
-snapshot (steps 2–3) and go to step 5. Without a sink list, step 7 only
-reads the gaps' code.
-
-**Measure only** (a baseline, combined coverage, or another skill asks
-for a number): steps 2 and 3 on the current corpus, without a round, then
-return.
+second. Without a sink list, step 7 only reads the gaps' code.
 
 1. **Run a round.** Each round is one develop run: how to run it in
    `fuzz-harness`'s runs.md, its command and environment in the
@@ -158,7 +161,9 @@ return.
    [references/diagnosis.md](references/diagnosis.md), "Choosing the next action".
    Record the action and its **aim** (the blocked branch, function or
    condition it should cover; for a sink reached but not triggered, the
-   untaken branch or condition at the sink). Where each action goes:
+   untaken branch or condition at the sink). A request only for a
+   diagnosis, such as "why is coverage stuck?", stops here: propose the
+   action, don't apply it. Otherwise, where each action goes:
    - seeds, dictionary or targeted inputs for a blocked branch or a sink
      reached but not triggered →
      [references/corpus.md](references/corpus.md);
