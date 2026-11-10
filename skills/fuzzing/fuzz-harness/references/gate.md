@@ -13,6 +13,9 @@ before the harness goes into a campaign or a long run. Commands are
 language-neutral here; the language skill gives the exact engine and
 coverage commands. `<h>` is the harness id, `<id>` the target id.
 
+A **new harness** is one written from scratch, not an existing one being
+extended, until it first passes the gate.
+
 ## 1. Prepare
 
 Prepare what the checks need: seeds, builds, the working tree before the
@@ -34,7 +37,7 @@ gate run, and the corpus's coverage before fuzzing.
     mkdir -p "$G/objects" && (export GIT_INDEX_FILE="$G/tree.index" GIT_OBJECT_DIRECTORY="$G/objects" \
       GIT_ALTERNATE_OBJECT_DIRECTORIES="$O"; git add -A && git write-tree) > "$G/tree-before.txt"
   ```
-- **Replay the corpus** (at a new harness's first gate: only its seeds) on
+- **Replay the corpus** (at a harness's first gate, it's only the seeds) on
   the coverage build, before the gate run, and export lcov to
   the harness's next snapshot `coverage/<h>/r<round>.lcov` (`fuzz-coverage`,
   "Snapshot"). After a harness, build or code change, it's the new baseline
@@ -93,9 +96,9 @@ Record executions per second from the gate run's final statistics.
 
 Replay the corpus in the coverage build again, into the next snapshot
 `r<next>`, and compare it with Prepare's on the scope files. The entry
-point and its callees in scope must be covered; at a new harness's first
-gate, the scope's covered branches must also grow over the seeds'
-(`change`), unless the seeds already cover the scope:
+point and its callees in scope must be covered; for a new harness, the
+scope's covered branches must also grow over the seeds' (`change`),
+unless the seeds already cover the scope:
 
 <!-- ci: gate-progress -->
 ```sh
@@ -105,10 +108,11 @@ python3 .seclab/fuzz/bin/coverage.py summary .seclab/fuzz/coverage/<h>/r<next>.l
 This snapshot is the baseline that the inner loop's first round compares
 with (`fuzz-coverage`).
 
-- If the covered branches didn't grow at a new harness's first gate:
-  mutations don't get past an early check (a checksum, a length or magic
-  the layout breaks); diagnose it (`fuzz-coverage`'s diagnosis.md) before
-  long runs, unless the seeds already cover the scope.
+- If the covered branches didn't grow for a new harness, and the seeds
+  don't already cover the scope, the gate fails: mutations don't get past
+  an early check (a checksum, a length or magic the layout breaks).
+  Diagnose it (`fuzz-coverage`'s diagnosis.md), fix it, and run the gate
+  again.
 
 ## 8. No state leaking between inputs (a smoke check, not a proof)
 
