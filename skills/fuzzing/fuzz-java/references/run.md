@@ -79,7 +79,11 @@ $L start --id r<round>-$H --harness $H --time <run_s> --corpus "$F/corpus/$H" \
 
 N copies of the develop command (`--copies`), with the run's own corpus
 first (where every copy writes and re-reads new inputs) and the persistent
-corpus second (read only):
+corpus second (read only). First set `CP` from the worktree's classpath
+file (`build.md`, "Classpath for standalone runs"):
+`CP=$(cat "$F/build/jazzer/<module>-<sha>.classpath")`. `env.sh` sets it
+from the checkout's `<module>.classpath`, whose classes develop keeps
+rebuilding.
 
 <!-- ci: java-long -->
 ```sh
@@ -91,11 +95,7 @@ $L start --prepare --id $H-long<n> --harness $H --copies <copies> --time <run_s>
   -artifact_prefix="{run}/artifacts/copy-{copy}/" -dict="{run}/$H.dict" "{run}/corpus" "$F/corpus/$H"
 ```
 
-With no duration, `-max_total_time=0` and no `--time`. `CP` comes from the
-worktree's classpath file, `<module>-<sha>.classpath` (`build.md`,
-"Classpath for standalone runs"): `env.sh` sets it from the checkout's
-`<module>.classpath`, so set `CP` from the worktree's file before this
-command.
+With no duration, `-max_total_time=0` and no `--time`.
 
 - Copies share inputs through libFuzzer's `-reload` (on by default, about
   once a second), and each picks its own random seed.
