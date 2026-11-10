@@ -164,6 +164,9 @@ measures it. Without a sink list, step 7 only reads the gaps' code.
      expressions: [references/redos.md](references/redos.md)).
 8. **Choose the next action** by the rule in
    [references/diagnosis.md](references/diagnosis.md), "Choosing the next action".
+   A gap that got 3 actions without gain is "hard": mark it so in the
+   target's Notes, and aim no further action at it until there's new
+   evidence.
    Record the action and its **aim** (the blocked branch, function or
    condition it should cover; for a sink reached but not triggered, the
    untaken branch or condition at the sink). A request only for a
@@ -203,11 +206,7 @@ measures it. Without a sink list, step 7 only reads the gaps' code.
     Write a short summary into the target file: final scope coverage, main
     remaining gaps with their classification, sink states, and whether a
     long run is worthwhile (reached-but-untriggered sinks, deep code still
-    being found). Effort limits:
-    - If build repair failed with 3 distinct approaches: ask the user
-      (interactive) or set the target aside (autonomous).
-    - If one gap got 3 actions without gain: mark it "hard" until there's
-      new evidence.
+    being found).
 11. **Overlap check** when the target has more than one harness, or after a
     new harness for an existing workflow, to find harnesses that duplicate
     each other. Java adds `--union`, the report of both harnesses' merged
