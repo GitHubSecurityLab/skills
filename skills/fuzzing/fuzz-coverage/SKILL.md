@@ -54,6 +54,8 @@ another copy.
 - `targets/<id>.md`: Scope files, Sinks, Harness, Coverage rounds.
   `targets/<id>.scope`, `sinks/<id>.tsv`.
 - `CAMPAIGN.md`: Settings (`round_minutes`, `plateau`), Open crashes.
+- `.seclab/threat-model.md`: what's attack surface, for scope corrections
+  (step 5) and the gaps it excludes.
 - The language skill: how to replay the corpus in the coverage build and
   export lcov.
 
