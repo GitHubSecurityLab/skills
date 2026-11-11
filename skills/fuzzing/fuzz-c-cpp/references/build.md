@@ -67,7 +67,7 @@ The empty Release flags stop a project that sets `CMAKE_BUILD_TYPE=Release`
 when it's empty from adding `-O3 -DNDEBUG` after ours (the build check
 below catches other forced types).
 - If the library is built for harnesses outside the project (OSS-Fuzz's,
-  below): it needs neither of the last two `-D`s: `--target <library>`.
+  below): it needs neither of the last two `-D`s: `--target` with every library they link.
 - If the project has no fuzzing option for `<fuzzers_option>`: add one
   first, in the project's style:
   ```cmake
@@ -150,8 +150,8 @@ go into the project's tree (`fuzz-campaign`'s handoff.md offers them for
   ```
   If it matches: the project forces its own flags; override them (CMake:
   `-DCMAKE_C_FLAGS_<TYPE>=` for the build type it sets).
-- **Static, before running anything:** the library archive or objects
-  (not the linked binary) contain the variant's hooks:
+- **Static, before running anything:** each project library the harnesses link (its archive or objects,
+  not the linked binary) has the variant's hooks. Check one library per run (the counts are totals):
   <!-- ci: c-hooks-check -->
   ```sh
   nm -A <library> 2>/dev/null | awk '/sanitizer_cov/ {c++} /__asan_/ {a++} /__cmplog_ins_hook/ {l++} /__profc_/ {p++}

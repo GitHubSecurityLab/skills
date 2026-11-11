@@ -65,8 +65,8 @@ a byte buffer as a C array.
   (`run.md` turns leak detection off there only for libFuzzer); `0` in a
   sandbox that blocks `ptrace`. If the reproducer is C++: `clang++`,
   without `-fno-sanitize=function` (`$HARDEN` keeps the standard library's
-  checks; C ignores it). Build into scratch, with the library's other link
-  dependencies added after it:
+  checks; C ignores it). Build into scratch; after the library, add the
+  project's other libraries in link order, then system ones such as `-lz`:
 
 <!-- ci: c-reproducer -->
 ```sh
