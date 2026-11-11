@@ -60,6 +60,11 @@ Not for writing harnesses (`SKILL.md`) or running them (runs.md).
    output option. Use the same compiler and flags for the library across
    variants, link statically where possible, and don't build the project's
    CLI tools or tests with fuzzer flags.
+   - **Before the first build,** add the block in the language skill's
+     run.md, "Environment (`--env`)", filled in, to `.seclab/fuzz/env.sh`
+     below `F` and `L`. Every command from here on starts with
+     `. .seclab/fuzz/env.sh;`: an agent's commands don't keep shell
+     variables.
    - If the project can only build in-tree: build each variant in its own
      git worktree outside the checkout, synced to the checkout's working
      tree before each rebuild (`fuzz-c-cpp`'s build.md, "In-tree builds").
