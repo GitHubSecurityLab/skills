@@ -63,10 +63,10 @@ untested.
 ## Classpath for standalone runs
 
 Write it once per build into `.seclab/fuzz/build/jazzer/<module>.classpath`;
-rebuild it when dependencies change. A long run's worktree gets its own,
-built there and written as `<module>-<sha>.classpath`, so its class
-directories are the worktree's. Both commands below run project build
-code: the first-build notice applies.
+rebuild it when dependencies change. Another worktree (a long run's, `base`)
+gets one built there, in its `.seclab/fuzz/build/` (`fuzz-harness`'s build.md),
+so its class directories are the worktree's. Both commands below run project
+build code: the first-build notice applies.
 
 Maven, from the root (multi-module: add `-pl <module> -am`; in the module
 directory, uninstalled sibling modules don't resolve); `<module_dir>` is

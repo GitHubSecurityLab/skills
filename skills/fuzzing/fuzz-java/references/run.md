@@ -80,10 +80,9 @@ $L start --id r<round>-$H --harness $H --time <run_s> --corpus "$F/corpus/$H" \
 N copies of the develop command (`--copies`), with the run's own corpus
 first (where every copy writes and re-reads new inputs) and the persistent
 corpus second (read only). First set `CP` from the worktree's classpath
-file (`build.md`, "Classpath for standalone runs"):
-`CP=$(cat "$F/build/jazzer/<module>-<sha>.classpath")`. `env.sh` sets it
-from the checkout's `<module>.classpath`, whose classes develop keeps
-rebuilding.
+file (`build.md`, "Classpath for standalone runs"), `<tree_build>` being its
+`.seclab/fuzz/build`: `CP=$(cat "<tree_build>/jazzer/<module>.classpath")`.
+`env.sh` sets it from the checkout's, whose classes develop keeps rebuilding.
 
 <!-- ci: java-long -->
 ```sh
