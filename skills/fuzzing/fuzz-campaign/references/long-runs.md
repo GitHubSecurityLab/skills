@@ -95,12 +95,10 @@ and nothing there touches a run's binaries.
   ```
 - Every tree a run's binaries come from is passed with `--tree` and
   recorded in its `meta.json` (commit, clean state).
-- If the C/C++ project builds only in-tree (`fuzz-c-cpp`'s build.md):
-  each build variant has its own worktree, also under
-  `<repo>.seclab-worktrees/`: `build/<variant>/` for develop's builds,
-  `<sha>/<variant>/` for a launch, `base/<variant>/` for `base`. They
-  stay when develop is finished. Before rebuilding a variant, sync its
-  worktree to the checkout's working tree (`fuzz-c-cpp`'s build.md).
+- If the C/C++ project builds only in-tree: each tree has a worktree per
+  variant, also under `<repo>.seclab-worktrees/`: `build/<variant>/` for
+  develop's builds, which stay when develop is finished, `<sha>/<variant>/`
+  for a launch, `base/<variant>/` for `base` (`fuzz-c-cpp`'s build.md, "In-tree builds").
 
 ## Launch worktrees are read-only
 

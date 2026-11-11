@@ -103,7 +103,7 @@ json.dump(s, open(sys.argv[1], "w"), indent=1)' "$F/runs/$H-long<n>/spec.json"
 ```
 
 `<tree>` is the run's worktree, and `<tree_build>` its `.seclab/fuzz/build`
-directory (`fuzz-campaign`).
+directory (`fuzz-campaign`; projects that build only in-tree: `build.md`, "In-tree builds").
 
 - Copies share inputs through libFuzzer's `-reload` (on by default, about
   once a second), and each picks its own random seed (no `-seed`).

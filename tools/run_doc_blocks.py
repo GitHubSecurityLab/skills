@@ -832,6 +832,19 @@ def c_cmake(ctx: Context) -> None:
     ctx.block("build-record", variant="coverage")
     ctx.expect("build/coverage/" in ctx.block("build-stale").stdout,
                "the stale check looks through the link (the checkout has an uncommitted change)")
+    # Another tree of an in-tree project (base): a worktree per variant in the tree's directory, built in place,
+    # without the sync or the link.
+    other = os.path.join(trees, "base", "libfuzzer")
+    ctx.sh('git worktree add -q --detach "%s" %s' % (other, sha))
+    link = os.path.realpath(os.path.join(ctx.F, "build", "coverage"))
+    cflags, ldflags = c_flags(ctx, "libfuzzer")
+    ctx.block("c-intree-build", replace=(("seclab-worktrees/build/<variant>", "seclab-worktrees/base/<variant>"),
+                                         ('rm -rf "$F/build/<variant>" && ln -s "$W" "$F/build/<variant>"', "")),
+              llvm_bin=llvm, compile_flags=cflags, link_flags=ldflags, targets="fuzz_record", **dict(tree, variant="libfuzzer"))
+    ctx.expect(all(os.path.exists(os.path.join(other, name)) for name in ("fuzz_record", "librecord.a"))
+               and os.path.realpath(os.path.join(ctx.F, "build", "coverage")) == link
+               and not os.path.islink(os.path.join(ctx.F, "build", "libfuzzer")),
+               "another tree's variant builds in its own worktree; the checkout's builds and links stay")
 
 
 @scenario("c-aflpp", "c", ["c-env", "c-ub", "c-toolchain-check", "aflpp-wrappers", "aflpp-spec", "c-check-run",

@@ -126,6 +126,9 @@ make -C "$W" CC=<llvm_bin>/clang CFLAGS="<compile_flags> $map -fno-sanitize=func
   LDFLAGS="<link_flags> -fno-sanitize=function" <targets>
 rm -rf "$F/build/<variant>" && ln -s "$W" "$F/build/<variant>"
 ```
+Another tree (for a long run, `base` or the freshness check) gets a worktree per variant it needs: the block that
+creates the tree, with `/<variant>` added to its path, then the block above with that `W`, without its last line and
+never synced. The tree's directory is its `<tree_build>`; a run passes each worktree it uses with `--tree` (spec: `trees`).
 
 **OSS-Fuzz projects:** read `projects/<name>/build.sh` in `google/oss-fuzz`
 for the steps and harness list. It expects `$CC`, `$CXX`, `$CFLAGS`,
