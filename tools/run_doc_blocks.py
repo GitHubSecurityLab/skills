@@ -749,7 +749,8 @@ def ci_template(heading: str) -> tuple:
     return env, steps
 
 
-@scenario("c-cmake", "c", ["c-ub", "c-cmake-build", "c-build-check", "c-hooks-check", "build-worktree", "c-intree-build"])
+@scenario("c-cmake", "c", ["c-ub", "c-cmake-build", "c-build-check", "c-hooks-check", "build-worktree", "c-intree-build",
+                          "build-record", "build-stale"])
 def c_cmake(ctx: Context) -> None:
     llvm = llvm_bin()
     cflags, ldflags = c_flags(ctx, "libfuzzer")
@@ -786,7 +787,7 @@ def c_cmake(ctx: Context) -> None:
     ctx.expect("Assertion" in fuzz.stdout + fuzz.stderr, "the CI build keeps assertions (no -DNDEBUG)")
 
     # An in-tree build (the toy's Makefile): a worktree synced to the uncommitted working tree without
-    # a git identity, its outputs linked into $F/build/<variant>/, its coverage paths naming the checkout.
+    # a git identity, $F/build/<variant> a link to it, its coverage paths naming the checkout.
     # On macOS the work directory's path goes through a symlink (/var -> /private/var).
     ctx.sh("printf '/* uncommitted */\\n' >> src/record.c")
     head = ctx.sh("git rev-parse HEAD").stdout
@@ -804,13 +805,17 @@ def c_cmake(ctx: Context) -> None:
     ctx.expect(synced and ctx.sh("git rev-parse HEAD").stdout == head and "M src/record.c" in ctx.sh("git status --porcelain").stdout,
                "the worktree has the uncommitted change; the checkout's branch and changes stay")
     cflags, ldflags = c_flags(ctx, "coverage")
+    ctx.sh('mkdir -p "$F/build/coverage"')  # a leftover directory the link replaces
     ctx.block("c-intree-build", llvm_bin=llvm, compile_flags=cflags, link_flags=ldflags, targets="fuzz_record",
-              binary="fuzz_record", library="librecord.a", **tree)
+              **tree)
     ctx.sh('LLVM_PROFILE_FILE="$F/coverage/intree.profraw" "$F/build/coverage/fuzz_record" seeds/ok && '
            '"{0}/llvm-profdata" merge -sparse "$F/coverage/intree.profraw" -o "$F/coverage/intree.profdata" && '
            '"{0}/llvm-cov" export -format=lcov -instr-profile="$F/coverage/intree.profdata" "$F/build/coverage/fuzz_record" '
            '> "$F/coverage/intree.lcov"'.format(llvm))
     ctx.expect_covered("$F/coverage/intree.lcov", "src/record.c")
+    ctx.block("build-record", variant="coverage")
+    ctx.expect("build/coverage/" in ctx.block("build-stale").stdout,
+               "the stale check looks through the link (the checkout has an uncommitted change)")
 
 
 @scenario("c-aflpp", "c", ["c-env", "c-ub", "c-toolchain-check", "aflpp-wrappers", "aflpp-spec", "c-check-run",

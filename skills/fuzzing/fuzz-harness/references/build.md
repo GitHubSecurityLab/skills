@@ -100,7 +100,7 @@ Not for writing harnesses (`SKILL.md`) or running them (runs.md).
    incremental, so it's cheap:
    <!-- ci: build-stale -->
    ```sh
-   find .seclab/fuzz/build -mindepth 2 -maxdepth 2 -name built-from | while IFS= read -r f; do
+   find -L .seclab/fuzz/build -mindepth 2 -maxdepth 2 -name built-from | while IFS= read -r f; do
      [ "$(cat "$f")" = "$(git rev-parse HEAD)" ] &&
        [ -z "$(git status --porcelain --untracked-files=no)" ] || echo "stale: ${f%built-from}"
    done

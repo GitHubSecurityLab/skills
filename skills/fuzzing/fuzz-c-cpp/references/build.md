@@ -38,8 +38,8 @@ HARDEN="-D_GLIBCXX_ASSERTIONS -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DE
   enables it): its extra checks report bugs the other builds never see.
 
 Every variant defines `FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION`; AFL++'s
-compilers do it themselves. Link statically (`-DBUILD_SHARED_LIBS=OFF`, `--disable-shared`, `--default-library=static`):
-uninstrumented shared libraries give the fuzzer no feedback.
+compilers do it themselves. Link statically (`-DBUILD_SHARED_LIBS=OFF`, `--disable-shared`, `--default-library=static`;
+plain Makefiles: in-tree builds below): uninstrumented shared libraries give the fuzzer no feedback.
 - If you build `msan`: do so only for C code without other dependencies,
   or through the project's OSS-Fuzz MSan build: every linked library, the
   C++ standard library included, must be built with MSan, or reports are
@@ -114,16 +114,17 @@ snap() { if [ -z "$(git status --porcelain)" ]; then git rev-parse HEAD; else (
     git -c user.name=seclab -c user.email=seclab@localhost commit-tree "$(git write-tree)" -p HEAD -m snapshot ); fi; }
 c=$(snap) && git -C "$W" checkout -q --detach "$c"
 ```
-Only changed files are rewritten, so the rebuild is incremental. Build each variant in its worktree,
-link the outputs into `$F/build/<variant>/`, where every later command looks, and map both spellings
-of the worktree's path (through symlinks or not) to the checkout:
+Only changed files are rewritten, so the rebuild is incremental. In each variant's worktree, build every
+harness and the libraries it links (`<targets>`), only static ones where the Makefile can build both
+(`-l<name>` picks a shared one over a `.a`). Map both spellings of the worktree's path (through symlinks
+or not) to the checkout, and replace `$F/build/<variant>`, where every later command looks, with a link to the worktree:
 <!-- ci: c-intree-build -->
 ```sh
-W="<checkout>/../<repo>.seclab-worktrees/build/<variant>"; mkdir -p "$F/build/<variant>"
+W="<checkout>/../<repo>.seclab-worktrees/build/<variant>"
 map="-fcoverage-prefix-map=$(cd "$W" && pwd)=$PWD -fcoverage-prefix-map=$(cd "$W" && pwd -P)=$PWD"
 make -C "$W" CC=<llvm_bin>/clang CFLAGS="<compile_flags> $map -fno-sanitize=function" \
   LDFLAGS="<link_flags> -fno-sanitize=function" <targets>
-ln -sf "$W/<binary>" "$W/<library>" "$F/build/<variant>/"
+rm -rf "$F/build/<variant>" && ln -s "$W" "$F/build/<variant>"
 ```
 
 **OSS-Fuzz projects:** read `projects/<name>/build.sh` in `google/oss-fuzz`

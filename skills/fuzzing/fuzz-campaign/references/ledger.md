@@ -29,7 +29,7 @@ Rules:
     crashes/<bucket>.md           one per crash bucket (template below)
     crashes/<bucket>/             inputs/ (at most 10), minimized input, reproducer, regression test, logs
     reports/<id>.md               report drafts
-    build/<variant>/              build directories (in-tree-only builds: worktrees under
+    build/<variant>/              build directories (in-tree-only builds: links to worktrees under
                                   <checkout>/../<repo>.seclab-worktrees/)
     corpus/<harness>/             persistent corpus per harness (Jest: the package's .cifuzz-corpus)
     dict/<harness>.dict           dictionaries
