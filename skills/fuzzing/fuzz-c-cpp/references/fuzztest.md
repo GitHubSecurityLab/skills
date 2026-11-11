@@ -236,6 +236,7 @@ Export as in `coverage.md`, "Export", with `<test_binary>`.
 ## Long runs, crashes, OSS-Fuzz
 
 - **Long runs:** N independent copies of the command (`--copies`), with
+  `--tree "<tree>"` and the binary from `<tree_build>/fuzztest/` (`run.md`, "Long runs"),
   `FUZZTEST_TESTSUITE_OUT_DIR={run}/corpus` and the persistent corpus as
   `IN_DIR`. Copies don't share inputs while they run (no reload; files are
   named by content, so one directory is safe). With no duration, leave out

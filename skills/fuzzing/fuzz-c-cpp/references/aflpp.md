@@ -82,7 +82,7 @@ findings and queue. The mix depends on the cores the run gets:
 
 Write the spec by hand into `runs/<h>-long<n>/spec.json`, copy the
 dictionary next to it, and hand over `launcher.py start --spec <file>`
-(`fuzz-campaign`'s long-runs.md). For 3 cores, with `<b>` the tree's `.seclab/fuzz/build`:
+(`fuzz-campaign`'s long-runs.md). For 3 cores, with `<b>` the run's `<tree_build>` (`run.md`, "Long runs"):
 
 <!-- ci: aflpp-spec -->
 ```json
