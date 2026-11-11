@@ -750,7 +750,7 @@ def ci_template(heading: str) -> tuple:
 
 
 @scenario("c-cmake", "c", ["c-ub", "c-cmake-build", "c-build-check", "c-hooks-check", "build-worktree", "c-intree-build",
-                          "build-record", "build-stale"])
+                          "build-record", "build-stale", "worktree-build"])
 def c_cmake(ctx: Context) -> None:
     llvm = llvm_bin()
     cflags, ldflags = c_flags(ctx, "libfuzzer")
@@ -767,6 +767,22 @@ def c_cmake(ctx: Context) -> None:
     counts = {k: int(v) for k, v in re.findall(r"(\w+) (\d+)", out)}
     ctx.expect(counts["sanitizer_cov"] > 0 and counts["__asan_"] > 0 and counts["__profc_"] == 0,
                "the library itself has the libfuzzer variant's hooks (%s)" % out.strip())
+    # Another worktree (a launch): its build goes into its own .seclab/fuzz/build; the checkout's stays.
+    mine = os.path.join(ctx.F, "build", "libfuzzer", "fuzz", "record_fuzzer")
+    with open(mine, "rb") as handle:
+        before = handle.read()
+    trees = os.path.join(os.path.dirname(ctx.repo), os.path.basename(ctx.repo) + ".seclab-worktrees")
+    sha = ctx.sh("git rev-parse HEAD").stdout.strip()
+    launch = os.path.join(trees, sha)
+    ctx.sh('git worktree add -q "%s" %s' % (launch, sha))
+    prefix = fill(ctx.blocks["worktree-build"], dict(tree=launch))
+    ctx.block("c-cmake-build", add=("cmake -S", prefix + "\n"), variant="libfuzzer", llvm_bin=llvm, compile_flags=cflags,
+              link_flags=ldflags, fuzzers_option="RECORD_BUILD_FUZZERS", harness="record_fuzzer")
+    with open(mine, "rb") as handle:
+        unchanged = handle.read() == before
+    built = os.path.exists(os.path.join(launch, ".seclab", "fuzz", "build", "libfuzzer", "fuzz", "record_fuzzer"))
+    ctx.expect(built and unchanged and ctx.sh('git -C "%s" status --porcelain' % launch).stdout == "",
+               "another worktree builds into its own .seclab/fuzz/build; the checkout's binary stays, the worktree stays clean")
 
     # The C/C++ CI template, run step by step with its own environment.
     env, steps = ci_template("C/C++ with libFuzzer")

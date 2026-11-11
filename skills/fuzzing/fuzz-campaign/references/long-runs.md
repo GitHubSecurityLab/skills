@@ -71,16 +71,18 @@ Done when each command is handed over and listed in Long runs.
 ## Which tree
 
 Every long run uses a `git worktree` of its **launch commit** (the
-campaign branch's commit when the commands are given), shared by every
-harness launched from that commit, also when develop is finished. Develop
-goes on in the checkout, and nothing there touches a run's binaries.
+campaign branch's commit when the commands are given; `<sha>` is its full
+hash, `git rev-parse HEAD`), shared by every harness launched from that
+commit, also when develop is finished. Develop goes on in the checkout,
+and nothing there touches a run's binaries.
 
 - **The worktree:**
   - **Location:** `<checkout>/../<repo>.seclab-worktrees/<sha>/`, outside
     the checkout, so the project's own tools (Jest, IDEs, `bazel //...`)
     don't see a second copy. Say where it is. Sandboxed agents ask before
     writing there.
-  - **Contents:** the fuzz builds the runs need, plus the libFuzzer
+  - **Contents:** the fuzz builds the runs need, in its own `.seclab/fuzz/build/`
+    (`fuzz-harness`'s build.md, "Build each variant in its own directory"), plus the libFuzzer
     ASan+UBSan build for triaging AFL++ findings; no coverage build (all
     measurement uses the checkout's). JS: `npm ci --prefer-offline` (or the
     project's equivalent), and for TypeScript the worktree's own `tsc`
@@ -129,6 +131,6 @@ git worktree add --detach "<checkout>/../<repo>.seclab-worktrees/base" <base_com
 c=$(git rev-list --reverse --no-merges --invert-grep --grep='^fuzz(fix)' <base_commit>..HEAD)
 [ -z "$c" ] || git -C "<checkout>/../<repo>.seclab-worktrees/base" cherry-pick $c
 ```
-Build there what the reproducers need: the libFuzzer ASan+UBSan library,
+Build there, as for a launch (Which tree), what the reproducers need: the libFuzzer ASan+UBSan library,
 the compiled classes and classpath file, or `npm ci` (and `tsc` for
 TypeScript).

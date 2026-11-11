@@ -82,7 +82,7 @@ Not for reporting vulnerabilities (`fuzz-triage`).
    Add fuzzing-mode patches only if the maintainers want them. Reword
    commits to the project's conventions (and `git commit -s` if it requires
    DCO sign-off; mention a CLA if it requires one). Rebuild in the worktree,
-   into its own `.seclab/fuzz/build/`, and rerun the gate on those builds
+   into its own `.seclab/fuzz/build/` (`fuzz-harness`'s build.md), and rerun the gate on those builds
    (`--tree "$W"`), without our fixes. Run the checks the project's CI
    runs on pull requests there too, its linters, formatter and
    license-header check (e.g. `pre-commit run --all-files`, `mvn verify`,

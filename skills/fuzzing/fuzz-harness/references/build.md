@@ -68,6 +68,17 @@ Not for writing harnesses (`SKILL.md`) or running them (runs.md).
    - If the project can only build in-tree: build each variant in its own
      git worktree outside the checkout, synced to the checkout's working
      tree before each rebuild (`fuzz-c-cpp`'s build.md, "In-tree builds").
+   - If the build is for another worktree (for a long run, `base`, the
+     freshness check or a hand-off branch): its builds go into its own
+     `.seclab/fuzz/build/` (`<tree_build>`), and the checkout's stay as they are.
+     Start each build command with this line instead of
+     `. .seclab/fuzz/env.sh;`, and in JS also set `P` to the package
+     directory there:
+     <!-- ci: worktree-build -->
+     ```sh
+     . .seclab/fuzz/env.sh; cd "<tree>" && F="$PWD/.seclab/fuzz" && mkdir -p "$F/build";
+     ```
+     If the project builds only in-tree: `fuzz-c-cpp`'s build.md, "In-tree builds".
 6. **Verify each variant.** The fuzz binary or test class exists, and the
    target library itself is instrumented: C/C++ by its object files'
    symbols, Java by plain `INFO: Instrumented <class>` lines (not
