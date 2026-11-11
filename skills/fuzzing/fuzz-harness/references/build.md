@@ -87,7 +87,10 @@ Not for writing harnesses (`SKILL.md`) or running them (runs.md).
 8. **Commit and record.** Build changes become `fuzz(build): <what>`
    commits on the campaign branch. Record the variants and their build
    commands in the target file (Harness, Build variants), and after each
-   build the commit it came from:
+   build the commit it came from, in its directory under
+   `.seclab/fuzz/build/` (C/C++: the variant's; Java: `jazzer/`, after the
+   project's build and its classpath file; TypeScript: `ts/`; plain JS
+   builds nothing there):
    <!-- ci: build-record -->
    ```sh
    git rev-parse HEAD > .seclab/fuzz/build/<variant>/built-from
@@ -97,9 +100,9 @@ Not for writing harnesses (`SKILL.md`) or running them (runs.md).
    incremental, so it's cheap:
    <!-- ci: build-stale -->
    ```sh
-   for v in .seclab/fuzz/build/*/; do
-     [ "$(cat "$v/built-from" 2>/dev/null)" = "$(git rev-parse HEAD)" ] &&
-       [ -z "$(git status --porcelain --untracked-files=no)" ] || echo "stale: $v"
+   find .seclab/fuzz/build -mindepth 2 -maxdepth 2 -name built-from | while IFS= read -r f; do
+     [ "$(cat "$f")" = "$(git rev-parse HEAD)" ] &&
+       [ -z "$(git status --porcelain --untracked-files=no)" ] || echo "stale: ${f%built-from}"
    done
    ```
 
@@ -116,7 +119,8 @@ to the next target.
 ## Done when
 
 - Every variant the next steps need builds from a recorded command and passes
-  its instrumentation check.
+  its instrumentation check, and the commit it was built from is recorded
+  (step 8).
 - Build changes are committed separately; tool versions are recorded.
 
 ## Pitfalls and shortcuts to reject
