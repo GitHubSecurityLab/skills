@@ -771,7 +771,7 @@ def ci_template(heading: str) -> tuple:
 
 
 @scenario("c-cmake", "c", ["c-ub", "c-cmake-build", "c-build-check", "c-hooks-check", "build-worktree", "c-intree-build",
-                          "build-record", "build-stale", "worktree-build"])
+                          "build-record", "build-stale", "worktree-build", "upstreaming-workspace"])
 def c_cmake(ctx: Context) -> None:
     llvm = llvm_bin()
     cflags, ldflags = c_flags(ctx, "libfuzzer")
@@ -866,6 +866,32 @@ def c_cmake(ctx: Context) -> None:
                and os.path.realpath(os.path.join(ctx.F, "build", "coverage")) == link
                and not os.path.islink(os.path.join(ctx.F, "build", "libfuzzer")),
                "another tree's variant builds in its own worktree; the checkout's builds and links stay")
+    # An upstreaming branch's worktree of an in-tree project: both blocks, run from it with its workspace, with
+    # upstream-<topic>-build/ for build/; its edits are synced, develop's worktrees and the checkout's links stay.
+    upstream = os.path.join(trees, "upstream-intree")
+    ctx.sh('git worktree add -q -b seclab/upstream-intree "%s" HEAD' % upstream)
+    ctx.block("upstreaming-workspace", checkout=ctx.repo, repo=os.path.basename(ctx.repo), topic="intree")
+    develop = ctx.sh('git -C "%s" rev-parse HEAD' % worktree).stdout
+    swap = (("seclab-worktrees/build/<variant>", "seclab-worktrees/upstream-intree-build/<variant>"),)
+    saved = (ctx.repo, ctx.F, dict(ctx.env))
+    try:
+        ctx.repo = upstream  # every command for the worktree: cd "<worktree>" && . .seclab/fuzz/env.sh
+        ctx.F = ctx.sh('. .seclab/fuzz/env.sh && echo "$F"').stdout.strip()
+        ctx.set(F=ctx.F)
+        ctx.sh("printf '/* upstreaming */\\n' >> src/record.c")
+        ctx.block("build-worktree", replace=swap, **dict(tree, variant="libfuzzer"))
+        ctx.block("c-intree-build", replace=swap, llvm_bin=llvm, compile_flags=cflags, link_flags=ldflags,
+                  targets="fuzz_record", **dict(tree, variant="libfuzzer"))
+        linked = os.path.realpath(os.path.join(ctx.F, "build", "libfuzzer"))
+    finally:
+        ctx.repo, ctx.F, ctx.env = saved
+    variant = os.path.join(trees, "upstream-intree-build", "libfuzzer")
+    with open(os.path.join(variant, "src", "record.c")) as handle:
+        synced = "/* upstreaming */" in handle.read()
+    ctx.expect(linked == os.path.realpath(variant) and synced and os.path.exists(os.path.join(variant, "fuzz_record"))
+               and ctx.sh('git -C "%s" rev-parse HEAD' % worktree).stdout == develop
+               and os.path.realpath(os.path.join(ctx.F, "build", "coverage")) == link,
+               "an upstreaming worktree builds in-tree like the checkout; develop's worktrees and the checkout's links stay")
 
 
 @scenario("c-aflpp", "c", ["c-env", "c-ub", "c-toolchain-check", "aflpp-wrappers", "aflpp-spec", "c-check-run",
