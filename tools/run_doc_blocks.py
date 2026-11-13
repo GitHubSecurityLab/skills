@@ -395,7 +395,7 @@ def build_c_toy(ctx: Context, variants=("libfuzzer", "coverage"), harness="fuzz_
     ["c-env", "c-ub", "c-develop", "c-repro", "c-minimize", "triage-rebucket", "c-reproducer", "c-long", "c-cov-replay", "c-cov-export",
      "upstreaming-held-back", "c-merge", "held-back-branch", "build-record", "build-stale", "c-leak-check", "c-reach",
      "fresh-worktrees", "dict-literals", "base-worktree", "release-rebase", "gate-tree-before", "gate-tree-after",
-     "gate-progress", "c-call-sequence"],
+     "gate-progress", "c-call-sequence", "upstreaming-workspace"],
 )
 def c_libfuzzer(ctx: Context) -> None:
     ctx.set(H="record")
@@ -563,6 +563,27 @@ def c_libfuzzer(ctx: Context) -> None:
     ctx.block("build-record", variant="libfuzzer")
     stale = ctx.block("build-stale").stdout
     ctx.expect("build/libfuzzer/" not in stale and "build/coverage/" in stale, "a rebuilt variant is no longer stale")
+    # Upstreaming (upstreaming.md): the upstreaming branch's worktree, here the toy before the fix, gets a workspace
+    # of its own. Its gate run fuzzes its own build and finds the bug the checkout's build no longer has.
+    upstream = os.path.join(trees, "upstream-gate")
+    ctx.sh('git worktree add -q -b seclab/upstream-gate "%s" %s'
+           % (upstream, ctx.sh("git rev-list --max-parents=0 HEAD").stdout.strip()))
+    ctx.block("upstreaming-workspace", checkout=ctx.repo, repo=os.path.basename(ctx.repo), topic="gate")
+    checkout_runs = sorted(os.listdir(os.path.join(ctx.F, "runs")))
+    saved = (ctx.repo, ctx.F, dict(ctx.env))
+    try:
+        ctx.repo = upstream  # every command for the worktree: cd "<worktree>" && . .seclab/fuzz/env.sh
+        ctx.F = ctx.sh('. .seclab/fuzz/env.sh && echo "$F"').stdout.strip()
+        ctx.set(F=ctx.F)
+        build_c_toy(ctx, ("libfuzzer",))
+        ctx.block("c-develop", round=1, run_s=60, **common)
+        meta = ctx.meta("r1-record")
+    finally:
+        ctx.repo, ctx.F, ctx.env = saved
+    ctx.expect([c["state"] for c in meta["copies"]] == ["found-crash"]
+               and [os.path.realpath(t["path"]) for t in meta["trees"]] == [os.path.realpath(upstream)]
+               and sorted(os.listdir(os.path.join(ctx.F, "runs"))) == checkout_runs,
+               "the upstreaming gate run fuzzes the worktree's build, without the fix, and stays in its workspace")
     ctx.block("c-reproducer", n=2, **reproducer)
     ctx.expect_state("poc-record-2", "finished")
     ctx.block("c-merge", n=2, timeout_s=120, long_run="record-long1", **common)
@@ -1218,7 +1239,7 @@ def node_bin() -> str:
     ["js-toolchain-check", "js-env", "jest-fuzz-config", "jest-probe", "jest-own-run", "jest-develop", "jest-repro", "jest-cov-replay", "js-cov-export", "jest-reach",
      "js-cli-develop", "js-cli-repro", "js-cli-minimize", "js-reproducer", "js-cli-cov-replay", "js-cli-long", "js-cli-merge",
      "js-cli-reach", "js-cli-leak-check", "js-check-run", "redos-check", "js-hang-profile",
-     "js-pp-tripwire", "js-http", "js-feedback-check", "js-object-input", "js-shadowing"],
+     "js-pp-tripwire", "js-http", "js-feedback-check", "js-object-input", "js-shadowing", "upstreaming-workspace"],
 )
 def js(ctx: Context) -> None:
     # The toolchain check runs before the first-build notice: Yarn must not run the release a .yarnrc names.
@@ -1241,6 +1262,15 @@ def js(ctx: Context) -> None:
     ctx.sh("rm yarn-canary.js .yarnrc .yarnrc.yml")
     ctx.sh('PATH="%s:$PATH" npm install --no-audit --no-fund --loglevel=error' % node_bin())
     ctx.env_block("js-env", node_bin=node_bin(), package_dir=ctx.repo)
+    # An upstreaming branch's workspace (upstreaming.md): its env.sh points F and P into the worktree, also when
+    # init.py wrote F through a symlink and P was written without (macOS: /private/var and /var).
+    upstream = os.path.join(os.path.dirname(ctx.repo), os.path.basename(ctx.repo) + ".seclab-worktrees", "upstream-ci")
+    ctx.sh('git worktree add -q -b seclab/upstream-ci "%s" HEAD' % upstream)
+    ctx.block("upstreaming-workspace", checkout=ctx.repo, repo=os.path.basename(ctx.repo), topic="ci")
+    f, p = ctx.sh('cd "%s" && . .seclab/fuzz/env.sh && printf "%%s\\n%%s\\n" "$F" "$P"' % upstream).stdout.splitlines()
+    real = os.path.realpath
+    ctx.expect(real(f) == real(os.path.join(upstream, ".seclab", "fuzz")) and real(p) == real(upstream),
+               "the upstreaming workspace's env.sh points F and P into its worktree (F=%s, P=%s)" % (f, p))
     jest = dict(jest_config="jest.fuzz.config.js", test_file="src/record.fuzz.js", test_title="record parse",
                 input_timeout_ms=5000, memory_mb=2048)
     corpus_dir = "record.fuzz/record/parse"

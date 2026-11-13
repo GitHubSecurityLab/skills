@@ -81,9 +81,24 @@ Not for reporting vulnerabilities (`fuzz-triage`).
    ```
    Add fuzzing-mode patches only if the maintainers want them. Reword
    commits to the project's conventions (and `git commit -s` if it requires
-   DCO sign-off; mention a CLA if it requires one). Rebuild in the worktree,
-   into its own `.seclab/fuzz/build/` (`fuzz-harness`'s build.md), and rerun the gate on those builds
-   (`--tree "$W"`), without our fixes. Run the checks the project's CI
+   DCO sign-off; mention a CLA if it requires one). Then give the worktree a
+   workspace of its own, from the checkout: the gate runs there on its
+   builds, without our fixes, and its runs and snapshots stay apart from
+   the campaign's. Its `env.sh` points `F`, and JS's `P`, into the worktree;
+   `P` is resolved through symlinks, as `init.py` and the agent may spell the
+   checkout's path differently:
+   <!-- ci: upstreaming-workspace -->
+   ```sh
+   W="<checkout>/../<repo>.seclab-worktrees/upstream-<topic>"; t=$(cd "$W" && pwd); T="$t/.seclab/fuzz"
+   mkdir -p "$T/build" && for d in bin targets dict leaks corpus build/jacoco; do [ ! -d "$F/$d" ] || cp -R "$F/$d" "$T/$(dirname "$d")/"; done
+   p=$([ -z "${P-}" ] || { r=$(cd "$P" && pwd -P); echo "${r#"$(pwd -P)"}"; })
+   sed -e "s|^F=.*|F=\"$T\"|" -e "s|^P=.*|P=\"$t$p\"|" "$F/env.sh" > "$T/env.sh"
+   ```
+   Jest: also copy the package's `.cifuzz-corpus` there. Every command for
+   the worktree then starts with `cd "<worktree>" && . .seclab/fuzz/env.sh;`
+   (`<worktree>`: `W` above): rebuild there (`fuzz-harness`'s build.md),
+   rerun the gate (`fuzz-harness`'s gate.md), and record its result in the
+   checkout's target files. Run the checks the project's CI
    runs on pull requests there too, its linters, formatter and
    license-header check (e.g. `pre-commit run --all-files`, `mvn verify`,
    `./gradlew check`, `npm run lint`), and fix what they flag in our
@@ -91,10 +106,11 @@ Not for reporting vulnerabilities (`fuzz-triage`).
    own branch the same way, `seclab/upstream-fix-<bucket>`, with its
    `fuzz(fix)` commit and regression test. Remove a worktree once its
    branch is ready (`git worktree remove "$W"`); the branch stays.
-   - If the gate crashes: bucket the crash together with the held-back
-     buckets' reproduction logs (`crash_buckets.py`, as in `fuzz-triage`)
-     before writing any PR text. In a held-back bucket, the harness and
-     its seeds are held back too; in no known bucket, it's a new finding
+   - If the gate crashes: bucket the crash, from the checkout, together
+     with the held-back buckets' reproduction logs (`crash_buckets.py`, as
+     in `fuzz-triage`, with the worktree as a `--root` too) before writing
+     any PR text. In a held-back bucket, the harness and its seeds are
+     held back too; in no known bucket, it's a new finding
      to triage first (held back while unresolved); in another known
      bucket, say so in the PR text.
 5. **OSS-Fuzz changes,** if that's the destination: update the project's

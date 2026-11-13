@@ -68,8 +68,8 @@ Not for writing harnesses (`SKILL.md`) or running them (runs.md).
    - If the project can only build in-tree: build each variant in its own
      git worktree outside the checkout, synced to the checkout's working
      tree before each rebuild (`fuzz-c-cpp`'s build.md, "In-tree builds").
-   - If the build is for another worktree (for a long run, `base`, the
-     freshness check or an upstreaming branch): its builds go into its own
+   - If the build is for another worktree (for a long run, `base` or the
+     freshness check): its builds go into its own
      `.seclab/fuzz/build/` (`<tree_build>`), and the checkout's stay as they are.
      Start each build command with this line instead of
      `. .seclab/fuzz/env.sh;`, and in JS also set `P` to the package
