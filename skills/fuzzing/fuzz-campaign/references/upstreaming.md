@@ -105,7 +105,9 @@ Not for reporting vulnerabilities (`fuzz-triage`).
    files. Each bug that isn't held back and isn't fixed upstream gets its
    own branch the same way, `seclab/upstream-fix-<bucket>`, with its
    `fuzz(fix)` commit and regression test. Remove a worktree once its
-   branch is ready (`git worktree remove "$W"`); the branch stays.
+   branch is ready and `git -C "$W" status --porcelain` prints nothing
+   (nothing uncommitted or untracked), with any `upstream-<topic>-build/`
+   worktrees (long-runs.md, "Cleanup"); the branch stays.
    - If the gate crashes: bucket the crash, from the checkout, together
      with the held-back buckets' reproduction logs (`crash_buckets.py`, as
      in `fuzz-triage`, with the worktree as a `--root` too) before writing

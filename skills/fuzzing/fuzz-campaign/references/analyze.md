@@ -75,7 +75,7 @@ checkout's `.cifuzz-corpus`.
 
 1. Ask the user to stop running runs, and secure the evidence of every
    ended run (phase 1, or a full analysis). Remove their worktrees
-   (copying Jest corpus files first). Run corpora that weren't merged stay
+   (long-runs.md, "Cleanup"; copying Jest corpus files first). Run corpora that weren't merged stay
    in their run directories.
 2. Keep the old branch tip as a ref outside `refs/tags`, so the archived
    ledger can still name its commits and `git push`, `--tags` and `--all`

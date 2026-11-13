@@ -111,10 +111,14 @@ that found them.
 
 A worktree is needed only until phase 1 of every run that used it (run
 corpora live in the checkout's `runs/`; a Jest run's new corpus files are
-copied out first, `fuzz-js`):
-
+copied out first, `fuzz-js`). Nothing in it needs keeping, so remove it
+with `--force`: initialized submodules, and build outputs the project
+doesn't ignore, make a plain `git worktree remove` refuse. A project that
+builds only in-tree has a worktree per variant: remove each
+`<tree>/<variant>`, then `rmdir "<tree>"`.
+<!-- ci: worktree-cleanup -->
 ```sh
-git worktree remove "<worktree>"
+git worktree remove --force "<worktree>"
 ```
 
 ## The `base` worktree

@@ -771,7 +771,8 @@ def ci_template(heading: str) -> tuple:
 
 
 @scenario("c-cmake", "c", ["c-ub", "c-cmake-build", "c-build-check", "c-hooks-check", "build-worktree", "c-intree-build",
-                          "build-record", "build-stale", "worktree-build", "upstreaming-workspace"])
+                          "build-record", "build-stale", "worktree-build", "upstreaming-workspace",
+                          "worktree-cleanup"])
 def c_cmake(ctx: Context) -> None:
     llvm = llvm_bin()
     cflags, ldflags = c_flags(ctx, "libfuzzer")
@@ -892,6 +893,14 @@ def c_cmake(ctx: Context) -> None:
                and ctx.sh('git -C "%s" rev-parse HEAD' % worktree).stdout == develop
                and os.path.realpath(os.path.join(ctx.F, "build", "coverage")) == link,
                "an upstreaming worktree builds in-tree like the checkout; develop's worktrees and the checkout's links stay")
+    # Cleanup (long-runs.md): an in-tree tree's variant worktree holds untracked build outputs, which a plain
+    # git worktree remove refuses; remove each with --force, then the tree's directory.
+    ctx.block("worktree-cleanup", worktree=other)
+    ctx.sh('rmdir "%s"' % os.path.dirname(other))
+    listed = [os.path.realpath(line[len("worktree "):]) for line in
+              ctx.sh("git worktree list --porcelain").stdout.splitlines() if line.startswith("worktree ")]
+    ctx.expect(not os.path.exists(os.path.dirname(other)) and os.path.realpath(other) not in listed,
+               "an in-tree tree's variant worktrees and directory are removed")
 
 
 @scenario("c-aflpp", "c", ["c-env", "c-ub", "c-toolchain-check", "aflpp-wrappers", "aflpp-spec", "c-check-run",
