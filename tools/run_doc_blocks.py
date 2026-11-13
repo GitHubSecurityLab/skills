@@ -393,7 +393,7 @@ def build_c_toy(ctx: Context, variants=("libfuzzer", "coverage"), harness="fuzz_
     "c-libfuzzer",
     "c",
     ["c-env", "c-ub", "c-develop", "c-repro", "c-minimize", "triage-rebucket", "c-reproducer", "c-long", "c-cov-replay", "c-cov-export",
-     "handoff-held-back", "c-merge", "held-back-branch", "build-record", "build-stale", "c-leak-check", "c-reach",
+     "upstreaming-held-back", "c-merge", "held-back-branch", "build-record", "build-stale", "c-leak-check", "c-reach",
      "fresh-worktrees", "dict-literals", "base-worktree", "release-rebase", "gate-tree-before", "gate-tree-after",
      "gate-progress", "c-call-sequence"],
 )
@@ -540,10 +540,10 @@ def c_libfuzzer(ctx: Context) -> None:
                % (grown(out).group(0) if grown(out) else "no Branches line"))
     out = ctx.block("gate-progress", h="record", id="record", round=0, next=0).stdout
     ctx.expect(grown(out) and grown(out).group(1) == "+0", "a snapshot without growth shows +0 covered")
-    # Hand-off: a harness whose last lcov reaches a held-back bug's root-cause line is held back.
-    ctx.sh('mkdir -p "$F/handoff" && printf "id\\tfile\\tline\\noverflow\\tsrc/record.c\\t16\\n" > "$F/handoff/held-back.tsv"')
-    out = ctx.block("handoff-held-back", h="record", last="r1").stdout
-    ctx.expect("| overflow | - | src/record.c:16 | reached |" in out, "the hand-off check finds the harness reaching the held-back line")
+    # Upstreaming: a harness whose last lcov reaches a held-back bug's root-cause line is held back.
+    ctx.sh('mkdir -p "$F/upstreaming" && printf "id\\tfile\\tline\\noverflow\\tsrc/record.c\\t16\\n" > "$F/upstreaming/held-back.tsv"')
+    out = ctx.block("upstreaming-held-back", h="record", last="r1").stdout
+    ctx.expect("| overflow | - | src/record.c:16 | reached |" in out, "the upstreaming check finds the harness reaching the held-back line")
 
     # W1: the merge finds the bug, so nothing is swapped; after the fix, the
     # same merge from the untouched inputs finds nothing, and its result is swapped in.
@@ -948,7 +948,7 @@ def build_java_toy(ctx: Context) -> None:
     "java",
     ["java-toolchain-check", "java-env", "jacoco-setup", "java-develop", "java-instrumented", "java-repro",
      "java-minimize", "java-reproducer", "java-long", "java-cov-replay", "java-cov-export", "java-merge",
-     "java-junit", "java-reach", "java-leak-check", "java-check-run", "handoff-held-back",
+     "java-junit", "java-reach", "java-leak-check", "java-check-run", "upstreaming-held-back",
      "java-maven-classpath", "java-decode"],
 )
 def java(ctx: Context) -> None:
@@ -1060,12 +1060,12 @@ def java(ctx: Context) -> None:
     ctx.expect(len(ctx.findings("cov-record-1")) == 1, "the replay continues past the crashing input and records it")
     ctx.block("java-cov-export", n=1, round=1, module="record")
     ctx.expect_covered("$F/coverage/$H/r1.lcov", "record/src/main/java/toy/Record.java")
-    # Hand-off on a JaCoCo-derived lcov: a harness reaching a held-back bug's line is held back.
-    ctx.sh('mkdir -p "$F/handoff" && printf "id\\tfile\\tline\\nsioobe\\trecord/src/main/java/toy/Record.java\\t14\\n" '
-           '> "$F/handoff/held-back.tsv"')
-    out = ctx.block("handoff-held-back", h="record", last="r1").stdout
+    # Upstreaming on a JaCoCo-derived lcov: a harness reaching a held-back bug's line is held back.
+    ctx.sh('mkdir -p "$F/upstreaming" && printf "id\\tfile\\tline\\nsioobe\\trecord/src/main/java/toy/Record.java\\t14\\n" '
+           '> "$F/upstreaming/held-back.tsv"')
+    out = ctx.block("upstreaming-held-back", h="record", last="r1").stdout
     ctx.expect("| sioobe | - | record/src/main/java/toy/Record.java:14 | reached |" in out,
-               "the hand-off check finds the harness reaching the held-back line in JaCoCo's lcov")
+               "the upstreaming check finds the harness reaching the held-back line in JaCoCo's lcov")
 
     # W1, as for C/C++: the merge's replay finds the bug; after the fix, nothing.
     ctx.block("java-merge", n=1, timeout_s=300, long_run="record-long1", **common)

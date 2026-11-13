@@ -19,7 +19,7 @@ This document records the decisions behind the fuzzing skills and their reasons;
 9. [Seeds and corpora](#9-seeds-and-corpora)
 10. [Long runs and analysis](#10-long-runs-and-analysis)
 11. [Triage and fixes](#11-triage-and-fixes)
-12. [Verdicts, reports and hand-off](#12-verdicts-reports-and-hand-off)
+12. [Verdicts, reports and upstreaming](#12-verdicts-reports-and-upstreaming)
 
 ---
 
@@ -100,7 +100,7 @@ A campaign's state lives in files in the project, and its changes to the project
 - **Plain files in the project, not a database.** `.seclab/` at the project's root holds the skills' state: `threat-model.md`, which every topic shares, and one directory per topic. For fuzzing, that's `.seclab/fuzz/`, with the campaign's ledger, `CAMPAIGN.md`, a short index of its state and next actions. Agents and users read Markdown; the scripts read numbers from lcov coverage files and tab-separated tables. Git's exclude file lists `.seclab/`, so the project's `.gitignore` stays untouched.
 - **The ledger drives resuming.** It's updated after every step, and its next actions each name a skill and a step. After the conversation is compacted, the agent invokes those skills again, since compaction drops skill text loaded early.
 - **One writer:** one campaign and one session at a time per repository, since the ledger has a single writer. A new campaign reuses the old one's corpora, dictionaries, threat model and known crash groups.
-- **A branch of its own:** `seclab/fuzz-<date>` at the base commit (the checkout's HEAD or the latest release), or the current branch if the user chooses. Not at the default branch's HEAD, because switching there can remove the code the user asked to fuzz. Commit types keep harness, build, fuzzing-mode and fix commits apart, so hand-off branches can take the harnesses without the fixes (§12).
+- **A branch of its own:** `seclab/fuzz-<date>` at the base commit (the checkout's HEAD or the latest release), or the current branch if the user chooses. Not at the default branch's HEAD, because switching there can remove the code the user asked to fuzz. Commit types keep harness, build, fuzzing-mode and fix commits apart, so upstreaming branches can take the harnesses without the fixes (§12).
 - **Skills used on their own** leave a minimal workspace that a later campaign reuses.
 
 ## 5. Safety
@@ -208,7 +208,7 @@ A fix is a proposal for the maintainers, so it's kept small and checked:
 
 When the user asks only for triage ("triage these crashes"), the agent stops once the crashes are understood: grouped, each with a verdict and a reproducer. It fixes or reports only when asked.
 
-## 12. Verdicts, reports and hand-off
+## 12. Verdicts, reports and upstreaming
 
 Each real bug gets a verdict, such as `vulnerability`, `library_hardening` (a real bug, but on data the threat model trusts) or `harness_bug` (a bug in the harness). Two rules decide whether it's a `vulnerability`:
 - **The crash type sets the starting point,** as ClusterFuzz classifies it: memory corruption is a security bug; null dereferences, stack overflows, running out of memory or time, and leaks aren't. A crash that only stops the program counts only in a server or shared service that parses untrusted input, and only if a small input triggers it.

@@ -1,6 +1,6 @@
 # C/C++ regression tests
 
-## Seed replay: the harness as a test (hand-off, `fuzz-campaign`)
+## Seed replay: the harness as a test (upstreaming, `fuzz-campaign`)
 
 A small driver lets the project's CI run a `LLVMFuzzerTestOneInput` harness
 without a fuzzing engine, with any compiler. Many projects already have one

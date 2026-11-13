@@ -59,13 +59,13 @@ $L start --id poc-$H-<n> --harness $H --timeout <timeout_s> --env PATH="$RUN_PAT
 The fix (`fuzz-triage`) turns it into a test of the project's framework (Jest, Mocha,
 Vitest, `node:test`) in the fix commit, with the bug named in a comment.
 
-## Hand-off (`fuzz-campaign`)
+## Upstreaming (`fuzz-campaign`)
 
 - CLI targets: the replay test above joins the project's normal test job,
   with the seeds in `fuzz/corpus/<thing>/`; add the npm script that fuzzes
   them.
-- Hooks used only for the campaign stay out of the hand-off unless the
-  fuzz test needs them.
+- Hooks used only for the campaign stay off the upstreaming branches unless
+  the fuzz test needs them.
 
 ## Keep it private until disclosure
 

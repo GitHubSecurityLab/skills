@@ -2,7 +2,7 @@
 name: fuzz-campaign
 description: >-
   Runs a fuzzing campaign on C/C++, Java or JS/TS code, from threat model
-  to hand-off. Use for "fuzz this project", "what should I fuzz?", "run
+  to upstreaming. Use for "fuzz this project", "what should I fuzz?", "run
   this fuzzer for 4 hours", "analyze the long runs", "upstream my
   harnesses", "add fuzzing to CI", or to resume. Not for one harness or
   given crashes (fuzz-harness, fuzz-coverage, fuzz-triage).
@@ -36,7 +36,7 @@ Long runs:  the agent prepares commands; the user runs them (fire and forget)
 Analyze:    phase 1 on the run's builds (check, triage) -> phase 2 on the current build
             (fix, report, merge, measure, sort) -> develop again or long runs again
 Crash path: any time: triage -> harness_bug: fix harness | real bug: fix -> report
-End:        when the user says so: hand-off and summary
+End:        when the user says so: upstreaming and summary
 ```
 
 ## When to use
@@ -48,7 +48,7 @@ End:        when the user says so: hand-off and summary
 - "Run this fuzzer for 4 hours": a long-run command
   ([references/long-runs.md](references/long-runs.md)).
 - "Upstream my harnesses", "add fuzzing to CI"
-  ([references/handoff.md](references/handoff.md); CI templates in
+  ([references/upstreaming.md](references/upstreaming.md); CI templates in
   [references/ci.md](references/ci.md)).
 
 Not for a single step on its own: writing one harness (`fuzz-harness`),
@@ -253,7 +253,7 @@ The campaign is `finished` when the user says so, or agrees after an
 analysis that finds no further work. Develop running out of actions isn't
 the end: it leads to long runs and their analysis.
 
-1. Hand-off: [references/handoff.md](references/handoff.md) (it can also
+1. Upstreaming: [references/upstreaming.md](references/upstreaming.md) (it can also
    run earlier, on request).
 2. Write the summary into the index and show it to the user: targets with
    their scope branch coverage from the start to now (Targets table),
@@ -312,7 +312,7 @@ the end: it leads to long runs and their analysis.
 
 ## Done when
 
-- The user ended the campaign, the hand-off ran, and the summary is in the
+- The user ended the campaign, upstreaming ran, and the summary is in the
   index and shown to the user.
 
 ## Pitfalls and shortcuts to reject

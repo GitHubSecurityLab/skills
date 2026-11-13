@@ -311,7 +311,7 @@ $L start --id repro-$H-<n> --harness $H --timeout <timeout_s> --env PATH="$RUN_P
 - **Minimize** through a temporary CLI target in scratch that calls the
   same code (`triage.md`).
 
-## Regression tests and hand-off
+## Regression tests and upstreaming
 
 - In regression mode (a normal `jest` run), every `it.fuzz` test runs on
   the empty input and on every file in its regression directory:
@@ -320,7 +320,7 @@ $L start --id repro-$H-<n> --harness $H --timeout <timeout_s> --env PATH="$RUN_P
   `.cifuzz-corpus/` is replayed too, but only when Jest collects coverage
   (`--coverage`); in CI it doesn't exist. That checks the harness on its
   seeds; a fixed bug gets its own test instead (`regression.md`).
-- At the hand-off, the project's CI runs the fuzz tests in regression mode
+- Once upstreamed, the project's CI runs the fuzz tests in regression mode
   (`npm run test:fuzz`), next to its normal test job.
 - `.cifuzz-corpus/` isn't committed; seeds worth keeping go into the
   regression directories (only the project's own data or generated inputs,

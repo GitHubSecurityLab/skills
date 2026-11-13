@@ -138,7 +138,7 @@ If the harnesses are kept there, not in the project: they're for the
 baseline only. Copy them to `.seclab/fuzz/oss-fuzz/`, and per variant,
 build the library as above and link each copy against it as `build.sh`
 does, in a script `.seclab/fuzz/build/<variant>.sh`. New harnesses, and copies you extend,
-go into the project's tree (`fuzz-campaign`'s handoff.md offers them for
+go into the project's tree (`fuzz-campaign`'s upstreaming.md offers them for
 `projects/<name>/`).
 
 ## Instrumentation checks

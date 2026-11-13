@@ -142,7 +142,7 @@ the check that fires, raising a limit, or disabling a sanitizer.
 - Pushing fix commits (the user pushes), or putting a held-back bug's fix
   (`fuzz-campaign`, safety rules) into any branch meant for upstream: it
   reveals the bug. Other fixes go upstream on their own branches (`fuzz-campaign`,
-  handoff.md), not inside harness pull requests.
+  upstreaming.md), not inside harness pull requests.
 
 ## Writes
 

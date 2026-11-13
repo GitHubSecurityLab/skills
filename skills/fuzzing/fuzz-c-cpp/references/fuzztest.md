@@ -247,7 +247,7 @@ Export as in `coverage.md`, "Export", with `<test_binary>`.
 - **OSS-Fuzz** builds FuzzTest harnesses with Bazel. A CMake project can
   follow libavif, which builds them in libFuzzer compatibility mode with a
   pinned FuzzTest and a few patches (`tests/oss-fuzz/build.sh`); the
-  hand-off says so and leaves the choice to the maintainers. The campaign
+  upstreaming pull request says so and leaves the choice to the maintainers. The campaign
   itself uses FuzzTest's standard mode only.
 
 ## Pitfalls

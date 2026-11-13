@@ -74,7 +74,7 @@ The fuzzing skills take an agent through a whole campaign:
   the most valuable fix, such as seeds, a dictionary or a harness change.
 - **Crashes.** It reproduces each crash, finds the root cause, tries to
   fix the bug with a regression test and drafts the report.
-- **Hand-off.** It prepares the harnesses and CI integration as changes
+- **Upstreaming.** It prepares the harnesses and CI integration as changes
   maintainers can merge.
 
 The agent checks with you before key decisions, such as which targets to

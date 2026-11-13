@@ -120,7 +120,7 @@ Not for triage or the fix itself (`SKILL.md`, fix.md).
      not in the public repository: the `fuzz(fix)` commit from the
      `seclab/held-back/<bucket>` branch goes there. Release the fix and
      publish the advisory; the held-back harnesses and tests land after
-     that (`fuzz-campaign`'s handoff.md);
+     that (`fuzz-campaign`'s upstreaming.md);
    - everyone else: the project's private vulnerability reporting
      (https://docs.github.com/en/code-security/how-tos/report-and-fix-vulnerabilities/report-privately)
      or the `SECURITY.md` contact, following GitHub Security Lab's

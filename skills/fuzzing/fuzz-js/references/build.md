@@ -48,7 +48,7 @@ give stack traces the `.ts` lines.
 - If the code needs ESM (top-level `await`, `import.meta`): compile it,
   and only it, without `--module commonjs`, with `{"type": "module"}` and
   imports that name their `.js` files.
-- At the hand-off: the target loads the project's own build output
+- When upstreaming: the target loads the project's own build output
   instead.
 
 ## Options

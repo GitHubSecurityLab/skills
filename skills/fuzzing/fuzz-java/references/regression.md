@@ -39,12 +39,12 @@ The state `exited 1` with the bug's exception means it reproduced;
 sources (package, the project's assertion style, no `main`), in the fix
 commit, named after the bug.
 
-## Hand-off (`fuzz-campaign`)
+## Upstreaming (`fuzz-campaign`)
 
 - Fuzz tests run in the project's normal test job in regression mode;
   nothing else is needed for CI to replay their seeds.
 - Check that the test dependency and any `junit-platform.properties`
-  entries are part of the hand-off branch, and that hooks used only for
+  entries are part of the upstreaming branch, and that hooks used only for
   the campaign (stubs for local fixes, fuzzing-only replacements) are
   either needed by the fuzz test or left out.
 - The `.cifuzz-corpus/` directory isn't committed; seed files worth keeping

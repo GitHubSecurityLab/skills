@@ -136,7 +136,7 @@ $L start --id merge-$H-<n> --harness $H --timeout <timeout_s> --env PATH="$RUN_P
 - If a timeout ended the replay's JVM (exit 70): the merge doesn't run; the
   `timeout-` file names the input, a blocking bug (`fuzz-triage`).
 
-## JUnit runs (regression, CI, hand-off)
+## JUnit runs (regression, CI, upstreaming)
 
 Regression mode replays the empty input, the seed sources and the inputs
 directories. The run is offline (`-o`, `--offline`): run the project's

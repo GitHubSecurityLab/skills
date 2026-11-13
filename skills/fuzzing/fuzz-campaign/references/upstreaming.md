@@ -1,6 +1,6 @@
-# Hand-off
+# Upstreaming
 
-The hand-off turns the campaign's harnesses, seeds and build changes into
+Upstreaming turns the campaign's harnesses, seeds and build changes into
 contributions maintainers can merge: in the project's own style, on clean
 branches from upstream, with nothing the hold-back rule covers before
 it's public and fixed upstream.
@@ -35,12 +35,12 @@ Not for reporting vulnerabilities (`fuzz-triage`).
    Every harness that reaches a held-back bug counts, not only the one
    that found it: list each held-back bucket's root-cause line (in the
    source the harnesses' last lcov was recorded on: after a local fix,
-   the fixed line) in `.seclab/fuzz/handoff/held-back.tsv` (columns `id`,
+   the fixed line) in `.seclab/fuzz/upstreaming/held-back.tsv` (columns `id`,
    `file`, `line`), and check every harness's last lcov:
-   <!-- ci: handoff-held-back -->
+   <!-- ci: upstreaming-held-back -->
    ```sh
    python3 .seclab/fuzz/bin/coverage.py sites .seclab/fuzz/coverage/<h>/<last>.lcov --root . \
-     --sites .seclab/fuzz/handoff/held-back.tsv
+     --sites .seclab/fuzz/upstreaming/held-back.tsv
    ```
    Any state but `not reached` holds that harness back.
    - If `sites` prints `unknown (no line data)`: list a nearby line with
@@ -69,7 +69,7 @@ Not for reporting vulnerabilities (`fuzz-triage`).
    - OSS-Fuzz builds FuzzTest harnesses with Bazel; a CMake project needs
      libavif's patched compatibility-mode build (`fuzz-c-cpp`'s
      fuzztest.md): say so.
-4. **Build hand-off branches** from current upstream HEAD (the `upstream`
+4. **Build upstreaming branches** from current upstream HEAD (the `upstream`
    remote in a fork's clone, else `origin`), each in its own worktree: the
    checkout and its builds stay on the campaign branch.
    ```sh
@@ -109,7 +109,7 @@ Not for reporting vulnerabilities (`fuzz-triage`).
    - If the repository is public: the offer and the PR text carry ci.md's
      visibility warning, and a scheduled discovery run is added only if
      the maintainers choose it.
-7. **Pull request texts** in `.seclab/fuzz/handoff/<name>.md` for the
+7. **Pull request texts** in `.seclab/fuzz/upstreaming/<name>.md` for the
    branch `seclab/<name>`: what is added, how to build and run it, the
    coverage it reaches, and how to turn a new finding into a regression
    test (a small test that calls the API with the values from the input).
@@ -124,7 +124,7 @@ Not for reporting vulnerabilities (`fuzz-triage`).
 
 ## Done when
 
-- Every harness is either on a hand-off branch that builds and passes the
+- Every harness is either on an upstreaming branch that builds and passes the
   gate and the project's checks, or recorded as held back with a release
   condition.
 - PR texts and, if accepted, the CI job and OSS-Fuzz changes are prepared.
@@ -133,11 +133,11 @@ Not for reporting vulnerabilities (`fuzz-triage`).
 
 - Opening pull requests or pushing branches. The user does that.
 - Cherry-picking a held-back bug's fix, regression test or seeds into any
-  hand-off branch.
+  upstreaming branch.
 - Contributing harnesses in our own style instead of the project's.
 - Adding the campaign's `.seclab/` files, corpora or logs to a branch.
 
 ## Writes
 
-- `seclab/upstream-*` branches (local), `.seclab/fuzz/handoff/*.md`.
+- `seclab/upstream-*` branches (local), `.seclab/fuzz/upstreaming/*.md`.
 - `CAMPAIGN.md`: held-back list in Next actions.

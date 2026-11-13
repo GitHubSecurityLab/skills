@@ -37,7 +37,7 @@ Rules:
     leaks/<harness>.supp          LeakSanitizer suppressions of queued leaks (fuzz-triage)
     coverage/<harness>/r<n>.lcov  snapshots (also r<n>.profdata or r<n>.exec), gate-*.lcov
     coverage/merged/<n>.lcov
-    handoff/                      held-back.tsv, PR texts (handoff.md)
+    upstreaming/                  held-back.tsv, PR texts (upstreaming.md)
     sinks/<target>.tsv            sink sites (id, file, line, group, kind, note)
     runs/<id>/                    one per run (launcher.py): spec.json, meta.json, progress.tsv,
                                   artifacts/copy-<i>/ (findings), copy-<i>/log,
