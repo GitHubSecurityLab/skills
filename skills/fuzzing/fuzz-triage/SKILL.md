@@ -84,6 +84,10 @@ another copy.
    state from earlier inputs).
    - If a timeout finishes near the limit: it isn't `non-reproducible`;
      replay it with a lower timeout (language skill).
+   - If an OSS-Fuzz testcase doesn't crash locally: it's
+     `non-reproducible` only if OSS-Fuzz's build doesn't crash on it either
+     ([references/oss-fuzz.md](references/oss-fuzz.md)); if that build
+     crashes, or can't be tried, the State is `needs investigation`.
    - If a crash fired while a run loaded its corpus (libFuzzer, Jazzer,
      Jazzer.js: before `INITED`; AFL++: `op:dry_run` and `orig:<seed>` in
      the file name): it fired on the seeds. Check first whether the

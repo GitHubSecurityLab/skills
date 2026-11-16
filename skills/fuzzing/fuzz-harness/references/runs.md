@@ -36,8 +36,9 @@ and passes its caps.
     snapshot `r<n>.lcov`), `cov-<h>-<n>`, and `reach-<h>-<n>-<step>`
     (`reach.py`'s replays, which it names itself);
   - triage: `repro-<h>-<n>` (a finding's replay), `min-<h>-<n>`
-    (minimizing), `poc-<h>-<n>` (a bug's reproducer program), so grouping
-    reads only replays;
+    (minimizing), `poc-<h>-<n>` (a bug's reproducer program),
+    `oss-fuzz-<h>-<n>` (a replay on OSS-Fuzz's build), so grouping reads
+    only local replays;
   - analysis merges: `merge-<h>-<n>`;
   - long runs: `<h>-long<n>`.
 
