@@ -25,8 +25,6 @@ nothing can be pushed.
   it in Settings (`stop_rule`).
 - The first-build notice becomes a warning at the start, which also states
   the stopping rule.
-- Develop ends by the stopping rule: a time box picks no new target once
-  it's used up, and the current harness finishes its gate.
 - Before stopping, check every picked target against `fuzz-harness`'s and
   `fuzz-coverage`'s Done when, and its findings against `fuzz-triage`'s: do
   the step behind a missing item, or record why it can't be done.

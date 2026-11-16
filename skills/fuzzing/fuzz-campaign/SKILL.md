@@ -175,8 +175,9 @@ index (Long sessions, above).
    ([references/targets.md](references/targets.md), "Rank all
    candidates cheaply"). After that,
    compare the best remaining action on the current harness with the top
-   new targets, using `fuzz-coverage`'s rule for the next action, and take
-   the best. Interactive mode shows the choice.
+   new targets the stopping rule allows (below), using `fuzz-coverage`'s
+   rule for the next action, and take the best. Interactive mode shows the
+   choice.
 2. **Harness.** Invoke `fuzz-harness` to write or extend the harness and
    pass the gate.
 3. **Inner loop.** Invoke `fuzz-coverage`. It returns when no action on the
@@ -190,6 +191,12 @@ index (Long sessions, above).
    `fuzz-java`'s coverage.md, "Combining Java coverage") and update the
    combined scope coverage in the index (`coverage.py summary` with every
    target's `--scope`).
+
+**The stopping rule** (Settings, `stop_rule`) ends develop's first pass,
+in both modes: no target beyond those chosen at the targets checkpoint
+(later re-ranking doesn't add any), and none once a time box is used up
+(the current harness still finishes its gate). When an analysis sends
+work back to develop, every ranked candidate competes again.
 
 A harness that finishes develop is ready for a long run. Offer the
 long-run commands (below) for the harnesses that are ready, whenever it
