@@ -96,13 +96,19 @@ Not for writing the harness (`fuzz-harness`) or for threat modelling itself
    code, trusted configuration). If the code is C/C++ and
    `fuzz-reachability` from the AFL++ project is installed: it can replace
    the manual walk (`fuzz-c-cpp`'s coverage.md, "Optional tools"). If the
-   code is TypeScript (`fuzz-js`'s coverage.md, "TypeScript"): build the
-   candidate's modules first (seconds; `fuzz-js`'s build.md) and write
-   their `.js` paths here, and their lines in step 6; the reasons name the
-   `.ts` files. Write each file with a
-   one-line reason into the target file, and the bare paths into
-   `targets/<id>.scope`. With coverage data, measure the scope; its
-   uncovered branches may reorder the top candidates:
+   code is TypeScript, the paths depend on the format (`fuzz-js`, "Choose
+   the harness format"):
+   - CLI targets (`fuzz-js`'s coverage.md, "TypeScript"): build the
+     candidate's modules first (seconds; `fuzz-js`'s build.md) and write
+     their `.js` paths here, and their lines in step 6; the reasons name
+     the `.ts` files.
+   - Jest fuzz tests through `ts-jest`: coverage names the `.ts` files,
+     and their lines with `"sourceMap": true` (`fuzz-js`'s jest.md,
+     "Setup"); write those, here and in step 6.
+
+   Write each file with a one-line reason into the target file, and the
+   bare paths into `targets/<id>.scope`. With coverage data, measure the
+   scope; its uncovered branches may reorder the top candidates:
    `python3 .seclab/fuzz/bin/coverage.py summary .seclab/fuzz/coverage/merged/<latest>.lcov --scope .seclab/fuzz/targets/<id>.scope --root .`.
    Its branch coverage (0% without data) starts the target's Scope
    branches in the index.

@@ -250,9 +250,9 @@ $L start --id cov-$H-<n> --harness $H --timeout <timeout_s> --env PATH="$RUN_PAT
   Find the hanging input by halving the subset (exact subset below), a
   blocking timeout bug; exclude it with the pattern, replay, and mark the
   snapshot partial.
-- TypeScript through `ts-jest`: coverage maps back to the `.ts` sources
-  only with `"sourceMap": true` in `tsconfig.json` (not yet run in a
-  campaign).
+- TypeScript through `ts-jest`: coverage names the `.ts` files; their
+  line numbers match the source only with `"sourceMap": true` in
+  `tsconfig.json` (not yet run in a campaign).
 
 **Exact subset** (`reach.py`, the gate's state-leak check): the same command
 with the pattern `^<describe> <test name> ({names})(?!.)`, where `{names}`
