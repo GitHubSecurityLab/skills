@@ -19,10 +19,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   values are reserved.
 - Handle every input, including empty ones. Never `exit()`; join any
   threads you start.
-- C++: like `catch (...)` (`fuzz-harness`, "Design the harness"), never
-  catch `std::out_of_range` from `.at()`: it's an out-of-bounds index the
-  check stopped. An uncaught exception is a `deadly signal` with the
-  throw's stack.
+- C++: never `catch (...)` (`fuzz-harness`, "Design the harness"). An
+  uncaught exception is a `deadly signal` with the throw's stack.
 - `data` is read-only and exactly `size` bytes long. If the API needs a
   NUL-terminated or writable buffer, copy into an exact-size heap buffer so
   ASan still catches over-reads:
