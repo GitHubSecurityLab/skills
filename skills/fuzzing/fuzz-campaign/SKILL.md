@@ -223,11 +223,9 @@ evidence is secured before anything changes the builds the runs used:
   ran, then triage every finding (`fuzz-triage`) on the build that found
   it. Analysis becomes `phase 1`.
 - **Phase 2, on the current build:** fix and report every real bug
-  (`fuzz-triage`); merge and minimize each harness's corpus,
-  swapping in the result only after a merge that finds nothing new;
-  measure coverage once; sort each harness (run longer, back to develop,
-  directed inputs); write the summary and next actions. Analysis becomes
-  `done`.
+  (`fuzz-triage`); merge and minimize each harness's corpus; measure
+  coverage once; sort each harness; write the summary and next actions.
+  Analysis becomes `done`.
 
 ## Crash path
 
