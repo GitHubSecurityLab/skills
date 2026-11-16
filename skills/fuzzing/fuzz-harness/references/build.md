@@ -82,9 +82,8 @@ Not for writing harnesses (`SKILL.md`) or running them (runs.md).
 6. **Verify each variant.** The fuzz binary or test class exists, and the
    target library itself is instrumented: C/C++ by its object files'
    symbols, Java by plain `INFO: Instrumented <class>` lines (not
-   `with custom hooks only`), JS by the target's files in the lcov
-   (language skill). A counter in the fuzz binary's start-up output
-   doesn't show it: the harness alone has counters.
+   `with custom hooks only`), JS by the target's files in the lcov (the
+   language skill's build.md, "Instrumentation checks").
 7. **Fuzzing-only patches,** when coverage analysis finds a blocker that
    fuzzing can't pass (checksums, signatures, random seeds, time checks):
    - C/C++: guard the change with
