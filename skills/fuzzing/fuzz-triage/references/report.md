@@ -8,8 +8,8 @@ a vulnerability.
 
 ## When to use
 
-- After the fix (`fuzz-triage`; or after triage when no safe fix exists) for buckets with
-  a real-bug verdict.
+- After fix.md, for buckets with a real-bug verdict, with or without a fix
+  of ours.
 - "Write an advisory/report for this crash."
 
 Not for triage or the fix itself (`SKILL.md`, fix.md).
@@ -17,7 +17,8 @@ Not for triage or the fix itself (`SKILL.md`, fix.md).
 ## Reads
 
 - `crashes/<bucket>.md` and `crashes/<bucket>/`: verdict, root cause,
-  minimized input, reproducer, regression test, fix commit and validation.
+  minimized input, reproducer, regression test, fix commit and validation,
+  Fixed upstream.
 - `.seclab/threat-model.md`: deployment and attacker, for the impact.
 - `CAMPAIGN.md`: Settings (`report_format`), base commit.
 
@@ -63,6 +64,14 @@ Not for triage or the fix itself (`SKILL.md`, fix.md).
    the user hasn't reviewed is labeled "mechanically validated; semantic
    review pending". Include the removable disclosure line, e.g. "Found
    with AI-assisted fuzzing; reproduced and reviewed by <name>."
+   - If the bucket is Fixed upstream, the fix is upstream's commit, not a
+     patch of ours, and gets no review label. Give that commit where the
+     draft has the fix (advisory.md: Suggested fix; ghsl.md:
+     Remediation), tested by the reproducer failing on the tested commit
+     and passing on HEAD. Give the first release that has it as the
+     patched version, or "none yet". Ask the maintainers to release the fix
+     if no release has it and, in a security report, to publish an
+     advisory.
 6. **Severity** (vulnerabilities). Start from the crash type's impact
    (`verdicts.md`), then write a CVSS 3.1 vector based on the threat
    model's deployment (attack vector, privileges, user interaction), with
@@ -90,7 +99,8 @@ Not for triage or the fix itself (`SKILL.md`, fix.md).
      and develop the fix in its temporary private fork
      (https://docs.github.com/en/code-security/tutorials/fix-reported-vulnerabilities/collaborate-in-a-fork),
      not in the public repository: the `fuzz(fix)` commit from the
-     `seclab/held-back/<bucket>` branch goes there. Release the fix and
+     `seclab/held-back/<bucket>` branch goes there (a bug fixed upstream
+     needs no fork: its fix is already public). Release the fix and
      publish the advisory; the held-back harnesses and tests land after
      that (`fuzz-campaign`'s upstreaming.md);
    - everyone else: the project's private vulnerability reporting
@@ -104,8 +114,8 @@ Not for triage or the fix itself (`SKILL.md`, fix.md).
 
 - Freshness, known-bug search and ownership are checked and recorded.
 - The draft exists in the chosen format with severity, reproducer package and
-  fix (or "Suggested fix: none" and the reason), and the user has the next
-  steps.
+  fix: ours, upstream's commit, or "Suggested fix: none" and the reason. The
+  user has the next steps.
 
 ## Pitfalls and shortcuts to reject
 
