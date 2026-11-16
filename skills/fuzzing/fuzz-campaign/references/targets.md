@@ -34,8 +34,6 @@ Not for writing the harness (`fuzz-harness`) or for threat modelling itself
      `gs://` with `https://storage.googleapis.com/`). Fuzz Introspector shows
      reachable-but-unfuzzed functions at
      `https://introspector.oss-fuzz.com/project-profile?project=<name>`.
-   - Past CVEs and fix commits (from the threat model): the fixed function
-     and its siblings are candidates.
 
    **Baseline:** build the existing harnesses locally (ones kept in
    `google/oss-fuzz`: from copies, language skill) and replay their
@@ -47,9 +45,9 @@ Not for writing the harness (`fuzz-harness`) or for threat modelling itself
    - If a baseline doesn't reach the entry point's callees: it used the
      wrong corpus; record that harness as unmeasured and look for the
      right one.
-
-   Then look for three gaps that existing fuzzing hides, each a strong
-   candidate:
+2. **Gaps existing fuzzing hides,** once the baseline coverage is merged
+   (`SKILL.md`, "Recon and ranking"; a module only a pending harness links
+   isn't a gap). Each is a strong candidate:
    - **modules no harness links:** library sources or build targets that
      appear in no harness's coverage (`summary --scope` reports them as
      having no data: 0%); OSS-Fuzz coverage and Fuzz Introspector don't
@@ -62,9 +60,10 @@ Not for writing the harness (`fuzz-harness`) or for threat modelling itself
      normalizer, diff, minifier) without checking its output, or never
      call its inverse; a round-trip or differential property there is a
      cheap extension (`fuzz-harness`'s properties.md).
-2. **List candidates** from the threat model's sources, public APIs that
+3. **List candidates** from the threat model's sources, public APIs that
    receive attacker-controlled data (of any type: bytes, strings, files,
-   numbers, options, structured values, call sequences), CVE fix sites,
+   numbers, options, structured values, call sequences), the fix sites of
+   the threat model's past CVEs (the fixed function and its siblings),
    gaps of existing harnesses, and sinks. For each, fill in the Candidate
    section of `targets/<id>.md` (template in ledger.md next to this
    file):
@@ -77,8 +76,8 @@ Not for writing the harness (`fuzz-harness`) or for threat modelling itself
      and those the project's property-based tests cover (threat model);
    - setup and prior state it needs;
    - how to call it, from the project's tests and examples (`path:line`).
-3. **Rank all candidates cheaply.** Rough estimates rank them all; only
-   the top 1–3 get scope files and sinks (steps 4–5). Rank in this order:
+4. **Rank all candidates cheaply.** Rough estimates rank them all; only
+   the top 1–3 get scope files and sinks (steps 5–6). Rank in this order:
    1. Drop anything an attacker can't reach under the threat model.
    2. Uncovered attack-surface code the candidate would reach: a rough
       estimate from the module or files it obviously calls, and their
@@ -88,7 +87,7 @@ Not for writing the harness (`fuzz-harness`) or for threat modelling itself
       <latest tag>..HEAD`; a new campaign on a new release ranks it first).
    4. Cost: setup and state the harness must build, external dependencies,
       build difficulty. Among similar candidates, the cheaper one goes first.
-4. **Scope files for the top 1–3 only** (static estimate). A target's
+5. **Scope files for the top 1–3 only** (static estimate). A target's
    coverage counts only its scope files, where its attacker-controlled
    data is processed. Starting at the entry point, follow the calls with
    `rg`, ctags or the agent's code navigation. Keep files where attacker
@@ -99,7 +98,7 @@ Not for writing the harness (`fuzz-harness`) or for threat modelling itself
    the manual walk (`fuzz-c-cpp`'s coverage.md, "Optional tools"). If the
    code is TypeScript (`fuzz-js`'s coverage.md, "TypeScript"): build the
    candidate's modules first (seconds; `fuzz-js`'s build.md) and write
-   their `.js` paths here, and their lines in step 5; the reasons name the
+   their `.js` paths here, and their lines in step 6; the reasons name the
    `.ts` files. Write each file with a
    one-line reason into the target file, and the bare paths into
    `targets/<id>.scope`. With coverage data, measure the scope; its
@@ -107,7 +106,7 @@ Not for writing the harness (`fuzz-harness`) or for threat modelling itself
    `python3 .seclab/fuzz/bin/coverage.py summary .seclab/fuzz/coverage/merged/<latest>.lcov --scope .seclab/fuzz/targets/<id>.scope --root .`.
    Its branch coverage (0% without data) starts the target's Scope
    branches in the index.
-5. **Sinks** for the same top candidates, at most `sink_groups` groups
+6. **Sinks** for the same top candidates, at most `sink_groups` groups
    (Settings) per target in every language, the threat model's paths
    first.
    - Java/JS: the threat model's sinks that fall into the scope files, one
@@ -122,14 +121,14 @@ Not for writing the harness (`fuzz-harness`) or for threat modelling itself
    - Write them to `sinks/<id>.tsv` (header: `id file line group kind note`,
      tab-separated) and a summary ("20 of 140 groups tracked") into the
      target file.
-6. **Present.** Interactive mode shows the ranked list with checks and
+7. **Present.** Interactive mode shows the ranked list with checks and
    scope at the targets checkpoint (`fuzz-campaign`), with a proposed
    stopping rule. Autonomous mode takes the candidates its stopping rule
    selects, top first.
 
 **Refresh** when the outer loop picks the next target: re-rank with the
 current merged coverage, mark done targets, add candidates that coverage
-analysis surfaced, and do steps 4–5 for new top candidates.
+analysis surfaced, and do steps 5–6 for new top candidates.
 
 ## Done when
 
@@ -149,7 +148,7 @@ analysis surfaced, and do steps 4–5 for new top candidates.
   library API unless the CLI on untrusted files is the deployment.
 - A new target whose workflow an existing harness already contains. Extend
   that harness instead.
-- Grouping C/C++ sink sites before the first plateau (step 5).
+- Grouping C/C++ sink sites before the first plateau (step 6).
 
 ## Writes
 
