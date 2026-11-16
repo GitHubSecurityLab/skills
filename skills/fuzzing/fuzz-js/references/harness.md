@@ -1,6 +1,8 @@
 # Jazzer.js fuzz tests
 
-Jest `it.fuzz` tests: `jest.md`.
+Jest `it.fuzz` tests: write them as `jest.md`, "Writing a fuzz test",
+says, which also says where their seeds and dictionaries go; the rest of
+this file applies to them too, with an example's body inside `it.fuzz`.
 
 ## CLI targets
 

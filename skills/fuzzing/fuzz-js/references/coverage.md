@@ -1,5 +1,8 @@
 # Jazzer.js coverage
 
+Jest `it.fuzz` tests: `jest.md`, "Coverage", which points back here for
+the export and the state-leak check.
+
 Jazzer.js writes lcov through Istanbul. Coverage instrumentation slows
 fuzzing, so it's only used for replays. `L`, `F`, `H` and `P` are as in
 `run.md` next to this file.

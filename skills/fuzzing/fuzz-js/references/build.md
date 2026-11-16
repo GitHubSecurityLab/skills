@@ -1,5 +1,8 @@
 # Jazzer.js setup
 
+Jest `it.fuzz` tests: install as below, then `jest.md`, "Setup", instead
+of the CLI targets section.
+
 ## Install (dev dependencies only)
 
 Installing runs package scripts: the first-build notice applies.

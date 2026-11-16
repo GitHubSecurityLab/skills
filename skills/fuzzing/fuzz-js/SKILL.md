@@ -18,8 +18,10 @@ instruments the code under test as it loads. Two formats exist:
   replays their corpus (`regression.md`).
 - **Jest fuzz tests** (`it.fuzz` in `*.fuzz.js` or `*.fuzz.ts` files), run
   through the `@jazzer.js/jest-runner` test runner, if it passes a probe
-  with the project's Jest. Everything about them is in [references/jest.md](references/jest.md),
-  read only on that path; the other references describe CLI targets.
+  with the project's Jest. Their way of doing each step is in
+  [references/jest.md](references/jest.md), read only on that path; the
+  other references describe CLI targets and point to it where Jest tests
+  differ.
 
 **Status:** the skills pin Jazzer 0.30.0 and Jazzer.js 4.0.0.
 

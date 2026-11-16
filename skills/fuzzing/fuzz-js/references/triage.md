@@ -1,5 +1,9 @@
 # Jazzer.js triage
 
+Jest `it.fuzz` tests: reproduce as `jest.md`, "Triage", says. The rest of
+this file applies to them too; its commands then run a temporary CLI
+target that calls the same code (`jest.md`, "Runs").
+
 Every command below executes the target: run it through the launcher
 (`repro-<h>-<n>`), with `L`, `F`, `H` and `P` as in `run.md` next to this
 file. The report is in `runs/repro-<h>-<n>/copy-0/log`. A long run's

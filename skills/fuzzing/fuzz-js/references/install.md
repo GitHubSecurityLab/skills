@@ -42,5 +42,8 @@ a fast network; slower machines take a few times longer.
 | pnpm or yarn | the lockfile needs it | `corepack enable` (bundled up to Node 24), or `npm install -g pnpm` | same | seconds |
 | Jazzer.js | always | dev dependencies (`build.md`) | same | a minute |
 
+Jest fuzz tests also need `@jazzer.js/jest-runner`, installed the same
+way (`jest.md`, "Setup"): list it with Jazzer.js.
+
 Ubuntu's own `nodejs` package (18) is too old. Node's `bin` directory, for
 `PATH` in the agent's commands: `fnm exec --using=24 -- which node`.

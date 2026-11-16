@@ -1,5 +1,9 @@
 # Running Jazzer.js
 
+Jest `it.fuzz` tests: `jest.md`, "Runs", instead of the settings, CLI
+target and merging sections below; the environment and the run check
+apply to both.
+
 Every run goes through `launcher.py` (`fuzz-harness`'s runs.md). An
 agent's commands don't keep shell variables, so every command starts with
 `. .seclab/fuzz/env.sh; H=<harness>;`: the file sets `F` (the absolute

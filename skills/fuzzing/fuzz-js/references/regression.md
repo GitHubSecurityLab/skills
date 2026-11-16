@@ -1,5 +1,8 @@
 # Jazzer.js regression tests
 
+Jest `it.fuzz` tests replace the seed replay below with `jest.md`,
+"Regression tests and upstreaming"; the rest applies to them too.
+
 ## Seed replay: the harness as a test
 
 **CLI targets:** a replay test in the project's own runner calls the
