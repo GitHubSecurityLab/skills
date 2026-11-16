@@ -99,16 +99,16 @@ Not for bugs in our harness (`fuzz-harness`) or untriaged crashes
      short isn't evidence: fix or filter that one first, or record "cut
      short at <bucket> after <n> s".
 5. **Review what the patch means.** Passing checks don't make a fix right.
-   Answer each question in the bucket's Fix section, and go back to step 3
-   on any no:
+   Answer each question in the bucket's Fix section (n/a where it doesn't
+   apply, e.g. no early return), and go back to step 3 on any no:
    - Does it repair the root cause where the bad state is computed,
      rather than clamp at the crash site, cap a loop or catch the error?
    - Are the guard's operands trusted (the buffer's real length, not a
      length field from the input)?
    - Does an early return or `goto` release what was allocated and leave
      the state callers see valid?
-   - Can sibling call sites, off-by-one values or wrap-around still get
-     past the check?
+   - Does the check also hold for sibling call sites, off-by-one values
+     and wrap-around?
    - Do valid inputs behave as before: the same outputs, or the same
      coverage of the core function, on the harness's valid seeds?
 6. **Commit** the fix with its regression test as one commit:
