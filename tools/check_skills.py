@@ -87,7 +87,7 @@ LANGUAGE_LINES = 150
 # Language-skill files past LANGUAGE_LINES, with the reason: path -> (lines allowed, why).
 # A new overrun, or a listed file growing past its cap, still warns.
 LONG_FILES = {
-    "skills/fuzzing/fuzz-c-cpp/references/build.md": (185, "variants, build-system recipes, in-tree builds, instrumentation checks"),
+    "skills/fuzzing/fuzz-c-cpp/references/build.md": (194, "variants, build-system recipes, in-tree builds, instrumentation checks"),
     "skills/fuzzing/fuzz-c-cpp/references/aflpp.md": (215, "AFL++'s builds, checks and long runs, read only for AFL++ long runs"),
     "skills/fuzzing/fuzz-c-cpp/references/run.md": (165, "libFuzzer and AFL++ commands for each kind of run"),
     "skills/fuzzing/fuzz-c-cpp/references/fuzztest.md": (260, "FuzzTest's whole path, coverage included, read only for FuzzTest projects"),

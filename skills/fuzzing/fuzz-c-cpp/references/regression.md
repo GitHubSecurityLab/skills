@@ -66,14 +66,15 @@ a byte buffer as a C array.
   sandbox that blocks `ptrace`. If the reproducer is C++: `clang++`,
   without `-fno-sanitize=function` (`$HARDEN` keeps the standard library's
   checks; C ignores it). Build into scratch; after the library, add the
-  project's other libraries in link order, then system ones such as `-lz`:
+  project's other libraries in link order (a shared one with
+  `-Wl,-rpath,<its directory>`, as for the first), then system ones such as `-lz`:
 
 <!-- ci: c-reproducer -->
 ```sh
 $L start --id poc-$H-<n> --harness $H --timeout <timeout_s> \
   --env ASAN_OPTIONS="$ASAN_OPTIONS:max_allocation_size_mb=<memory_mb>:allocator_may_return_null=0:detect_leaks=<repro_leaks>" \
   --env UBSAN_OPTIONS="$UBSAN_OPTIONS" --env PATH="$RUN_PATH" -- \
-  sh -c 'clang -g -O1 -fsanitize=address,$4 -fno-sanitize-recover=$4 $5 -fno-sanitize=function -I"$2" "$1" "$3" -o "$0/repro" && exec "$0/repro"' \
+  sh -c 'clang -g -O1 -fsanitize=address,$4 -fno-sanitize-recover=$4 $5 -fno-sanitize=function -I"$2" "$1" "$3" -Wl,-rpath,"${3%/*}" -o "$0/repro" && exec "$0/repro"' \
   "{scratch}" "$F/crashes/<bucket>/repro.c" "<include_dir>" "<tree_build>/libfuzzer/<library>" "$UB" "$HARDEN"
 ```
 

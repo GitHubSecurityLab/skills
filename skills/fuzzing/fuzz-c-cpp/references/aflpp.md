@@ -29,7 +29,8 @@ CmpLog. Put them, and the UBSan flags (`$UB` and `$HARDEN` from env.sh,
 written out), in a wrapper per variant. `<afl_cc>` is `afl-clang-lto`
 (link-time instrumentation, the best coverage) where it builds: it needs
 `lld` of the same LLVM version and `AR=llvm-ar RANLIB=llvm-ranlib`.
-Otherwise, and on macOS, it's `afl-clang-fast`.
+Otherwise, on macOS, and with a shared project library (whose edge IDs
+would collide with the binary's), it's `afl-clang-fast`.
 
 <!-- ci: aflpp-wrappers -->
 ```sh

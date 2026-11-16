@@ -11,7 +11,7 @@ sanitizers, with the fuzzing build's fuzzing-mode macro and patches.
    <!-- ci: c-cov-replay -->
    ```sh
    $L start --id cov-$H-<n> --harness $H --timeout <timeout_s> --env PATH="$RUN_PATH" \
-     --env LLVM_PROFILE_FILE="{run}/profraw/%c%p.profraw" -- \
+     --env LLVM_PROFILE_FILE="{run}/profraw/%c%p-%m.profraw" -- \
      "$F/build/coverage/<binary>" -merge=1 -rss_limit_mb=<memory_mb> -timeout=<input_timeout_s> \
      -artifact_prefix="{run}/artifacts/copy-{copy}/" "{scratch}/out" "$F/corpus/$H"
    ```
@@ -20,7 +20,9 @@ sanitizers, with the fuzzing build's fuzzing-mode macro and patches.
      crash is a finding for `fuzz-triage`, the input stays in the corpus,
      and the snapshot is still complete.
    - `%c` (continuous mode) writes counters as they change, so the crashed
-     child's coverage is kept; `%p` gives each process its own file.
+     child's coverage is kept; `%p` gives each process its own file, and
+     `%m` each module (a shared library is one), which continuous mode needs
+     on Linux.
    - If the host is Linux: `%c` needs the coverage variant's
      `-mllvm -runtime-counter-relocation` (`build.md`).
    - If other corpora count too (e.g. a long run's corpus, or AFL++
@@ -30,19 +32,21 @@ sanitizers, with the fuzzing build's fuzzing-mode macro and patches.
    `LLVM Profile Error` in the log (e.g. one naming
    `__llvm_profile_counter_bias`: built without the relocation flag)
    means the profile is empty: rebuild and replay.
-3. **Export** the profile to lcov (reads files only, no target code). Add
-   `-object=<lib>` after the binary for each library the target lives in:
+3. **Export** the profile to lcov (reads files only, no target code).
+   `<objects>`: `-object=<lib>` for each library the target lives in, from
+   the coverage build:
    <!-- ci: c-cov-export -->
    ```sh
    R="$F/runs/cov-$H-<n>"; mkdir -p "$F/coverage/$H"
    llvm-profdata merge -sparse "$R"/profraw/*.profraw -o "$F/coverage/$H/r<round>.profdata"
    llvm-cov export -format=lcov -instr-profile="$F/coverage/$H/r<round>.profdata" \
-     "$F/build/coverage/<binary>" > "$F/coverage/$H/r<round>.lcov"
+     "$F/build/coverage/<binary>" <objects> > "$F/coverage/$H/r<round>.lcov"
    ```
-   A shared library, or a static `.a`, whose objects the binary doesn't
-   reference are dropped at link time, so without `-object` their files
-   would be missing (`summary`: no coverage data). Then continue with
-   `coverage.py` as the calling skill says.
+   The binary's coverage map has only the code linked into it: not a
+   shared library's, nor a static `.a`'s objects it doesn't reference (the
+   link drops them), so without `-object` their files would be missing
+   (`summary`: no coverage data). Then continue with `coverage.py` as the
+   calling skill says.
    - If LLVM is older than 12: the export has no branch records (`BRDA`);
      they need LLVM 12 or later.
 
@@ -53,19 +57,19 @@ of the corpus directories, i.e. `-merge=1 "{scratch}/out" "{dir}"`. A
 file arguments.
 
 **Inputs that reach a line** (`reach.py`, directed inputs in
-`fuzz-coverage`):
+`fuzz-coverage`; `<objects>` as above):
 
 <!-- ci: c-reach -->
 ```sh
 python3 "$F/bin/reach.py" --harness $H --corpus "$F/corpus/$H" --file <file> --line <line> \
-  --env PATH="$RUN_PATH" --env "LLVM_PROFILE_FILE={out}/%c%p.profraw" --timeout <timeout_s> \
+  --env PATH="$RUN_PATH" --env "LLVM_PROFILE_FILE={out}/%c%p-%m.profraw" --timeout <timeout_s> \
   --replay "$F/build/coverage/<binary> -merge=1 -rss_limit_mb=<memory_mb> -timeout=<input_timeout_s> -artifact_prefix={run}/artifacts/copy-{copy}/ {scratch}/out {dir}" \
-  --export "sh -c 'llvm-profdata merge -sparse \$0/*.profraw -o \$0/p.profdata && llvm-cov export -format=lcov -instr-profile=\$0/p.profdata \$1 > \$2' {out} $F/build/coverage/<binary> {lcov}"
+  --export "sh -c 'llvm-profdata merge -sparse \$0/*.profraw -o \$0/p.profdata && llvm-cov export -format=lcov -instr-profile=\$0/p.profdata \$1 <objects> > \$2' {out} $F/build/coverage/<binary> {lcov}"
 ```
 
 **The gate's state-leak check** (`fuzz-harness`'s gate.md, "No state leaking between inputs"):
 a sample replayed in one process (A), then each input in a fresh process
-(B), as files, which run exactly those inputs:
+(B), as files, which run exactly those inputs (`<objects>` as above):
 
 <!-- ci: c-leak-check -->
 ```sh
@@ -78,14 +82,14 @@ for side in one fresh; do
       if [ "$side" = one ]; then exec "$b" $o "$a" "$@"; fi
       for f; do "$b" $o "$a" "$f" || exit; done' sh "$B" "$side" "$S"/* > /dev/null
   llvm-profdata merge -sparse "$F/runs/gate-$H-<n>-$side"/profraw/*.profraw -o "$G/$side.profdata"
-  llvm-cov export -format=lcov -instr-profile="$G/$side.profdata" "$B" > "$F/coverage/$H/gate-$side.lcov"
+  llvm-cov export -format=lcov -instr-profile="$G/$side.profdata" "$B" <objects> > "$F/coverage/$H/gate-$side.lcov"
 done
 python3 "$F/bin/coverage.py" overlap "$F/coverage/$H/gate-one.lcov" "$F/coverage/$H/gate-fresh.lcov" --counts \
   --processes $(ls "$S" | wc -l) --root .
 ```
 
 **One function,** with its branch counts:
-`llvm-cov show -instr-profile=<profdata> <binary> -name=<function> -show-branches=count`.
+`llvm-cov show -instr-profile=<profdata> <binary> <objects> -name=<function> -show-branches=count`.
 It shows a template's instantiations apart.
 - If `gaps` lists a template's branch as blocked, on LLVM 20 or older:
   check that branch with this command. Those versions also export the

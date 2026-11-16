@@ -72,7 +72,9 @@ gtest_discover_tests(parser_fuzz_test)
 The macro sets flags only for its directory and those below: a library in a
 sibling directory, or defined before it, stays uninstrumented. If the root
 can't be edited, pass the flags as cache variables. Check the library's
-objects either way (`build.md`).
+objects either way (`build.md`), and make it static (a `fuzz(build)` change
+for these builds if the project builds it only shared): FuzzTest reads only
+the first module's counters (warning: `... was called multiple times`).
 
 Two variants, each in its own build directory (`<test_target>`: the fuzz
 test's CMake target), with `clang` and `clang++` from the LLVM directory
@@ -89,7 +91,7 @@ when it's empty, whose `-O3 -DNDEBUG` would compile the assertions out.
 <!-- ci: fuzztest-build -->
 ```sh
 CC=clang CXX=clang++ cmake -S . -B "$F/build/fuzztest" -DFUZZTEST_FUZZING_MODE=on \
-  -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+  -DCMAKE_BUILD_TYPE=RelWithDebInfo -DBUILD_SHARED_LIBS=OFF \
   -DCMAKE_C_FLAGS_RELWITHDEBINFO="-O1 -g" -DCMAKE_CXX_FLAGS_RELWITHDEBINFO="-O1 -g" \
   -DCMAKE_C_FLAGS_RELEASE= -DCMAKE_CXX_FLAGS_RELEASE= \
   -DCMAKE_C_FLAGS="-fsanitize=$UB -fno-sanitize-recover=$UB -fno-sanitize=function" \
@@ -100,7 +102,7 @@ CC=clang CXX=clang++ cmake -S . -B "$F/build/fuzztest" -DFUZZTEST_FUZZING_MODE=o
 `coverage`: unit-test mode (no `FUZZTEST_FUZZING_MODE`):
 <!-- ci: fuzztest-coverage-build -->
 ```sh
-CC=clang CXX=clang++ cmake -S . -B "$F/build/coverage" -DCMAKE_BUILD_TYPE= \
+CC=clang CXX=clang++ cmake -S . -B "$F/build/coverage" -DCMAKE_BUILD_TYPE= -DBUILD_SHARED_LIBS=OFF \
   -DCMAKE_C_FLAGS_RELEASE= -DCMAKE_CXX_FLAGS_RELEASE= \
   -DCMAKE_C_FLAGS="-g -O1 -fprofile-instr-generate -fcoverage-mapping -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION" \
   -DCMAKE_CXX_FLAGS="-g -O1 -fprofile-instr-generate -fcoverage-mapping -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION" \

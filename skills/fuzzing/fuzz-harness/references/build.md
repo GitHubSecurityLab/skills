@@ -58,7 +58,7 @@ Not for writing harnesses (`SKILL.md`) or running them (runs.md).
    `.seclab/fuzz/build/<variant>/`: CMake `-B`, a Meson build directory, an
    autotools build directory (`../configure` from there), or the build tool's
    output option. Use the same compiler and flags for the library across
-   variants, link statically where possible, and don't build the project's
+   variants, build libraries static where possible, and don't build the project's
    CLI tools or tests with fuzzer flags.
    - **Before the first build,** add the block in the language skill's
      run.md, "Environment (`--env`)", filled in, to `.seclab/fuzz/env.sh`

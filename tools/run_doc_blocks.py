@@ -459,7 +459,7 @@ def c_libfuzzer(ctx: Context) -> None:
     common = dict(binary="fuzz_record", memory_mb=2048, input_timeout_s=10, max_len=4096, build="$F/build")
     # The gate's seeds-only snapshot (gate.md, "Prepare"), which "Fuzzing gets past the seeds" compares after fuzzing.
     ctx.block("c-cov-replay", n=0, timeout_s=120, **common)
-    ctx.block("c-cov-export", n=0, round=0, binary="fuzz_record")
+    ctx.block("c-cov-export", n=0, round=0, binary="fuzz_record", objects="")
 
     # Develop round: finds the planted overflow.
     ctx.block("c-develop", round=1, run_s=120, **common)
@@ -530,7 +530,7 @@ def c_libfuzzer(ctx: Context) -> None:
     ctx.block("c-cov-replay", n=1, timeout_s=120, **common)
     ctx.expect_state("cov-record-1", "finished")
     ctx.expect(len(ctx.findings("cov-record-1")) == 1, "the replay records the crashing input as a finding")
-    ctx.block("c-cov-export", n=1, round=1, binary="fuzz_record")
+    ctx.block("c-cov-export", n=1, round=1, binary="fuzz_record", objects="")
     ctx.expect_covered("$F/coverage/$H/r1.lcov", "src/record.c")
     # The gate's progress check: fuzzing covers scope branches the seeds didn't; no growth shows as +0.
     ctx.sh('mkdir -p "$F/targets" && echo src/record.c > "$F/targets/record.scope"')
@@ -596,7 +596,7 @@ def c_libfuzzer(ctx: Context) -> None:
     # reach.py: the smallest inputs that reach the copy in parse_record. The coverage build is
     # from before the fix: the kept input crashes in the replays, which go on and exit 0.
     out = ctx.block("c-reach", file="src/record.c", line=16, timeout_s=120, input_timeout_s=10,
-                    binary="fuzz_record", memory_mb=2048).stdout
+                    binary="fuzz_record", memory_mb=2048, objects="").stdout
     ctx.expect("reached: " in out, "reach.py finds an input that reaches src/record.c:16")
     ctx.expect("finding: " in out and ctx.findings("reach-record-1-1"),
                "reach.py keeps and reports the input that crashes in its replays")
@@ -604,13 +604,13 @@ def c_libfuzzer(ctx: Context) -> None:
     # The gate's leak check: clean for this harness, a difference for a leaky one.
     build_c_toy(ctx, ("coverage",))
     out = ctx.block("c-leak-check", n=2, sample_size=8, timeout_s=60, input_timeout_s=10, binary="fuzz_record",
-                    memory_mb=2048).stdout
+                    memory_mb=2048, objects="").stdout
     ctx.expect(clean_leak_check(out), "the leak check finds nothing in a clean harness")
     build_c_toy(ctx, ("coverage",), harness="fuzz_leaky")
     ctx.sh('mkdir -p "$F/corpus/leaky" && cp "$F/corpus/$H"/* "$F/corpus/leaky/"')
     ctx.set(H="leaky")
     out = ctx.block("c-leak-check", n=1, sample_size=8, timeout_s=60, input_timeout_s=10, binary="fuzz_leaky",
-                    memory_mb=2048).stdout
+                    memory_mb=2048, objects="").stdout
     ctx.expect("### Different hit counts" in out and "fuzz_leaky.c" in out, "the leak check points at the leaking harness")
     # State that repeats work leaves the covered sets equal: only the hit counts show it. The corpus has
     # inputs of the same name in a subdirectory: the sample keeps them all.
@@ -619,7 +619,7 @@ def c_libfuzzer(ctx: Context) -> None:
     ctx.set(H="repeat")
     inputs = int(ctx.sh('find "$F/corpus/$H" -type f -size +0c | wc -l').stdout)
     out = ctx.block("c-leak-check", n=1, sample_size=inputs, timeout_s=60, input_timeout_s=10, binary="fuzz_repeat",
-                    memory_mb=2048).stdout
+                    memory_mb=2048, objects="").stdout
     ctx.expect(len(ctx.files(".seclab/fuzz/runs/gate-repeat-1/sample")) == inputs,
                "the sample keeps inputs of the same name from different directories (%d)" % inputs)
     ctx.expect("### Different hit counts" in out and "src/record.c" in out, "the leak check sees work repeated across inputs")
@@ -901,6 +901,78 @@ def c_cmake(ctx: Context) -> None:
               ctx.sh("git worktree list --porcelain").stdout.splitlines() if line.startswith("worktree ")]
     ctx.expect(not os.path.exists(os.path.dirname(other)) and os.path.realpath(other) not in listed,
                "an in-tree tree's variant worktrees and directory are removed")
+
+
+@scenario("c-shared", "c", ["c-env", "c-ub", "c-cmake-build", "c-hooks-check", "c-develop", "c-cov-replay",
+                           "c-cov-export", "c-reach", "c-leak-check", "c-reproducer"])
+def c_shared(ctx: Context) -> None:
+    # A project library built only shared (build.md, "Variants"): CMake's build-tree rpath makes each binary load
+    # the build's copy. Each check fails without what the skill adds for shared libraries: the hooks check on the
+    # objects, the library as an -object, %m in continuous mode (Linux), and the reproducer's rpath.
+    ctx.set(H="record")
+    ctx.env_block("c-env", detect_leaks=1 if system() == "Linux" else 0, llvm_bin=llvm_bin())
+    ctx.env_block("c-ub")
+    ctx.sh("sed 's/^add_library(record /add_library(record SHARED /' CMakeLists.txt > shared.txt "
+           "&& mv shared.txt CMakeLists.txt")
+    lib = "librecord.so" if system() == "Linux" else "librecord.dylib"
+    for variant in ("libfuzzer", "coverage"):
+        cflags, ldflags = c_flags(ctx, variant)
+        ctx.block("c-cmake-build", variant=variant, llvm_bin=llvm_bin(), compile_flags=cflags, link_flags=ldflags,
+                  fuzzers_option="RECORD_BUILD_FUZZERS", harness="record_fuzzer")
+
+    def hooks(library: str) -> dict:
+        out = ctx.block("c-hooks-check", library=library).stdout
+        return {k: int(v) for k, v in re.findall(r"(\w+) (\d+)", out)}
+
+    ctx.expect(hooks('"$F/build/coverage/CMakeFiles/record.dir/src/record.c.o"')["__profc_"] > 0
+               and hooks('"$F/build/coverage/%s"' % lib)["__profc_"] == 0,
+               "the shared library's objects have the coverage hooks; the linked library has none")
+
+    ctx.sh('mkdir -p "$F/corpus/$H" && cp seeds/ok "$F/corpus/$H/" && echo \'"REC1"\' > "$F/dict/$H.dict"')
+    common = dict(binary="fuzz/record_fuzzer", memory_mb=2048, input_timeout_s=10, max_len=4096)
+    ctx.block("c-develop", round=1, run_s=120, **common)
+    ctx.expect_state("r1-record", "found-crash")
+    ctx.expect("INFO: Loaded 2 modules" in ctx.log("r1-record"), "the binary loads the build's instrumented library")
+
+    def lcov(name: str) -> str:
+        with open(os.path.join(ctx.F, "coverage", "record", name)) as handle:
+            return handle.read()
+
+    objects = "-object=$F/build/coverage/" + lib
+    ctx.block("c-cov-replay", n=1, timeout_s=120, **common)
+    ctx.block("c-cov-export", n=1, round=1, binary=common["binary"], objects="")
+    ctx.expect("src/record.c" not in lcov("r1.lcov"), "without -object, the export misses the library's files")
+    ctx.block("c-cov-export", n=1, round=1, binary=common["binary"], objects=objects)
+    ctx.expect_covered("$F/coverage/$H/r1.lcov", "src/record.c")
+    if system() == "Linux":
+        ctx.block("c-cov-replay", n=2, timeout_s=120, replace=(("%c%p-%m", "%c%p"),), **common)
+        out = ctx.block("c-cov-export", n=2, round=2, binary=common["binary"], objects=objects, ok=(1,))
+        ctx.expect("no profile can be merged" in out.stderr,
+                   "without %m, the binary and the library write one profile, which is lost")
+
+    reach = dict(file="src/record.c", line=16, timeout_s=120, input_timeout_s=10, binary=common["binary"],
+                 memory_mb=2048)
+    out = ctx.block("c-reach", objects="", ok=(3,), **reach)
+    ctx.expect("no step's report has a record for src/record.c" in out.stderr,
+               "without -object, reach.py finds no record of the library's file")
+    ctx.expect("reached: " in ctx.block("c-reach", objects=objects, **reach).stdout,
+               "with the library as an object, reach.py finds an input that reaches src/record.c:16")
+
+    leak = dict(sample_size=8, timeout_s=60, input_timeout_s=10, binary=common["binary"], memory_mb=2048,
+                objects=objects)
+    ctx.expect(clean_leak_check(ctx.block("c-leak-check", n=1, **leak).stdout), "the leak check finds nothing")
+    ctx.expect_covered("$F/coverage/$H/gate-one.lcov", "src/record.c")
+    ctx.expect_covered("$F/coverage/$H/gate-fresh.lcov", "src/record.c")
+
+    ctx.sh('mkdir -p "$F/crashes/overflow" && cp repro.c "$F/crashes/overflow/repro.c"')
+    reproducer = dict(bucket="overflow", include_dir=os.path.join(ctx.repo, "src"),
+                      tree_build=os.path.join(ctx.F, "build"), library=lib, timeout_s=120, memory_mb=2048,
+                      repro_leaks=1)
+    ctx.block("c-reproducer", n=1, ok=(1, 127, 134), replace=((' -Wl,-rpath,"${3%/*}"', ""),), **reproducer)
+    ctx.expect(re.search("cannot open shared object file|Library not loaded", ctx.log("poc-record-1")),
+               "without the rpath, the reproducer can't load the library")
+    ctx.block("c-reproducer", n=2, ok=(1, 134), **reproducer)
+    ctx.expect("Assertion" in ctx.log("poc-record-2"), "with the rpath, the reproducer fails with the assertion")
 
 
 @scenario("c-aflpp", "c", ["c-env", "c-ub", "c-toolchain-check", "aflpp-wrappers", "aflpp-spec", "c-check-run",
@@ -1619,7 +1691,7 @@ def c_fuzztest(ctx: Context) -> None:
     ctx.set(H="record")
     ctx.block("fuzztest-cov-replay", n=1, timeout_s=300, **common)
     ctx.expect_state("cov-record-1", "finished")
-    ctx.block("c-cov-export", n=1, round=1, binary="record_fuzz_test")
+    ctx.block("c-cov-export", n=1, round=1, binary="record_fuzz_test", objects="")
     ctx.expect_covered("$F/coverage/$H/r1.lcov", "src/record.cc")
 
     # The gate's leak check: clean for this fuzz test, a difference for a leaky one.

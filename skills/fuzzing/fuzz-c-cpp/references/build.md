@@ -38,8 +38,12 @@ HARDEN="-D_GLIBCXX_ASSERTIONS -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DE
   enables it): its extra checks report bugs the other builds never see.
 
 Every variant defines `FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION`; AFL++'s
-compilers do it themselves. Link statically (`-DBUILD_SHARED_LIBS=OFF`, `--disable-shared`, `--default-library=static`;
-plain Makefiles: in-tree builds below): uninstrumented shared libraries give the fuzzer no feedback.
+compilers do it themselves. Build the project's libraries static (`-DBUILD_SHARED_LIBS=OFF`, `--disable-shared`,
+`--default-library=static`; plain Makefiles: in-tree builds below), so each fuzz binary contains their instrumented
+code: a shared one takes extra steps, and gives no feedback if the binary loads another copy (e.g. an installed one).
+- If a project library builds only shared (CMake `add_library(<name> SHARED ...)`, Meson `shared_library()`, a
+  Makefile without an archive): it works with libFuzzer and AFL++'s `afl-clang-fast` if each binary loads the
+  variant's copy (instrumentation checks below); FuzzTest needs it static (`fuzztest.md`).
 - If you build `msan`: do so only for C code without other dependencies,
   or through the project's OSS-Fuzz MSan build: every linked library, the
   C++ standard library included, must be built with MSan, or reports are
@@ -155,8 +159,9 @@ go into the project's tree (`fuzz-campaign`'s upstreaming.md offers them for
   ```
   If it matches: the project forces its own flags; override them (CMake:
   `-DCMAKE_C_FLAGS_<TYPE>=` for the build type it sets).
-- **Static, before running anything:** each project library the harnesses link (its archive or objects,
-  not the linked binary) has the variant's hooks. Check one library per run (the counts are totals):
+- **Before running anything:** each project library the harnesses link has the variant's hooks. Check its
+  archive or objects (a linked binary has the harness's hooks too, and linking drops `__profc_`), one library per
+  run (the counts are totals):
   <!-- ci: c-hooks-check -->
   ```sh
   nm -A <library> 2>/dev/null | awk '/sanitizer_cov/ {c++} /__asan_/ {a++} /__cmplog_ins_hook/ {l++} /__profc_/ {p++}
@@ -164,8 +169,12 @@ go into the project's tree (`fuzz-campaign`'s upstreaming.md offers them for
   ```
   `libfuzzer`: `sanitizer_cov` and `__asan_` above 0; `coverage`: `__profc_`;
   AFL++ variants: `aflpp.md` next to this file.
+- **Each binary loads the variant's copy of a shared project library.** Linux: `env -u LD_LIBRARY_PATH ldd <binary>`
+  (the launcher passes none) shows its path in the build; else link with `-Wl,-rpath,<its directory>`. macOS:
+  `otool -L <binary>` names that path, or `@rpath/` with its directory among the `LC_RPATH`s in `otool -l <binary>`;
+  else run `install_name_tool -id <its path> <library>` each time it's built, before the binaries link it.
 - **libFuzzer, at the start of each run:**
-  `INFO: Loaded 1 modules (N inline 8-bit counters)`. For a real library
+  `INFO: Loaded 1 modules (N inline 8-bit counters)`, one more per shared project library. For a real library
   `N` is in the thousands; a few dozen means only the harness is
   instrumented.
 - **FuzzTest**'s `Edges covered` grows from its own framework: check the
