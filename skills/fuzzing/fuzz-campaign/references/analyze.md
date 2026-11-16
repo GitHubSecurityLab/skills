@@ -55,21 +55,28 @@ checkout's `.cifuzz-corpus`.
 5. **Measure** coverage once, after the swap, with the current coverage
    build: replay every harness's corpus, not only the long runs', then
    combine them as in `SKILL.md`, "Combined coverage".
-6. **Sort each harness:**
-   - still growing at the end (a copy's coverage counter rose by at least
-     1% in the last quarter of its own elapsed time, from `progress.tsv`
-     or AFL++'s `plot_data` `edges_found`; or the run reached a scope
-     function or sink that the snapshot before it didn't, step 5), judged
-     on every copy that didn't end at a finding (`finished`, `stopped`, or
-     `died` up to its last sample; a copy cut short by a finding always
-     looks like it's growing): run it longer next time;
+6. **Sort each harness.** Judge its growth on every copy that didn't end
+   at a finding (`finished`, `stopped`, or `died` up to its last sample; a
+   copy cut short by a finding always looks like it's growing):
+   - **growing:** a copy's coverage counter rose by at least 1% in the
+     last quarter of its own elapsed time (`progress.tsv`, or AFL++'s
+     `plot_data` `edges_found`), or the run reached a scope function or
+     sink that the snapshot before it didn't (step 5);
+   - **unknown:** too few progress samples to tell (e.g. a copy that ran
+     only minutes);
+   - **plateaued:** otherwise.
+
+   Then pick its next steps; a harness can have more than one:
+   - growing or unknown: run it longer next time;
    - plateaued with gaps: back to develop;
    - sinks reached but not triggered, tested or sanitized: directed
-     inputs (`fuzz-coverage`'s corpus.md);
-   - too few progress samples: "unknown".
+     inputs (`fuzz-coverage`'s corpus.md) before its next run;
+   - plateaued, with no gaps and no such sinks: nothing is left worth the
+     cost. Once all of a target's harnesses end up here, the target
+     becomes `done`.
 7. **Write** the summary and next actions, and show the coverage goal if
    one is set. Set the run's analysis to `done`, and offer the next
-   long-run commands.
+   long-run commands for the harnesses that run longer.
 
 ## A new campaign on a new release
 

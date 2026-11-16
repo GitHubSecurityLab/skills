@@ -185,7 +185,7 @@ A long run fuzzes one harness for hours or days, with several copies (parallel f
 
 Analysis, when the user asks, turns a run's results into evidence, fixes and next steps:
 - **Evidence first, on the run's builds:** every finding is triaged on the build that found it, since a later build may no longer reproduce it. Fixes, reports, corpus merges and coverage follow on the current build.
-- **Each harness is sorted by its result:** one whose coverage still grew runs longer next time, one that plateaued with gaps goes back to develop, and sinks reached but not triggered get targeted inputs.
+- **Each harness is sorted by its result:** one whose coverage still grew runs longer next time, one that plateaued with gaps goes back to develop, and sinks reached but not triggered get targeted inputs. One that plateaued with no gaps or pending sinks is done, so analysis can also end a target.
 - **A harness waits for its run's analysis.** Autonomous develop doesn't change a harness while it has a run going or not yet analyzed, so the next run starts from that run's inputs; in interactive mode, the user decides.
 
 ## 11. Triage and fixes
