@@ -23,37 +23,9 @@ Not for triage or the fix itself (`SKILL.md`, fix.md).
 
 ## Steps
 
-1. **Freshness,** before any fix work, and again here if upstream moved
-   since. Run the bug's reproducer (`fuzz-triage`; the language
-   skill's regression.md, "The bug's reproducer") on current upstream HEAD and on the
-   latest release, each in a worktree next to the
-   campaign's others, built with what the reproducer needs
-   (`fuzz-harness`'s build.md and runs.md). The reproducer doesn't need
-   our harness, which these trees don't have. Take the latest release
-   from release metadata
-   (`gh release list --limit 5 --json tagName,publishedAt` covers every
-   branch; or the project's changelog, or tags sorted by date):
-   `git describe` on HEAD misses releases cut from maintenance branches.
-   The project's remote is `upstream` in a fork's clone, else `origin`:
-   <!-- ci: fresh-worktrees -->
-   ```sh
-   R=origin; git remote get-url upstream > /dev/null 2>&1 && R=upstream
-   git fetch --tags "$R" && git remote set-head "$R" -a > /dev/null
-   W="<checkout>/../<repo>.seclab-worktrees"
-   [ -d "$W/fresh-head" ] || git worktree add --detach "$W/fresh-head" "$R/HEAD"
-   git -C "$W/fresh-head" checkout -q --detach "$R/HEAD"
-   [ -d "$W/fresh-release" ] || git worktree add --detach "$W/fresh-release" <release_tag>
-   git -C "$W/fresh-release" checkout -q --detach <release_tag>
-   ```
-   Later reports reuse both worktrees at the new commits. Record the
-   affected versions.
-   - If the reproducer passes on HEAD: find the fixing commit (`git log`
-     on the files involved) and record it (Fixed upstream). The verdict
-     stays: being fixed isn't being public, so a held-back bug's report
-     and hold-back still apply (`fuzz-campaign`, safety rules). If the
-     latest release is still affected, raise "fixed upstream, not yet
-     released" at the report checkpoint; it may be a silent security fix
-     that users don't have yet.
+1. **Freshness:** run fix.md's check ("Check the precondition, then
+   freshness") again if upstream moved since, or now if it never ran (a
+   report asked for directly).
 2. **Known-bug search** in:
    - public issues and pull requests
      (`gh search issues --repo OWNER/REPO "<function>"`, the same with

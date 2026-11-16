@@ -26,12 +26,40 @@ Not for bugs in our harness (`fuzz-harness`) or untriaged crashes
 
 1. **Check the precondition, then freshness.** The bucket has a root
    cause and a real-bug verdict; otherwise triage it first
-   (`fuzz-triage`'s steps). Before any fix work, run the reproducer on
-   upstream HEAD and the latest release (report.md, "Freshness"), so no
-   fix is written for a bug upstream already fixed.
-   - If HEAD already fixes the bug: record Fixed upstream. A blocking bug
-     gets upstream's fixing commit, cherry-picked as its `fuzz(fix)`
-     commit and validated as below; any other bug needs no fix of ours.
+   (`fuzz-triage`'s steps). Then make sure upstream hasn't fixed the bug
+   already: run its reproducer on upstream's HEAD and latest release.
+   - **Find the latest release** (`<release_tag>`) in release metadata:
+     `gh release list --limit 5 --json tagName,publishedAt` (it covers
+     every branch), else the project's changelog or the tags sorted by
+     date. Not `git describe` on HEAD: it misses releases cut from
+     maintenance branches.
+   - **Check out both** as the git worktrees `fresh-head` and
+     `fresh-release` in `<checkout>/../<repo>.seclab-worktrees/`. The
+     project's remote is `upstream` in a fork's clone, else `origin`:
+     <!-- ci: fresh-worktrees -->
+     ```sh
+     R=origin; git remote get-url upstream > /dev/null 2>&1 && R=upstream
+     git fetch --tags "$R" && git remote set-head "$R" -a > /dev/null
+     W="<checkout>/../<repo>.seclab-worktrees"
+     [ -d "$W/fresh-head" ] || git worktree add --detach "$W/fresh-head" "$R/HEAD"
+     git -C "$W/fresh-head" checkout -q --detach "$R/HEAD"
+     [ -d "$W/fresh-release" ] || git worktree add --detach "$W/fresh-release" <release_tag>
+     git -C "$W/fresh-release" checkout -q --detach <release_tag>
+     ```
+     Later checks move the same worktrees to the new commits.
+   - **Build and run the reproducer in each.** It calls the project's API
+     directly, not through a harness, so build only what it needs
+     (`fuzz-harness`'s build.md and runs.md). Then run it as the language
+     skill's regression.md, "The bug's reproducer", says.
+   - **Record** both results in the bucket's Evidence: they show which
+     versions are affected.
+   - If the reproducer passes on HEAD: upstream fixed the bug. Find the
+     fixing commit (`git log` on the files involved) and record it as
+     Fixed upstream (verdicts.md, "State and Fixed upstream"). If the bug
+     is blocking: cherry-pick that commit as its `fuzz(fix)` commit and
+     validate it as below. Otherwise it needs no fix of ours, and goes on
+     to report.md only if the hold-back rule covers it (`SKILL.md`,
+     "Route").
 2. **The regression test is the bug's reproducer** from
    `crashes/<bucket>/` (`SKILL.md`, "Write the reproducer"). Run it
    (the language skill's regression.md, "The bug's reproducer"): it
@@ -149,4 +177,5 @@ the check that fires, raising a limit, or disabling a sanitizer.
 - A `fuzz(fix): ...` commit with the regression test made from the
   reproducer; for a held-back bug, on a new `seclab/held-back/<bucket>`
   branch.
-- `crashes/<bucket>.md`: Fix. `CAMPAIGN.md`: Open crashes (Progress).
+- `crashes/<bucket>.md`: Evidence (HEAD, latest release), Fixed upstream,
+  Fix. `CAMPAIGN.md`: Open crashes (Progress).

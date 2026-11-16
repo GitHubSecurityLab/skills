@@ -418,7 +418,7 @@ def c_libfuzzer(ctx: Context) -> None:
             if os.path.exists(os.path.join(ctx.F, "runs", "gate-record-%d" % n, name))]
     ctx.expect(not left, "the stray-file check deletes its snapshot's objects and index (left: %s)" % left)
     ctx.sh("git checkout -q -- src/record.h && rm notes.txt fuzz/new.txt")
-    # Freshness (fuzz-triage's report.md): a later report moves the same worktrees to the new commits.
+    # Freshness (fuzz-triage's fix.md): a later check moves the same worktrees to the new commits.
     # The clone is a fork's: origin is the fork, which doesn't follow the project (upstream).
     up = os.path.join(os.path.dirname(ctx.repo), "upstream")
     fork = os.path.join(os.path.dirname(ctx.repo), "fork")
@@ -433,7 +433,7 @@ def c_libfuzzer(ctx: Context) -> None:
     upstream = ctx.sh('git -C "%s" rev-parse HEAD' % up).stdout.strip()
     ctx.expect(all(ctx.sh('git -C "%s/%s" rev-parse HEAD' % (trees, t)).stdout.strip() == upstream
                    for t in ("fresh-head", "fresh-release")),
-               "a second report moves the freshness worktrees to upstream's new HEAD and release")
+               "a second check moves the freshness worktrees to upstream's new HEAD and release")
     ctx.env_block("c-env", detect_leaks=1 if system() == "Linux" else 0, llvm_bin=llvm_bin())
     ctx.env_block("c-ub")
     build_c_toy(ctx)
