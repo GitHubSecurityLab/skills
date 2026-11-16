@@ -10,7 +10,7 @@ a vulnerability.
 
 - After fix.md, for buckets with a real-bug verdict, with or without a fix
   of ours.
-- "Write an advisory/report for this crash."
+- "Write an advisory/report for this crash", even before any fix.
 
 Not for triage or the fix itself (`SKILL.md`, fix.md).
 
@@ -26,7 +26,7 @@ Not for triage or the fix itself (`SKILL.md`, fix.md).
 
 1. **Freshness:** run fix.md's check ("Check the precondition, then
    freshness") again if upstream moved since, or now if it never ran (a
-   report asked for directly).
+   report asked for before any fix).
 2. **Known-bug search** in:
    - public issues and pull requests
      (`gh search issues --repo OWNER/REPO "<function>"`, the same with
@@ -72,6 +72,10 @@ Not for triage or the fix itself (`SKILL.md`, fix.md).
      patched version, or "none yet". Ask the maintainers to release the fix
      if no release has it and, in a security report, to publish an
      advisory.
+   - If the bug has no fix of ours and isn't Fixed upstream, the draft's
+     fix is "Suggested fix: none" and the reason when fix.md found no safe
+     fix, else "Suggested fix: not attempted" (a report asked for before
+     any fix).
 6. **Severity** (vulnerabilities). Start from the crash type's impact
    (`verdicts.md`), then write a CVSS 3.1 vector based on the threat
    model's deployment (attack vector, privileges, user interaction), with
@@ -93,6 +97,8 @@ Not for triage or the fix itself (`SKILL.md`, fix.md).
    the review in the bucket's Fix section.
    - If the mode is autonomous: list them in the end-of-campaign summary;
      the label stays.
+   - If the draft's fix is "not attempted": offer the fix ("fix this
+     crash", fix.md), then update the draft.
 9. **Next steps for the user** (in the summary, not in the draft):
    - maintainers of the project: create a draft repository security advisory
      (https://docs.github.com/en/code-security/how-tos/report-and-fix-vulnerabilities/fix-reported-vulnerabilities/create-repository-advisory),
@@ -114,8 +120,8 @@ Not for triage or the fix itself (`SKILL.md`, fix.md).
 
 - Freshness, known-bug search and ownership are checked and recorded.
 - The draft exists in the chosen format with severity, reproducer package and
-  fix: ours, upstream's commit, or "Suggested fix: none" and the reason. The
-  user has the next steps.
+  fix: ours, upstream's commit, "Suggested fix: not attempted", or
+  "Suggested fix: none" and the reason. The user has the next steps.
 
 ## Pitfalls and shortcuts to reject
 
