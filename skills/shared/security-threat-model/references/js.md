@@ -23,7 +23,7 @@ child_process|shelljs|execa|\b(cp|childProcess|shell)\.\w+\s*\(|(^|[^.A-Za-z0-9_
 Check: input in the command or arguments; `shell: true`.
 
 ## File paths
-Detector: partly (path-traversal): only the first path argument, not a path already resolved.
+Detector: partly (path-traversal): not a path already resolved.
 ```
 \.(readFile|writeFile|appendFile|createReadStream|createWriteStream|unlink|rm|rmdir|rename|mkdir|open|copyFile|symlink|readdir)(Sync)?\s*\(|path\.(join|resolve|normalize)\s*\(
 ```
