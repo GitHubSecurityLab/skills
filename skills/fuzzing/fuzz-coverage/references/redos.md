@@ -59,10 +59,16 @@ character).
    as a reproduction (`fuzz-triage`, "Reproduce"), with the command in
    the language skill's triage.md, "Reproduce".
    A timeout there shows that input reaches the regex with the attack
-   intact.
+   intact. A harness that cuts or rejects long input (Java `String`
+   parameters and fields, `consumeString(maxLength)`, a size check) stops
+   the attack too: raise that bound first (`fuzz-harness`), to four times
+   the attack's size in bytes, for the doubling below.
    - If it times out: that confirms it; triage it like an external crash
      (`fuzz-triage`, "Collect"); the verdict is `timeout`.
    - If it finishes: Java's engine may be faster, so double the repeated
      part until a replay times out or the time stops growing. A time that
      doesn't grow means a length limit or a filter stops the attack before
-     the regex: record the group as sanitized, with what stops it.
+     the regex or, for Java, that Java's engine doesn't backtrack on this
+     pattern. If you find that limit or filter in the project's code, record
+     the group as sanitized, with its `file:line`; otherwise record it as
+     tested.
