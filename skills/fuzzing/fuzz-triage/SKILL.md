@@ -243,7 +243,8 @@ leak, and validating its fix, run without it.
 
 - `runs/repro-<h>-<n>/` (through the launcher), `crashes/<bucket>.md`,
   `crashes/<bucket>/` (kept inputs, minimized input, reproducer),
-  `leaks/<h>.supp`.
+  `leaks/<h>.supp`. The bucket file's layout: `fuzz-campaign`'s ledger.md,
+  "`crashes/<bucket>.md`".
 - `CAMPAIGN.md`: Open crashes.
 
 ## Next

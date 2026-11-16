@@ -62,8 +62,8 @@ another copy.
   and the scope files, each with a one-line reason: from the entry point,
   follow the calls and keep the files where attacker data is processed,
   stopping at code the threat model excludes. Put the bare paths into
-  `targets/<id>.scope`, which the gate measures. Don't read the campaign
-  references for it.
+  `targets/<id>.scope`, which the gate measures. Don't read targets.md for
+  it.
 - `.seclab/threat-model.md`. Without one, invoke `security-threat-model` in
   focused mode for this entry point.
 - The language skill (`fuzz-c-cpp`, `fuzz-java`, `fuzz-js`): harness format,
@@ -180,6 +180,8 @@ another copy.
 ## Writes
 
 - `targets/<id>.md`: Harness (workflow, corpus and dictionary paths), Gate.
+  The target file's layout: `fuzz-campaign`'s ledger.md,
+  "`targets/<target>.md`".
 - `CAMPAIGN.md`: Harnesses table.
 - A `fuzz(harness): ...` commit on the campaign branch.
 

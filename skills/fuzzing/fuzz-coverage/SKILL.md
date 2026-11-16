@@ -242,7 +242,8 @@ measures it. Without a sink list, step 7 only reads the gaps' code.
 
 - `coverage/<harness>/r<n>.lcov`.
 - `targets/<id>.md`: Coverage rounds, Scope files (corrections), Sinks
-  (states), Notes; `targets/<id>.scope`.
+  (states), Notes; `targets/<id>.scope`. The target file's layout:
+  `fuzz-campaign`'s ledger.md, "`targets/<target>.md`".
 - `CAMPAIGN.md`: Targets (status, scope branch coverage).
 
 ## Next
