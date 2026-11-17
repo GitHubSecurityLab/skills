@@ -1,10 +1,9 @@
 # Fix
 
-A tested fix makes a report far more useful to maintainers, and fixing a
-bug that fires on most inputs is the only way to keep fuzzing the code
-behind it. Fix commits reveal the bug; those of a bug the hold-back rule
-covers (`fuzz-campaign`, safety rules) stay on a local branch of their own
-until it's public and fixed upstream.
+A tested fix makes a report far more useful to maintainers. Fix commits
+reveal the bug; those of a bug the hold-back rule covers (`fuzz-campaign`,
+safety rules) stay on a local branch of their own until it's public and
+fixed upstream.
 
 ## Reads
 
@@ -87,8 +86,8 @@ until it's public and fixed upstream.
    - the harness gate passes again (`fuzz-harness`);
    - one fuzzing round from the corpus (the schedule's first length) runs
      its full time without hitting the bug again. A round another bug cuts
-     short isn't evidence: fix or filter that one first, or record "cut
-     short at <bucket> after <n> s".
+     short isn't evidence: skip or fix that one first (`SKILL.md`,
+     "Blocking bugs"), or record "cut short at <bucket> after <n> s".
 5. **Review what the patch means.** Passing checks don't make a fix right.
    Answer each question in the bucket's Fix section (n/a where it doesn't
    apply, e.g. no early return), and go back to step 3 on any no:
@@ -137,10 +136,8 @@ design-level problem, a large refactor, or a fix that needs the
 maintainers' knowledge of the intended behaviour, the report goes out
 without a patch and says why ("Suggested fix: none" and the reason,
 report.md). Set the bucket's Progress to `needs-decision`. If the bug
-blocks fuzzing, filter its inputs in the harness (`SKILL.md`, blocking
-bugs); set the target aside only when no precondition can tell them
-apart and the engine can't skip them. Interactive mode asks the user
-first.
+blocks fuzzing and the engine can't skip it, the target is set aside
+(`SKILL.md`, "Blocking bugs"). Interactive mode asks the user first.
 
 Never "fix" by suppressing the symptom: catching the exception, removing
 the check that fires, raising a limit, or disabling a sanitizer.

@@ -66,13 +66,12 @@ doesn't merge distinct bugs. Add `--ignore 'HarnessHooks'` (or the name
 of your hook class) when findings reported from hooks should be grouped
 by the project frames below them.
 
-**Skipping a queued finding** that no harness precondition can tell
-apart (`fuzz-triage`, blocking bugs): develop runs pass Jazzer's
-`--ignore=<token>` (comma-separated for several) with the finding's
-`DEDUP_TOKEN`, and Jazzer skips that stack. The token covers the stack's
-line numbers: a variant on another path, or an edit to a file on the
-stack, gets a new one. Record it in the target file like a precondition,
-and drop it with the fix.
+**Skipping a blocking finding** while its fix is queued (`fuzz-triage`,
+"Blocking bugs"): develop runs pass Jazzer's `--ignore=<token>`
+(comma-separated for several) with the finding's `DEDUP_TOKEN`, and Jazzer
+skips that stack. The token covers the stack's line numbers: a variant on
+another path, or an edit to a file on the stack, gets a new one. Record it
+in the target file, and drop it with the fix.
 
 ## Minimize
 

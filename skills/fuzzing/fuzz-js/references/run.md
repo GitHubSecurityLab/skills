@@ -73,8 +73,8 @@ $L start --id r<round>-$H --harness $H --time <run_s> --corpus "$F/corpus/$H" --
 writes and re-reads new inputs) and the persistent corpus second. An async
 target's copy uses about two cores: give its long runs half as many
 copies. Each copy stops at its first finding; the others continue. A known
-bug without a fix would stop them again and again: the harness filters its
-inputs first (`fuzz-triage`). `<tree>` is the run's worktree, and
+bug without a fix would stop them again and again: fix it first
+(`fuzz-triage`, "Blocking bugs"). `<tree>` is the run's worktree, and
 `<tree_package>` the package directory in it (`fuzz-campaign`):
 
 <!-- ci: js-cli-long -->

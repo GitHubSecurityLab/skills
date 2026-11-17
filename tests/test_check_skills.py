@@ -365,7 +365,7 @@ class CheckSkillsTests(unittest.TestCase):
         self.assertIn("references/b.md", errors[0])
 
     def test_blocking_bug_rule_stated_once(self):
-        rule = "A property violation is filtered by\ndefault: a narrow precondition.\n"
+        rule = "The harness never filters a\nbug's inputs.\n"
         self.add("fuzzing", "fuzz-triage", skill("fuzz-triage", body=rule))
         self.add("fuzzing", "fuzz-harness")
         write(os.path.join(self.root, "skills", "fuzzing", "fuzz-harness", "references", "gate.md"), rule)

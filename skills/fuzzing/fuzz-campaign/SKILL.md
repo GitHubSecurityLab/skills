@@ -307,8 +307,8 @@ the end: it leads to long runs and their analysis.
   whatever a later triage says, until it's public and fixed upstream.
   Until then, every summary lists the branches that must not be pushed:
   `seclab/held-back/*`, and each branch with commits that reach or reveal
-  it, such as the campaign's branch with its harnesses and filters (with
-  `--branch current`, the user's own).
+  it, such as the campaign's branch with its harnesses (with `--branch
+  current`, the user's own).
 - Keep the caps in Settings: memory and per-input timeout.
 - No `sudo` or system settings changes outside a disposable environment.
 - Never stop or restart a long run the user started, unless they ask.

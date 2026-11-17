@@ -79,7 +79,7 @@ fuzz binary: the language skill's build.md, "Instrumentation checks".
 A crash on the seeds or anywhere in the gate run goes to `fuzz-triage`.
 In code that was never fuzzed, shallow real bugs are common.
 A `harness_bug` is fixed here; a real bug in the target is **blocking**,
-fixed or filtered as `fuzz-triage`'s blocking-bug rule says. Then start the
+handled as `fuzz-triage`'s blocking-bug rule says. Then start the
 gate again.
 
 ## 6. Fast enough

@@ -151,9 +151,9 @@ SINGLE_SOURCES = {
         os.path.join("skills", "fuzzing", "fuzz-campaign", "SKILL.md"),
         "the hold-back rule (`fuzz-campaign`, safety rules)",
     ),
-    "filtered by default": (
+    "never filters a bug's inputs": (
         os.path.join("skills", "fuzzing", "fuzz-triage", "SKILL.md"),
-        "the blocking-bug rule (`fuzz-triage`, blocking bugs)",
+        "the blocking-bug rule (`fuzz-triage`, \"Blocking bugs\")",
     ),
     "cost only breaks ties": (
         os.path.join("skills", "fuzzing", "fuzz-coverage", "references", "diagnosis.md"),

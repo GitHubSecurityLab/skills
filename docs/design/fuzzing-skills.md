@@ -172,7 +172,7 @@ A harness starts from seeds, inputs that already exercise its code, and its corp
 Each harness keeps one corpus:
 - **One corpus per harness,** whichever engine runs it. Develop rounds write into it; long runs write into their own directory, which is merged back at analysis.
 - **Minimized when the harness's develop loop ends,** since its long runs start from that corpus, and at analysis merges, but not after every round. A few minutes of fuzzing can leave tens of thousands of files, which every replay then loads.
-- **Crashing inputs stay in the corpus.** A bug that keeps getting in the way is fixed or filtered instead (§11). A minimizing merge may still drop a crashing input (libFuzzer's does, Jazzer's doesn't), so once the bug is fixed, its original input goes back into the corpus, since it now reaches code the fuzzer couldn't pass before.
+- **Crashing inputs stay in the corpus.** A bug that keeps getting in the way is skipped by the engine or fixed instead (§11). A minimizing merge may still drop a crashing input (libFuzzer's does, Jazzer's doesn't), so once the bug is fixed, its original input goes back into the corpus, since it now reaches code the fuzzer couldn't pass before.
 
 ## 10. Long runs and analysis
 
@@ -197,7 +197,7 @@ Triage makes each finding reproducible and understood before anything is fixed o
 - **Every real bug gets a reproducer that doesn't need the harness:** a small program that calls the project's API with the values the harness passed, including the check that caught the bug. Reports, regression tests and later checks all use it.
 
 A bug is handled right away only if it blocks fuzzing:
-- **Blocking bugs,** which keep a harness from making progress (a crash on the seeds, or one that keeps ending runs early), are handled right away. Memory-safety bugs are fixed. Other bugs are filtered out in the harness and their fix is queued, since whether that code is wrong is often the maintainers' call.
+- **Blocking bugs,** which keep a harness from making progress (a crash on the seeds, or one that keeps ending runs early), are handled right away: where the engine can skip a given stack on request (Jazzer), they're skipped and their fix is queued; otherwise they're fixed, memory corruption or not, so no input is kept from the code behind them, and without a safe fix the target is set aside.
 - **Other bugs wait** until their target's develop loop ends, or for analysis.
 
 A fix is a proposal for the maintainers, so it's kept small and checked:

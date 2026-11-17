@@ -172,10 +172,11 @@ python3 <this skill's directory>/../fuzz-campaign/scripts/init.py
       [references/advisory.md](references/advisory.md), or GHSL's,
       [references/ghsl.md](references/ghsl.md); an ordinary bug report
       otherwise).
-      **Blocking** bugs (below) right away, with the full validation; the
-      others are queued (Progress `queued`) until their target's develop
-      loop ends (long-run findings: during analysis), and their full
-      validation runs once for the batch (fix.md, "Validate");
+      **Blocking** bugs right away, with the full validation, unless the
+      engine can skip them (below); the others are queued (Progress
+      `queued`) until their target's develop loop ends (long-run findings:
+      during analysis), and their full validation runs once for the batch
+      (fix.md, "Validate");
     - State `non-reproducible` or `duplicate of <bucket>`, or Fixed
       upstream (and not held back) → recorded only;
     - State `needs investigation` → recorded and listed for the user.
@@ -186,7 +187,7 @@ A blocking bug keeps its harness from fuzzing, so it's handled right
 away; the others wait (step 10). Which bugs block, in this order of
 precedence:
 1. **A crash on the seeds or in the gate is blocking,** even if the engine
-   could skip it.
+   would skip it while fuzzing.
 2. **A bug found while fuzzing is blocking** when it ends two fuzzing
    rounds, or two long-run copies, of the same harness early.
    Reproduction attempts don't count.
@@ -196,16 +197,14 @@ precedence:
 Long-run findings wait for the analysis, blocking or not: its phase 1
 reproduces them on the run's build, phase 2 fixes them (`fuzz-campaign`).
 
-A blocking memory-safety bug is fixed right away. If no safe fix exists,
-the harness may filter out the inputs that trigger it, recorded in the
-target file; there's no other "unblock" patch. A blocking
-`property_violation`, `unexpected_exception` or other bug without memory
-corruption is filtered by default instead: a narrow precondition in the
-harness, recorded, with the fix queued. Whether the code is wrong is often
-the maintainers' call, and fixing each one first stalls develop in
-libraries with many shallow logic bugs. Fix those right away only when
-their inputs can't be told apart and the engine can't skip them (Jazzer
-can: `fuzz-java`'s triage.md).
+Where the engine can skip a given stack on request (Jazzer's `--ignore`:
+`fuzz-java`'s triage.md), a blocking bug is skipped that way, with its fix
+queued. Otherwise it's fixed right away, memory corruption or not; without
+a safe fix (fix.md, "When no safe fix is possible"), the target is set
+aside. The harness never filters a bug's inputs, and there's no other
+"unblock" patch: a filter lets the bug's variants through or hides other
+bugs in the same inputs, and the inputs it turns away add no coverage, so
+the next minimizing merge drops them from the corpus.
 
 **Leaks** stay detected, except on macOS, where libFuzzer reports a false
 leak at exit; in AFL++ instances (`detect_leaks=0`, `fuzz-c-cpp`'s
