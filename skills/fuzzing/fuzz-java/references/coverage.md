@@ -117,8 +117,8 @@ python3 "$F/bin/coverage.py" overlap "$C/gate-one.lcov" "$C/gate-fresh.lcov" --u
 
 - The test classes are included: state often leaks in the harness.
 
-**Inputs that reach a line** (`reach.py`, directed inputs in
-`fuzz-coverage`):
+**Inputs that reach a line** (`reach.py`, for targeted inputs:
+`fuzz-coverage`'s corpus.md):
 
 <!-- ci: java-reach -->
 ```sh

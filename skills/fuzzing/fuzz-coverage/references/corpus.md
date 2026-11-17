@@ -6,14 +6,15 @@ from it.
 
 ## Steps
 
-1. **Targeted inputs** for a gap: a blocked branch
-   from `gaps`, or a sink that's reached but not triggered (reach, then
-   trigger). Inputs that already reach the gap are the starting points; a
-   generator varies them toward what the guard or the sink needs.
-   1. Find inputs that already reach it: `reach.py` (the language skill's
-      `coverage.md`), the starting points. If it's a sink behind a
-      condition on its own line: confirm that the call ran (`reach.py`
-      reads line coverage, like `sites`).
+1. **Targeted inputs** do one of two jobs: take a blocked branch from
+   `gaps`, to reach the code behind it, or trigger a sink that's reached
+   but not yet triggered. Both start from inputs that already reach the
+   branch's guard or the sink; a generator varies them toward what the
+   guard or the sink needs.
+   1. Find inputs that already reach the guard or the sink: `reach.py`
+      (the language skill's `coverage.md`), the starting points. If it's a
+      sink behind a condition on its own line: confirm that the call ran
+      (`reach.py` reads line coverage, like `sites`).
    2. For a sink, state the condition that breaks it: the value at the
       sink that overruns the buffer, wraps the size, leaves the base
       directory or names a class from input.
@@ -21,7 +22,7 @@ from it.
       inputs toward the guard or that condition (the value it compares, a
       consistent length, the field that feeds the sink).
    4. Replay its variants right away (the language skill's coverage.md)
-      and check whether the gap became covered. If it's a sink: its
+      and check whether the branch became covered. If it's a sink: its
       trigger shows only on the sanitizer or detector build; put the
       variants into the corpus and run a round
       (`fuzz-coverage`, "Run a round"), which runs them first.
@@ -31,7 +32,7 @@ from it.
       that add no coverage; corpus upkeep re-creates them before long runs.
 
    Typical inputs:
-   - a check on a magic value or keyword: a seed with the expected value;
+   - a check on a magic value or keyword: an input with the expected value;
    - a length that must be consistent: compute it in the generator (a
      checksum needs a fuzzing-only patch: diagnosis.md next to this file);
    - a sink group that is reached but not triggered: boundary values in the

@@ -23,7 +23,8 @@ Errors (exit code 1):
     workflow skills' "Run every step", the standalone skills' "Before
     stopping") differs
   - a term in another meaning or a retired one (TERMS: "leak check" for the
-    state-leak check, an action's "target" for its aim, "hand-off" for upstreaming)
+    state-leak check, an action's "target" for its aim, "hand-off" for upstreaming,
+    "directed inputs" for targeted inputs)
   - a rule stated without its exception (QUALIFIED_PHRASES: constant
     arguments, unless the object called on comes from input)
   - a reference file its SKILL.md doesn't link
@@ -199,6 +200,7 @@ TERMS = {
     r"(?<!state-)\bleak[- ]check": "state-leak check (gate.md, \"No state leaking between inputs\"; LeakSanitizer finds leaks)",
     r"\bits target\b|\btarget (?:becomes|became) covered": "aim (what an action should cover; a target is an entry point)",
     r"\bhand-?offs?\b": "upstreaming (fuzz-campaign's upstreaming.md)",
+    r"\bdirected inputs?\b": "targeted inputs (fuzz-coverage's corpus.md)",
 }
 
 # The ledger's Open crashes columns whose values other skills set: each value set must be in the legend.

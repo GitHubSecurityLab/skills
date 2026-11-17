@@ -69,7 +69,7 @@ checkout's `.cifuzz-corpus`.
    Then pick its next steps; a harness can have more than one:
    - growing or unknown: run it longer next time;
    - plateaued with gaps: back to develop;
-   - sinks reached but not triggered, tested or sanitized: directed
+   - sinks reached but not triggered, tested or sanitized: targeted
      inputs (`fuzz-coverage`'s corpus.md) before its next run;
    - plateaued, with no gaps and no such sinks: nothing is left worth the
      cost. Once all of a target's harnesses end up here, the target

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Find corpus inputs that reach a given source line.
 
-The starting point for directed inputs: replay chosen subsets of a corpus in
+The starting point for targeted inputs: replay chosen subsets of a corpus in
 the coverage build, read the line's hit count from the exported lcov, and
 narrow down to the smallest input that reaches it.
 

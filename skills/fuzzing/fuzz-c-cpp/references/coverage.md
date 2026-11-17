@@ -56,8 +56,8 @@ of the corpus directories, i.e. `-merge=1 "{scratch}/out" "{dir}"`. A
 `-runs=0` directory replay adds an empty input, and `-merge=1` refuses
 file arguments.
 
-**Inputs that reach a line** (`reach.py`, directed inputs in
-`fuzz-coverage`; `<objects>` as above):
+**Inputs that reach a line** (`reach.py`, for targeted inputs:
+`fuzz-coverage`'s corpus.md; `<objects>` as above):
 
 <!-- ci: c-reach -->
 ```sh
