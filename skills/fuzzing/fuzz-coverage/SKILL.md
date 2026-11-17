@@ -202,9 +202,10 @@ measures it. Without a sink list, step 7 only reads the gaps' code.
      coverage clearly rises:** the aim by that replay, by the restarted
      rounds, or by targeted inputs written for it right after
      ([references/corpus.md](references/corpus.md)); scope coverage when
-     the scope branches covered at the next plateau are at least 5% above
-     the last snapshot before the change. Otherwise revert its commit,
-     rebuild, and replay the corpus again for a new baseline.
+     the next plateau covers at least 5% more scope branches than the last
+     snapshot before the change (compare `summary`'s covered counts, not
+     percentages: the change can add or remove branches). Otherwise revert
+     its commit, rebuild, and replay the corpus again for a new baseline.
    - **When an action is applied,** the round schedule restarts at its
      first value (not after a rollback); snapshot numbers keep counting.
 10. **Leave the loop** when no action left unlocks security-relevant code,
