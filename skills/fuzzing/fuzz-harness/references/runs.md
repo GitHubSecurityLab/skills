@@ -10,13 +10,6 @@ through it: they run with the user's environment. The agent runs develop
 runs itself; long runs are commands the agent hands to the user, who runs
 them in a terminal.
 
-## When to use
-
-- The gate, rounds, replays and reproductions of the inner loop.
-- "How is the fuzzing run doing?", "stop it".
-
-Not for deciding what to run next (`fuzz-coverage`, `fuzz-campaign`).
-
 ## Reads
 
 - `CAMPAIGN.md`: Settings (`memory_mb`, `input_timeout_s`, `round_minutes`,

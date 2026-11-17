@@ -3,13 +3,6 @@
 A target is an entry point where attacker-controlled data enters, plus the
 checks that decide what counts as a bug.
 
-## When to use
-
-- "What should I fuzz in this repo?"
-
-Not for writing the harness (`fuzz-harness`) or for threat modelling itself
-(`security-threat-model`).
-
 ## Reads
 
 - `.seclab/threat-model.md`: Context, Sources, Sinks, Paths. If it's

@@ -6,14 +6,6 @@ already known, or sent to the wrong project. This skill never sends
 anything: the user reports it, through the project's private channel for
 a vulnerability.
 
-## When to use
-
-- After fix.md, for buckets with a real-bug verdict, with or without a fix
-  of ours.
-- "Write an advisory/report for this crash", even before any fix.
-
-Not for triage or the fix itself (`SKILL.md`, fix.md).
-
 ## Reads
 
 - `crashes/<bucket>.md` and `crashes/<bucket>/`: verdict, root cause,

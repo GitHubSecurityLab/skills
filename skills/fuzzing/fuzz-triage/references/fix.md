@@ -6,15 +6,6 @@ behind it. Fix commits reveal the bug; those of a bug the hold-back rule
 covers (`fuzz-campaign`, safety rules) stay on a local branch of their own
 until it's public and fixed upstream.
 
-## When to use
-
-- `fuzz-triage` assigned a real-bug verdict and found the root cause.
-- A bug fires on almost every input and blocks fuzzing: fix it right away.
-- "Fix this crash", "write a patch for the bug the fuzzer found".
-
-Not for bugs in our harness (`fuzz-harness`) or untriaged crashes
-(triage them first, `SKILL.md`).
-
 ## Reads
 
 - `crashes/<bucket>.md`: Root cause, Reproduce, inputs in

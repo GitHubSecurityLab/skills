@@ -3,13 +3,6 @@
 Fuzzing builds should come from the project's own build system, so
 harnesses can be contributed upstream and maintainers can rebuild them.
 
-## When to use
-
-- Setup of a campaign, a new target needing a different build, a harness
-  change that needs build changes, or "build this with ASan and libFuzzer".
-
-Not for writing harnesses (`SKILL.md`) or running them (runs.md).
-
 ## Reads
 
 - `CAMPAIGN.md`: Settings, Disposable environment, Harnesses.

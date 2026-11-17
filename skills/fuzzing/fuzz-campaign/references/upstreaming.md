@@ -6,13 +6,6 @@ branches from upstream, with nothing the hold-back rule covers before
 it's public and fixed upstream.
 The agent prepares everything; the user opens the pull requests.
 
-## When to use
-
-- "Upstream my harnesses", "add fuzzing to CI", "turn these crashes into
-  regression tests".
-
-Not for reporting vulnerabilities (`fuzz-triage`).
-
 ## Reads
 
 - `CAMPAIGN.md`: Harnesses, Open crashes. `crashes/*.md`: verdicts,

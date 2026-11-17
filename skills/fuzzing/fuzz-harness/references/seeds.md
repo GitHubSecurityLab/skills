@@ -1,12 +1,5 @@
 # Seeds and dictionaries
 
-## When to use
-
-- After a new harness passes the build, before the gate and the first runs.
-- "Make seeds and a dictionary for this harness."
-
-Not for harness changes (`SKILL.md`) or running fuzzers (runs.md).
-
 ## Reads
 
 - `targets/<id>.md`: Harness (format, corpus and dictionary paths), Scope
