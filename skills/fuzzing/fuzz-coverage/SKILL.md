@@ -146,9 +146,11 @@ measures it. Without a sink list, step 7 only reads the gaps' code.
    remaining gaps per function.
 7. **Check the sinks.** A sink group's state says whether it still needs
    inputs. Run `sites`, then update each group's state: not reached,
-   reached, triggered (from the crash ledger), or **tested**: its trigger
-   or boundary inputs ran on the sanitizer or detector build without a
-   finding.
+   reached, triggered (a bucket in `crashes/` has its crash location or
+   root cause at one of the group's sites), **tested**: its trigger or
+   boundary inputs ran on the sanitizer or detector build without a
+   finding, or **sanitized**: the code blocks the attack before the sink,
+   recorded with the `file:line` that does.
    ```sh
    python3 .seclab/fuzz/bin/coverage.py sites .seclab/fuzz/coverage/<h>/r<n>.lcov --sites .seclab/fuzz/sinks/<id>.tsv --root .
    ```
