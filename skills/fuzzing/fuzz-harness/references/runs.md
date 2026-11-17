@@ -32,8 +32,8 @@ Give each run a new id, and a command that names its findings directory
 and passes its caps.
 
 - **Run ids** (one directory each under `runs/`):
-  - develop runs: `gate-<h>-<n>`, `r<n>-<h>` (a round, named like its
-    snapshot `r<n>.lcov`), `cov-<h>-<n>`, and `reach-<h>-<n>-<step>`
+  - develop runs: `gate-<h>-<n>`, `r<round>-<h>` (a round, named like its
+    snapshot `r<round>.lcov`), `cov-<h>-<n>`, and `reach-<h>-<n>-<step>`
     (`reach.py`'s replays, which it names itself);
   - triage: `repro-<h>-<n>` (a finding's replay), `min-<h>-<n>`
     (minimizing), `poc-<h>-<n>` (a bug's reproducer program),

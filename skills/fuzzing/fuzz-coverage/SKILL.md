@@ -85,16 +85,16 @@ measures it. Without a sink list, step 7 only reads the gaps' code.
    `fuzz-harness`'s runs.md, its command and environment in the
    language skill's run.md. It lasts the next value of the
    `round_minutes` schedule (1, 2, 4, 8 minutes by default), with the id
-   `r<n>-<h>`, where `n` is the number its snapshot gets (step 2), and
-   resumes from the harness's corpus. Rounds are short; the hours go into
-   long runs. Hand findings to `fuzz-triage`.
+   `r<round>-<h>`, where `<round>` is the number its snapshot gets
+   (step 2), and resumes from the harness's corpus. Rounds are short; the
+   hours go into long runs. Hand findings to `fuzz-triage`.
    - If a crash cut the round short: it doesn't count toward the plateau;
      rerun it after triage (blocking bugs: `fuzz-triage`).
 2. **Snapshot.** Replay the corpus in the coverage build and export lcov to
-   `coverage/<harness>/r<n>.lcov` (commands in the language skill, where
-   `n` is `<round>`). Every replay of a harness's corpus (the gate's, a new
-   baseline, a round's) takes the next `n`, from 0, and `n` never restarts:
-   no snapshot or run id is overwritten, and `r<n-1>` is the one before.
+   `coverage/<harness>/r<round>.lcov` (commands in the language skill).
+   Every replay of a harness's corpus (the gate's, a new baseline, a
+   round's) takes the next `<round>`, from 0, and it never restarts: no
+   snapshot or run id is overwritten, and `r<round-1>` is the one before.
 3. **Measure.** One `summary` call gives the scope's coverage and its
    change since the previous snapshot; between rounds, that's all the
    analysis (no full diagnosis). Run it on the scope files and against
@@ -103,7 +103,7 @@ measures it. Without a sink list, step 7 only reads the gaps' code.
    `summary` says so and gives no change: this snapshot is a new baseline,
    and if it's a round's, that round doesn't count toward the plateau.
    ```sh
-   python3 .seclab/fuzz/bin/coverage.py summary .seclab/fuzz/coverage/<h>/r<n>.lcov --prev .seclab/fuzz/coverage/<h>/r<n-1>.lcov --scope .seclab/fuzz/targets/<id>.scope --root .
+   python3 .seclab/fuzz/bin/coverage.py summary .seclab/fuzz/coverage/<h>/r<round>.lcov --prev .seclab/fuzz/coverage/<h>/r<round-1>.lcov --scope .seclab/fuzz/targets/<id>.scope --root .
    ```
    Add a row to Coverage rounds, with the run's executions.
 4. **Plateau?** This decides when rounds stop and diagnosis starts; gaps
@@ -135,8 +135,8 @@ measures it. Without a sink list, step 7 only reads the gaps' code.
    the action (step 8). List them with `gaps`, then `show` each top gap's
    function:
    ```sh
-   python3 .seclab/fuzz/bin/coverage.py gaps .seclab/fuzz/coverage/<h>/r<n>.lcov --scope .seclab/fuzz/targets/<id>.scope --root .
-   python3 .seclab/fuzz/bin/coverage.py show .seclab/fuzz/coverage/<h>/r<n>.lcov --root . --file <file> --function <function>
+   python3 .seclab/fuzz/bin/coverage.py gaps .seclab/fuzz/coverage/<h>/r<round>.lcov --scope .seclab/fuzz/targets/<id>.scope --root .
+   python3 .seclab/fuzz/bin/coverage.py show .seclab/fuzz/coverage/<h>/r<round>.lcov --root . --file <file> --function <function>
    ```
    `gaps` lists **blocked branches** first: a branch never taken at a point
    where another branch was taken, with the guard's source line, ranked by
@@ -152,7 +152,7 @@ measures it. Without a sink list, step 7 only reads the gaps' code.
    finding, or **sanitized**: the code blocks the attack before the sink,
    recorded with the `file:line` that does.
    ```sh
-   python3 .seclab/fuzz/bin/coverage.py sites .seclab/fuzz/coverage/<h>/r<n>.lcov --sites .seclab/fuzz/sinks/<id>.tsv --root .
+   python3 .seclab/fuzz/bin/coverage.py sites .seclab/fuzz/coverage/<h>/r<round>.lcov --sites .seclab/fuzz/sinks/<id>.tsv --root .
    ```
    If `sites` marks a site *to confirm*: check that its call ran before
    counting it (diagnosis.md, "Sites to confirm"). Tested and sanitized
@@ -243,7 +243,7 @@ measures it. Without a sink list, step 7 only reads the gaps' code.
 
 ## Writes
 
-- `coverage/<harness>/r<n>.lcov`.
+- `coverage/<harness>/r<round>.lcov`.
 - `targets/<id>.md`: Coverage rounds, Scope files (corrections), Sinks
   (states), Notes; `targets/<id>.scope`. The target file's layout:
   `fuzz-campaign`'s ledger.md, "`targets/<target>.md`".

@@ -35,7 +35,7 @@ Rules:
     dict/<harness>.dict           dictionaries
     oss-fuzz/                     copies of harnesses kept in google/oss-fuzz (baseline only)
     leaks/<harness>.supp          LeakSanitizer suppressions of queued leaks (fuzz-triage)
-    coverage/<harness>/r<n>.lcov  snapshots (also r<n>.profdata or r<n>.exec), gate-*.lcov
+    coverage/<harness>/           snapshots r<round>.lcov (also .profdata or .exec), gate-*.lcov
     coverage/merged/<n>.lcov
     upstreaming/                  held-back.tsv, PR texts (upstreaming.md)
     sinks/<target>.tsv            sink sites (id, file, line, group, kind, note)
