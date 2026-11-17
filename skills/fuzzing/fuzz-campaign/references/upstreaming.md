@@ -47,11 +47,12 @@ The agent prepares everything; the user opens the pull requests.
    Record what is held back and the condition for releasing it.
 2. **Regression tests** for every bug that isn't held back: the
    test made from each bug's reproducer (`fuzz-triage`'s fix, in its `fuzz(fix)`
-   commit), in the project's test framework. Never add crash inputs to
-   regression directories: after an input-layout change they may test
-   nothing. The harnesses' seed replays (the language skill's regression.md,
-   "Seed replay: the harness as a test") stay, as checks that the
-   harnesses still run.
+   commit), in the project's test framework. Never add crash inputs to a
+   directory the project's CI replays (seeds, inputs, regression inputs):
+   CI fails until the fix lands, and after an input-layout change they may
+   test nothing. The harnesses' seed replays (the language skill's
+   regression.md, "Seed replay: the harness as a test") stay, as checks
+   that the harnesses still run.
    - If the project fixed the bug its own way: check that the test passes
      with that fix.
 3. **Choose the destination:** the project's own repository, or, if the

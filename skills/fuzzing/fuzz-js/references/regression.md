@@ -69,12 +69,3 @@ Vitest, `node:test`) in the fix commit, with the bug named in a comment.
   them.
 - Hooks used only for the campaign stay off the upstreaming branches unless
   the fuzz test needs them.
-
-## Keep it private until disclosure
-
-A held-back bug's test (`fuzz-campaign`, "Safety rules") stays in the
-`fuzz(fix)` commit, which is never pushed, until the bug is public and
-fixed upstream: it reveals the bug as soon as it's pushed. Never put a
-crash file among the seeds the replay test reads: the project's CI
-replays it, failing until the fix lands and revealing a held-back bug.
-The reproducer is the regression test.

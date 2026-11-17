@@ -119,9 +119,3 @@ CI and a bisect would pass.
   from it, for the reproducer's direct API call.
 - Seeds in `.WithSeeds({...})` run in every mode, including the short
   unit-test run in normal CI: a harness check, not a bug's test.
-
-## Keep it private until disclosure
-
-A held-back bug's regression test (`fuzz-campaign`, safety rules) reveals
-it. It stays in the `fuzz(fix)` commit, which is never pushed, until the
-bug is public and fixed upstream.

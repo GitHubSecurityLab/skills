@@ -50,11 +50,3 @@ commit, named after the bug.
 - The `.cifuzz-corpus/` directory isn't committed; seed files worth keeping
   go into the inputs directories (only the project's own data or generated
   inputs, and never inputs reaching a held-back bug).
-
-## Keep it private until disclosure
-
-Keep a held-back bug's test (`fuzz-campaign`, safety rules) in the
-`fuzz(fix)` commit, which is never pushed, until the bug is public and
-fixed upstream: the test reveals the bug as soon as it's pushed. Never put
-a crash file into an inputs directory: the project's CI replays it,
-failing until the fix lands and revealing a held-back bug.
