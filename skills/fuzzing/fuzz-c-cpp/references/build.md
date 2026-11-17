@@ -14,7 +14,7 @@ host is macOS: use Homebrew's clang by absolute path
 | `aflpp-plain` | `CC`/`CXX` the AFL++ compiler (`<afl_cc>`, `aflpp.md`), `-g -O1`, no sanitizers; no `-fsanitize=fuzzer*` on the library | `-fsanitize=fuzzer`, compiling and linking the harness in one command |
 | `aflpp` | as `aflpp-plain`, with `AFL_USE_ASAN=1` and `-fsanitize=$UB -fno-sanitize-recover=$UB $HARDEN` in its wrapper (`aflpp.md`) | as `aflpp-plain` |
 | `cmplog` | as `aflpp-plain`, with `AFL_LLVM_CMPLOG=1` in the wrapper | as `aflpp-plain` |
-| `coverage` | `-g -O1 -fprofile-instr-generate -fcoverage-mapping -mllvm -runtime-counter-relocation -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION`, no sanitizers (the relocation flag lets continuous profiles work on Linux) | `-fprofile-instr-generate -fsanitize=fuzzer` (libFuzzer's `main` replays the corpus) |
+| `coverage` | `-g -O1 -fprofile-instr-generate -fcoverage-mapping -mllvm -runtime-counter-relocation -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION`, no sanitizers (the relocation flag lets continuous profiles work on Linux; macOS turns fortify on by default, which makes `memcpy`, `strcpy` and the like macros from a system header, and llvm-cov counts such a call right after an early `return` as run) | `-fprofile-instr-generate -fsanitize=fuzzer` (libFuzzer's `main` replays the corpus) |
 | `msan` (Linux, optional; untested in CI) | `-fsanitize=fuzzer-no-link,memory -fsanitize-memory-track-origins` | `-fsanitize=fuzzer,memory` |
 | `ubsan-int` (optional; untested in CI) | `libfuzzer` plus `-fsanitize=unsigned-integer-overflow,implicit-conversion,alignment` | as `libfuzzer` |
 

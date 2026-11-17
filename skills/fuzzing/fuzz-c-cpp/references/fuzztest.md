@@ -104,8 +104,8 @@ CC=clang CXX=clang++ cmake -S . -B "$F/build/fuzztest" -DFUZZTEST_FUZZING_MODE=o
 ```sh
 CC=clang CXX=clang++ cmake -S . -B "$F/build/coverage" -DCMAKE_BUILD_TYPE= -DBUILD_SHARED_LIBS=OFF \
   -DCMAKE_C_FLAGS_RELEASE= -DCMAKE_CXX_FLAGS_RELEASE= \
-  -DCMAKE_C_FLAGS="-g -O1 -fprofile-instr-generate -fcoverage-mapping -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION" \
-  -DCMAKE_CXX_FLAGS="-g -O1 -fprofile-instr-generate -fcoverage-mapping -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION" \
+  -DCMAKE_C_FLAGS="-g -O1 -fprofile-instr-generate -fcoverage-mapping -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION" \
+  -DCMAKE_CXX_FLAGS="-g -O1 -fprofile-instr-generate -fcoverage-mapping -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION" \
   -DCMAKE_EXE_LINKER_FLAGS="-fprofile-instr-generate" && cmake --build "$F/build/coverage" --target <test_target>
 ```
 
