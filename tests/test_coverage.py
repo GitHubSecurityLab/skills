@@ -183,6 +183,22 @@ class SummaryTests(unittest.TestCase):
         self.assertIn("src/missing.c", out)
         self.assertNotIn("harness.c", out)
 
+    def test_summary_gives_no_change_against_different_code(self):
+        prev = "SF:/w/a.c\nDA:1,1\nDA:2,0\nend_of_record\nSF:/w/b.c\nDA:1,0\nend_of_record\n"
+        new = "SF:/w/a.c\nDA:1,1\nDA:2,1\nDA:3,0\nend_of_record\nSF:/w/b.c\nDA:1,1\nend_of_record\n"
+        new += "SF:/w/c.c\nDA:1,1\nend_of_record\n"  # in one snapshot only, like a JS file loaded later
+        with tempfile.TemporaryDirectory() as tmp:
+            paths = []
+            for name, text in (("prev.lcov", prev), ("new.lcov", new)):
+                paths.append(os.path.join(tmp, name))
+                with open(paths[-1], "w") as handle:
+                    handle.write(text)
+            _, out, err = run("summary", paths[1], "--prev", paths[0], "--root", "/w")
+        self.assertIn("**Different code:** 1 file has other lines or branches than the previous snapshot (a.c)", out)
+        self.assertNotIn("; previous", out)
+        self.assertNotIn("Change (points)", out)
+        self.assertIn("different code", err)
+
     def test_scope_entries_match_from_the_root_not_by_suffix(self):
         text = (
             "SF:/w/src/parse.c\nDA:1,1\nend_of_record\n"

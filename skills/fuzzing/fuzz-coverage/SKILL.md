@@ -98,9 +98,10 @@ measures it. Without a sink list, step 7 only reads the gaps' code.
 3. **Measure.** One `summary` call gives the scope's coverage and its
    change since the previous snapshot; between rounds, that's all the
    analysis (no full diagnosis). Run it on the scope files and against
-   the previous snapshot of the same coverage build; without `--prev` for
-   a harness's first snapshot and for a new build's baseline, since lines
-   and branches of different builds don't match:
+   the previous snapshot (without `--prev` for a harness's first). If the
+   scope code differs between them, as after a fix or a build patch,
+   `summary` says so and gives no change: this snapshot is a new baseline,
+   and if it's a round's, that round doesn't count toward the plateau.
    ```sh
    python3 .seclab/fuzz/bin/coverage.py summary .seclab/fuzz/coverage/<h>/r<n>.lcov --prev .seclab/fuzz/coverage/<h>/r<n-1>.lcov --scope .seclab/fuzz/targets/<id>.scope --root .
    ```

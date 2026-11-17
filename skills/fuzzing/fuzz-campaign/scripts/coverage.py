@@ -10,7 +10,7 @@ Commands:
                 files are never combined; merge the .exec files instead)
   merge         combine several lcov files
   summary       branch/line/function coverage, optionally limited to scope
-                files and compared with a previous snapshot
+                files and compared with a previous snapshot of the same code
   gaps          functions with branches never taken, ranked
   show          source of one file annotated with hit counts (one function,
                 or a line range for functions the data doesn't name)
@@ -489,6 +489,17 @@ def cmd_merge(args) -> int:
     return 0
 
 
+def _same_code(a: FileCov, b: FileCov) -> bool:
+    """Whether two snapshots of a file have the same lines and branches,
+    i.e. come from the same code and build."""
+    return (
+        set(a.lines) == set(b.lines)
+        and set(a.branches) == set(b.branches)
+        and a.line_counts()[1] == b.line_counts()[1]
+        and a.branch_counts()[1] == b.branch_counts()[1]
+    )
+
+
 def cmd_summary(args) -> int:
     mapper = PathMapper(args.root)
     scope = load_scope(args.scope)
@@ -496,9 +507,11 @@ def cmd_summary(args) -> int:
     prev_files = {}
     if args.prev:
         prev_files, _ = filter_scope(_load(args, [args.prev]), mapper, scope)
+    differs = sorted(d for d in set(files) & set(prev_files) if not _same_code(files[d], prev_files[d]))
+    compare = bool(args.prev) and not differs
 
     totals = _totals(files)
-    prev_totals = _totals(prev_files) if args.prev else None
+    prev_totals = _totals(prev_files) if compare else None
     label = "%d files in scope" % len(files) if scope else "%d files" % len(files)
     if unmatched:
         label += "; incomplete"
@@ -521,6 +534,14 @@ def cmd_summary(args) -> int:
             % (len(unmatched), ", ".join(unmatched)),
             file=sys.stderr,
         )
+    if differs:
+        print(
+            "**Different code:** %d %s other lines or branches than the previous snapshot (%s): "
+            "they come from different builds, so there's no change; this snapshot is a new baseline"
+            % (len(differs), "file has" if len(differs) == 1 else "files have", ", ".join(differs))
+        )
+        print()
+        print("warning: different code than the previous snapshot: %s" % ", ".join(differs), file=sys.stderr)
     for key, name in (("br", "Branches"), ("ln", "Lines"), ("fn", "Functions")):
         hit, total = totals[key]
         text = "- **%s:** %s" % (name, _ratio(hit, total))
@@ -537,7 +558,7 @@ def cmd_summary(args) -> int:
         ln_hit, ln_total = cov.line_counts()
         fn_hit, fn_total = cov.function_counts()
         change = ""
-        if args.prev:
+        if compare:
             prev = prev_files.get(display)
             if prev is None:
                 change = "new"
@@ -557,14 +578,14 @@ def cmd_summary(args) -> int:
         )
     rows.sort(key=lambda row: (-row[0], row[1]))
     print()
-    if args.prev:
+    if compare:
         print("| File | Branches | Change (points) | Lines | Functions |")
         print("|---|---|---|---|---|")
     else:
         print("| File | Branches | Lines | Functions |")
         print("|---|---|---|---|")
     for row in rows[: args.top]:
-        if args.prev:
+        if compare:
             print("| %s | %s | %s | %s | %s |" % (row[1], row[2], row[3], row[4], row[5]))
         else:
             print("| %s | %s | %s | %s |" % (row[1], row[2], row[4], row[5]))
@@ -1730,7 +1751,7 @@ def build_parser() -> argparse.ArgumentParser:
     with_root(p)
     with_sf_base(p)
     with_scope(p)
-    p.add_argument("--prev", help="previous lcov snapshot to compare with")
+    p.add_argument("--prev", help="previous lcov snapshot to compare with (no change if its code differs)")
     p.add_argument("--top", type=int, default=40, help="max files listed (default 40)")
     p.set_defaults(func=cmd_summary)
 
