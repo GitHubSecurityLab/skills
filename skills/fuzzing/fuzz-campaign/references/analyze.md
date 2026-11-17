@@ -125,5 +125,8 @@ checkout's `.cifuzz-corpus`.
    release: the persistent corpora plus every unmerged run corpus, with
    phase 2's merge rules. Mark those runs `done` in the archived ledger.
    Then update the threat model (`security-threat-model`, incremental
-   mode), rank changed code first, run the gate, then develop, long runs
-   and analysis as usual.
+   mode) and rank changed code first. For each old target with scope
+   files, update them for files the release moved, removed or added, and
+   write its sinks again (targets.md, "Sinks"): their files and lines may
+   have changed, so their states start over. Then run the gate, develop,
+   long runs and analysis as usual.
