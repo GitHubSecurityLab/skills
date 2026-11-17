@@ -57,13 +57,15 @@ checkout's `.cifuzz-corpus`.
    combine them as in `SKILL.md`, "Combined coverage".
 6. **Sort each harness.** Judge its growth on every copy that didn't end
    at a finding (`finished`, `stopped`, or `died` up to its last sample; a
-   copy cut short by a finding always looks like it's growing):
-   - **growing:** a copy's coverage counter rose by at least 1% in the
-     last quarter of its own elapsed time (`progress.tsv`, or AFL++'s
-     `plot_data` `edges_found`), or the run reached a scope function or
-     sink that the snapshot before it didn't (step 5);
-   - **unknown:** too few progress samples to tell (e.g. a copy that ran
-     only minutes);
+   copy cut short by a finding always looks like it's growing) and has at
+   least two progress samples in the last quarter of its own elapsed time
+   (`progress.tsv`, or AFL++'s `plot_data` `edges_found`; `progress.tsv`
+   samples every 5 minutes, so every copy that ran 20 minutes has them):
+   - **growing:** any of these copies' coverage counter rose by at least
+     1% in its last quarter, or the run reached a scope function or sink
+     that the snapshot before it didn't (step 5);
+   - **unknown:** otherwise, if no copy is left to judge (all ended at a
+     finding or lack the samples);
    - **plateaued:** otherwise.
 
    Then pick its next steps; a harness can have more than one:
