@@ -45,10 +45,8 @@ $L start --id repro-$H-<n> --harness $H --timeout <timeout_s> --env PATH="$RUN_P
   injection.
 - **Timeouts** print libFuzzer's timeout report with the thread stacks.
   One that finishes near the limit (`Executed … in <n> ms`) is still slow:
-  replay it with `-timeout` at half its time. Grow the relevant part of
-  the input over several sizes (1x, 2x, 4x, 8x) and compare run times:
-  growth faster than the size shows an algorithmic DoS (linear code also
-  doubles), and so does a small input that already hits the timeout.
+  replay it with `-timeout` at half its time. Then run the growth test
+  (`fuzz-triage`, "Find the root cause").
 - **`OutOfMemoryError`** under `-Xmx<memory_mb>m`: check whether an
   allocation size comes from the input.
 - **`Stack overflow (use '-Xss<n>k' to reproduce)`** (a

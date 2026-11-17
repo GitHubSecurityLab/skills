@@ -80,11 +80,7 @@ these reports:
     "$P/<target_file>" "<finding>" --timeout=<input_timeout_ms> || :
   node --prof-process "$F/runs/prof-$H-<n>/v8.log" | sed -n '/Bottom up/,+12p'
   ```
-  Then grow the relevant part of the input over several sizes (1x, 2x,
-  4x, 8x) and compare run times. Growth faster than the size shows an
-  algorithmic DoS (linear code also doubles), and so does a small input
-  that already hits the timeout: e.g. a regular expression with
-  catastrophic backtracking.
+  Then run the growth test (`fuzz-triage`, "Find the root cause").
 
 ## Minimize
 

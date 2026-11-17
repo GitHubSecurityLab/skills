@@ -132,6 +132,12 @@ python3 <this skill's directory>/../fuzz-campaign/scripts/init.py
    - where the attacker's bytes enter, and which bytes of the minimized
      input matter (`xxd` it);
    - why the existing checks didn't stop it.
+   For a timeout, run the growth test: grow the relevant part of the
+   input over several sizes (1x, 2x, 4x, 8x) and compare run times.
+   Growth faster than the size shows an algorithmic DoS (a linear parser's
+   time just doubles when the input does), and so does a small input that
+   already hits the timeout (e.g. a regular expression with catastrophic
+   backtracking); one that never ends is a hang.
    If the crash's path runs fuzzing-only code (our patches, or the
    project's own `FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION` blocks:
    skipped checksums, signatures), it's only real if it also happens

@@ -36,12 +36,8 @@ $L start --id repro-$H-<n> --harness $H --timeout <timeout_s> \
 - If it's a timeout: replay with the same `-timeout`. One that finishes
   near it (`Executed <file> in <n> ms`) is still slow, since libFuzzer
   checks only every `-timeout`/2 + 1 s: replay it with `-timeout` at half
-  its time to get the report. Then grow the relevant part of the input
-  over several sizes (e.g. 1x, 2x, 4x, 8x) and compare run times: a linear
-  parser also takes twice as long on twice the input, so growth faster
-  than the size (time per byte rising) shows an algorithmic DoS, and so
-  does a small input that already hits the timeout; one that never ends
-  is a hang.
+  its time to get the report. Then run the growth test (`fuzz-triage`,
+  "Find the root cause").
 - If it's out of memory: the report gives the allocation stack
   (`malloc(<n>) exceeds limit`) or the RSS (`used: <n>Mb`). Check whether
   the size comes from the input.
