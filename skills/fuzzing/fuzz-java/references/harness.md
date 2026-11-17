@@ -50,8 +50,8 @@ class HeaderParserFuzzTest {
     diagnosis.md): valid syntax by construction. The raw `byte[]` test
     stays for malformed input;
   - `FuzzedDataProvider` (`com.code_intelligence.jazzer.api`): `consumeInt`,
-    `consumeString(maxLength)`, `consumeRemainingAsBytes()` and similar;
-    integers come from the end of the input, i.e. a raw seed's last bytes.
+    `consumeString(maxLength)`, `consumeRemainingAsBytes()` and similar
+    (its input layout: `fuzz-harness`, "Design the harness").
 - Catch only exceptions the API documents for invalid input. Everything else
   is a finding (`unexpected_exception` in triage).
 - Property checks: JUnit assertions (`assertEquals`) or `throw new

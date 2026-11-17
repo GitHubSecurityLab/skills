@@ -45,10 +45,10 @@
    - raw-bytes harnesses (a format parser taking `bytes`, `byte[]`,
      `Buffer`, or one Java `String` with a length above the largest seed)
      take the format's files as they are;
-   - a byte-provider split (`FuzzedDataProvider` in any language) reads
-     integers and booleans from the end of the input, the first call the
-     last bytes: the generator appends them to each file (or prepends
-     them, for a harness that reads its options from a fixed prefix);
+   - a byte-provider split (`FuzzedDataProvider`: `SKILL.md`, "Design the
+     harness"): the generator appends the option values to each file, the
+     first call's value as its last bytes (or prepends them, for a harness
+     that reads its options from a fixed prefix);
    - typed harnesses (FuzzTest domains, Jazzer typed parameters) don't map
      files to arguments: use the engine's seed mechanism (`.WithSeeds`,
      Jazzer's `@ValuePool`; the language skill).

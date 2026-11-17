@@ -123,17 +123,13 @@ argument, always UTF-8 since 4.0; older docs show a second argument),
 `consumeRemainingAsBytes()`, `consumeStringArray(maxCount, maxLength)`,
 `remainingBytes`. Nothing can be read after a `consumeRemaining*` call.
 The `*Bytes` methods return arrays of numbers: `Buffer.from(...)` where
-the code needs a buffer.
-Integral and boolean values come from the end of the input, so any new
-call reinterprets old seeds; the corpus is replayed for a new baseline
-(`fuzz-coverage`).
+the code needs a buffer. The provider's input layout: `fuzz-harness`,
+"Design the harness".
 
 ## Seeds and dictionaries
 
-- Seeds are written in the harness's layout: a harness passing `data`
-  straight to a format parser takes the format's files one to one; with a
-  `FuzzedDataProvider`, append the bytes of its integral and boolean values
-  in reverse call order.
+- Seeds are written in the harness's layout (`fuzz-harness`'s seeds.md,
+  "Write seeds in the harness's input layout").
 - Seeds go into the corpus directory argument (`corpus/<h>/`).
 - Dictionaries: `-dict=<file>` in the fuzzer options.
 

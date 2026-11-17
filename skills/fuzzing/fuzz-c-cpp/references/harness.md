@@ -57,12 +57,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
 }
 ```
 
-- Integers, booleans and enums are taken from the **end** of the input;
-  bytes and strings from the front. A raw format file used as a seed loses
-  its last bytes to the options, which breaks formats whose end matters
-  (JSON, XML, ZIP's end record, PNG's `IEND`). For such formats, take the
-  options from a fixed-size prefix or from bytes after the document, or
-  write the seeds in the harness's layout (`fuzz-harness`, seeds.md).
+- Where its values come from in the input, and formats whose end
+  matters: `fuzz-harness`, "Design the harness".
 - Copies from `ConsumeBytes`/`ConsumeRemainingBytes` are exact-size, so
   over-reads still trip ASan.
 - Header reference:

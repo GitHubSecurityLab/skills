@@ -128,10 +128,17 @@ python3 <this skill's directory>/../fuzz-campaign/scripts/init.py
      inputs (fix seeds, reset state).
    - Fast: expensive one-time setup goes in the engine's initialization hook;
      no logging per input; limit input size to what the format needs.
-   - Input layout: nothing can be read after `ConsumeRemainingBytes` or
-     similar calls, so new options go before the final consume-remaining
-     call. A layout change reinterprets old seeds (FuzzedDataProvider
-     reads integers from the end of the input). Where the document marks
+   - Input layout: `FuzzedDataProvider` (every language) takes single
+     values (integers, booleans, enums) from the end of the input, the
+     first call the last bytes, and bytes, arrays and strings from the
+     front; nothing can be read after `ConsumeRemainingBytes` or similar
+     calls. A raw format file used as a seed loses its last bytes to the
+     options, which breaks formats whose end matters (JSON, XML, ZIP's end
+     record, PNG's `IEND`): take their options from a fixed-size prefix or
+     from bytes after the document, or write the seeds in the harness's
+     layout (seeds.md).
+   - Changing the layout: new options go before the final consume-remaining
+     call, and the change reinterprets old seeds. Where the document marks
      its own end, prefer an option read after it, with the old behaviour
      when absent: it keeps old seeds. Otherwise that's fine:
      `fuzz-coverage` replays the corpus on the new build for a new

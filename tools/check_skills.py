@@ -159,6 +159,10 @@ SINGLE_SOURCES = {
         os.path.join("skills", "fuzzing", "fuzz-triage", "SKILL.md"),
         "the timeout growth test (`fuzz-triage`, \"Find the root cause\")",
     ),
+    "from the end of the input": (
+        os.path.join("skills", "fuzzing", "fuzz-harness", "SKILL.md"),
+        "the FuzzedDataProvider layout (`fuzz-harness`, \"Design the harness\")",
+    ),
     "cost only breaks ties": (
         os.path.join("skills", "fuzzing", "fuzz-coverage", "references", "diagnosis.md"),
         "the next-action rule (`fuzz-coverage`'s diagnosis.md)",
