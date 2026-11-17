@@ -289,6 +289,17 @@ class CheckSkillsTests(unittest.TestCase):
         self.assertIn("fuzz-triage/SKILL.md", errors[1])
         self.assertIn("has 0", errors[1])
 
+    def test_standalone_skills_have_the_same_start_section(self):
+        start = "## Start\n\nRun:\n\n```sh\n## not a heading\npython3 init.py\n```\n\n- Exit 2: rerun.\n"
+        self.add("fuzzing", "fuzz-harness", skill("fuzz-harness", body="# H\n\n" + start + "\n## Reads\n\nH only.\n"))
+        self.add("fuzzing", "fuzz-coverage", skill("fuzz-coverage", body="# C\n\n" + start + "\n## Reads\n\nC only.\n"))
+        self.add("fuzzing", "fuzz-triage", skill("fuzz-triage", body="# T\n\n" + start.replace("rerun", "run again")
+                                                 + "\n## Reads\n\nT only.\n"))
+        errors = [e for e in cs.check(self.root).errors if "'## Start'" in e]
+        self.assertEqual(len(errors), 1, errors)
+        self.assertIn("fuzz-triage/SKILL.md", errors[0])
+        self.assertIn("differs", errors[0])
+
     def test_standalone_skills_have_the_same_before_stopping_check(self):
         line = "- **Before stopping,** check the Done when items that this request's steps produce.\n"
         self.add("fuzzing", "fuzz-harness", skill("fuzz-harness", body="# H\n\n## Next\n\n" + line))

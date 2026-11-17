@@ -21,7 +21,9 @@ Errors (exit code 1):
   - a shared skill that uses the fuzzing workspace (.seclab/fuzz)
   - a line several skills state alike (SHARED_LINES: the Jazzer status, the
     workflow skills' "Run every step", the standalone skills' "Before
-    stopping") differs
+    stopping" and "Standalone: stop") differs
+  - a section several skills state alike (SHARED_SECTIONS: the standalone
+    skills' Start) differs
   - a term in another meaning or a retired one (TERMS: "leak check" for the
     state-leak check, an action's "target" for its aim, "hand-off" for upstreaming,
     "directed inputs" for targeted inputs, "crash ledger" for the crash buckets)
@@ -216,6 +218,10 @@ SHARED_LINES = (
                      os.path.join("skills", "fuzzing", "fuzz-js", "SKILL.md"))),
     ("**Run every step**", tuple(os.path.join("skills", "fuzzing", name, "SKILL.md") for name in _WORKFLOW_SKILLS)),
     ("- **Before stopping,**", tuple(os.path.join("skills", "fuzzing", name, "SKILL.md") for name in sorted(STANDALONE_SKILLS))),
+    ("- Standalone: stop", tuple(os.path.join("skills", "fuzzing", name, "SKILL.md") for name in sorted(STANDALONE_SKILLS))),
+)
+SHARED_SECTIONS = (
+    ("Start", tuple(os.path.join("skills", "fuzzing", name, "SKILL.md") for name in sorted(STANDALONE_SKILLS))),
 )
 
 
@@ -457,6 +463,7 @@ def check(root: str) -> Report:
     check_terms(report, root)
     check_shared_skills(report, root)
     check_shared_lines(report, root)
+    check_shared_sections(report, root)
     check_failure_tables(report, root)
     check_launcher_commands(report, root)
     check_pointers(report, root, skills)
@@ -691,6 +698,41 @@ def check_shared_lines(report: Report, root: str) -> None:
                 first = (rel, found[0])
             elif found[0] != first[1]:
                 report.error(rel, "its %s line differs from %s's" % (prefix, first[0]))
+
+
+def _sections(text: str, title: str) -> list:
+    """The lines of each `## <title>` section; a `## ` line in a code block doesn't end one."""
+    sections, current, fence = [], None, None
+    for line in text.splitlines():
+        match = FENCE_RE.match(line)
+        if match:
+            fence = match.group(1) if fence is None else (None if match.group(1) == fence else fence)
+        elif fence is None and line.startswith("## "):
+            current = [] if line[3:].strip() == title else None
+            if current is not None:
+                sections.append(current)
+            continue
+        if current is not None:
+            current.append(line)
+    return sections
+
+
+def check_shared_sections(report: Report, root: str) -> None:
+    """Sections several skills state alike (the standalone skills' Start)."""
+    for title, paths in SHARED_SECTIONS:
+        present = [rel for rel in paths if os.path.exists(os.path.join(root, rel))]
+        if len(present) < 2:
+            continue
+        first = None
+        for rel in present:
+            with open(os.path.join(root, rel), encoding="utf-8") as handle:
+                found = _sections(handle.read(), title)
+            if len(found) != 1:
+                report.error(rel, "needs exactly one '## %s' section, has %d" % (title, len(found)))
+            elif first is None:
+                first = (rel, found[0])
+            elif found[0] != first[1]:
+                report.error(rel, "its '## %s' section differs from %s's" % (title, first[0]))
 
 
 def check_failure_tables(report: Report, root: str) -> None:

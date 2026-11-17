@@ -33,21 +33,20 @@ decides when to change them.
 ## Start
 
 Before anything else, and again whenever you resume, run from the
-repository root:
+repository root and follow what it prints:
 
 ```sh
 python3 <this skill's directory>/../fuzz-campaign/scripts/init.py
 ```
 
-It sets up `.seclab/fuzz/`, copies or refreshes the scripts in
-`.seclab/fuzz/bin/`, and prints the first-build notice and the safety rules,
-which apply here too. Show the notice before any build or run of project
-code, then rerun with `--notice-shown`. Exit 2 (no ledger yet): rerun with
-`--branch current`, and before the first commit ask whether the work moves
-to a new `seclab/fuzz-<date>` branch (`--branch new`); read-only requests
-never ask. If `init.py` is missing, the skill was installed without its
-plugin: ask the user to install the `seclab-skills` plugin; don't look for
-another copy.
+- The safety rules it prints apply here too.
+- Exit 2 (no ledger yet): rerun with `--branch current`.
+- Ledger status `standalone`: before the first commit, ask whether the work
+  moves to a new `seclab/fuzz-<date>` branch (`--branch new`); read-only
+  requests never ask.
+- If `init.py` is missing, the skill was installed without its plugin: ask
+  the user to install the `seclab-skills` plugin; don't look for another
+  copy.
 
 ## Reads
 
@@ -263,9 +262,5 @@ measures it. Without a sink list, step 7 only reads the gaps' code.
 - In a campaign: the skill for the chosen action, or back to
   `fuzz-campaign` when the loop ends. Called by another skill for one
   step: return to it with the result.
-- Standalone: stop when the request is done ("why is coverage stuck?":
-  the diagnosis and the proposed action). Show the result, using
-  the skills' terms, each explained in a few words the first time (e.g.
-  "the gate (the harness checks)"), and offer the next step
-  without starting it.
+- Standalone: stop when the request is done. Show the result, using the skills' terms, each explained in a few words the first time (e.g. "the gate (the harness checks)"), and offer the next step without starting it.
 
