@@ -105,11 +105,16 @@ measures it. Without a sink list, step 7 only reads the gaps' code.
    ```sh
    python3 .seclab/fuzz/bin/coverage.py summary .seclab/fuzz/coverage/<h>/r<round>.lcov --prev .seclab/fuzz/coverage/<h>/r<round-1>.lcov --scope .seclab/fuzz/targets/<id>.scope --root .
    ```
-   Add a row to Coverage rounds, with the run's executions.
+   Add a row to Coverage rounds, with the run's executions; for a round
+   that doesn't count toward the plateau (cut short by a crash, on
+   different code, or too slow: step 4), its Change says why instead.
 4. **Plateau?** This decides when rounds stop and diagnosis starts; gaps
    diagnosed earlier may be code the fuzzer would still reach. A round
-   that ran far fewer inputs than its minutes times the gate's executions
-   per second (a busy host, a slow input) doesn't count; rerun it. A round
+   that ran at less than half the harness's last measured executions per
+   second (the last round that counted, or the gate if it ran later)
+   doesn't count: a busy host or a slow input held it back. Rerun it once;
+   if the rerun is slow too, the harness got slower: count the rerun, and
+   find the cause (`fuzz-harness`'s gate.md, "Fast enough"). A round
    **stalls** when it adds no new scope branches and found no crash. The
    engine has plateaued after two stalled rounds in a row that ran at
    least 100,000 inputs together (fewer: run the next round), or when the
