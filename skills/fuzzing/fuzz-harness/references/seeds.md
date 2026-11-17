@@ -42,8 +42,8 @@ Not for harness changes (`SKILL.md`) or running fuzzers (runs.md).
    of range, deep nesting): error-handling code that still processes
    attacker data is attack surface. Sources from outside the project (5, 6)
    stay local and are never proposed upstream.
-   - If the imported corpus is large: minimize it before the gate
-     (`fuzz-coverage`'s corpus.md).
+   - If the corpus passes about 10,000 files after an import: minimize it
+     before the gate (`fuzz-coverage`'s corpus.md).
    - After an import, list the files above the harness's input cap
      (`find <dir> -type f -size +<cap>c`): they slow every execution; keep
      them only if the format needs that size, and then raise the cap.

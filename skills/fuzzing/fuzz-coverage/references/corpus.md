@@ -50,9 +50,9 @@ from it.
    - Minimize the persistent corpus alone with the same command (without a
      run's corpus) when the develop loop ends, before the long-run
      commands; when it passes about 10,000 files (every replay, `reach.py`
-     and a long run's start load all of them); after importing a large
-     external corpus; and when the user asks. Jest fuzz tests: only on
-     request (the language skill).
+     and a long run's start load all of them), also right after an import;
+     and when the user asks. Jest fuzz tests: only on request (the
+     language skill).
    - After the minimizing before the long runs, rerun the generators of
      sinks still reached but not triggered into the corpus, a few hundred
      inputs at most and none that crash: the merge dropped their
