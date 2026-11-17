@@ -1,11 +1,8 @@
 # Running Jazzer
 
-Every run goes through `launcher.py` (`fuzz-harness`'s runs.md) with the
-standalone driver. Every command starts with
-`. .seclab/fuzz/env.sh; H=<harness>;`, since an agent's commands don't keep
-shell variables: the file sets `F` (the absolute path of `.seclab/fuzz`),
-`L` (`python3 $F/bin/launcher.py`) and the environment below. `{run}` and
-`{copy}` are filled in by the launcher. Commands need absolute paths.
+Every run goes through `launcher.py` (`fuzz-harness`'s runs.md explains `F`,
+`L` and placeholders like `{run}`) with the standalone driver, and every
+command starts with `. .seclab/fuzz/env.sh; H=<harness>;`.
 
 ## Settings to flags
 

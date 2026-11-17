@@ -1,11 +1,8 @@
 # Running C/C++ fuzzers
 
-Every run goes through `launcher.py` (`fuzz-harness`'s runs.md). An
-agent's commands don't keep shell variables, so every command starts with
-`. .seclab/fuzz/env.sh; H=<harness>;`: the file sets `F` (the absolute
-path of `.seclab/fuzz`), `L` (`python3 $F/bin/launcher.py`) and the
-environment below. `{run}`, `{scratch}` and `{copy}` are filled in by the
-launcher. Commands need absolute paths. Build before the run and run the
+Every run goes through `launcher.py` (`fuzz-harness`'s runs.md explains `F`,
+`L` and placeholders like `{run}`), and every command starts with
+`. .seclab/fuzz/env.sh; H=<harness>;`. Build before the run and run the
 built binary directly; never `bazel run` through the launcher (Bazel's
 server and cache live in the real `HOME`).
 

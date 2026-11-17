@@ -22,7 +22,9 @@ them in a terminal.
 ### 1. Pick the run id and the command
 
 Give each run a new id, and a command that names its findings directory
-and passes its caps.
+and passes its caps. The agent's own shell commands, `$L start` included,
+begin with `. .seclab/fuzz/env.sh;`, which sets `F` (the absolute path of
+`.seclab/fuzz`) and `L` (`python3 $F/bin/launcher.py`).
 
 - **Run ids** (one directory each under `runs/`):
   - develop runs: `gate-<h>-<n>`, `r<round>-<h>` (a round, named like its
@@ -74,8 +76,7 @@ One plain process each, in the foreground. Choose the flags first:
   10 seconds, so its runs stay in the foreground: in its sandbox, a
   detached run ends with the command on Linux.
 
-Then start it (`F`, `L`: from `.seclab/fuzz/env.sh`, which every command
-sources first; the language skill's run.md):
+Then start it:
 
 ```sh
 $L start --id r3-<h> --harness <h> --time 240 --corpus "$F/corpus/<h>" \

@@ -4,12 +4,9 @@ Jest `it.fuzz` tests: `jest.md`, "Runs", instead of the settings, CLI
 target and merging sections below; the environment and the run check
 apply to both.
 
-Every run goes through `launcher.py` (`fuzz-harness`'s runs.md). An
-agent's commands don't keep shell variables, so every command starts with
-`. .seclab/fuzz/env.sh; H=<harness>;`: the file sets `F` (the absolute
-path of `.seclab/fuzz`), `L` (`python3 $F/bin/launcher.py`) and the
-environment below. `{run}`, `{scratch}` and `{copy}` are filled in by the
-launcher.
+Every run goes through `launcher.py` (`fuzz-harness`'s runs.md explains `F`,
+`L` and placeholders like `{run}`), and every command starts with
+`. .seclab/fuzz/env.sh; H=<harness>;`.
 
 ## Settings to options
 
