@@ -38,7 +38,7 @@ Rules:
     coverage/<harness>/           snapshots r<round>.lcov (also .profdata or .exec), gate-*.lcov
     coverage/merged/<n>.lcov
     upstreaming/                  held-back.tsv, PR texts (upstreaming.md)
-    sinks/<target>.tsv            sink sites (id, file, line, group, kind, note)
+    sinks/<target>.tsv            sink sites (id, file, line, code, group, kind, note)
     runs/<id>/                    one per run (launcher.py): spec.json, meta.json, progress.tsv,
                                   artifacts/copy-<i>/ (findings), copy-<i>/log,
                                   copy-<i>/work/ (scratch; deleted after develop runs);

@@ -84,8 +84,9 @@ plateau (above):
       off-by-one bugs live in checks);
    5. past security fixes in the file;
    6. low hit counts in coverage.
-3. Add the sites to `sinks/<id>.tsv` (`id file line group kind note`), in
-   place of the hotspot's row.
+3. Add the sites to `sinks/<id>.tsv` (`id file line code group kind
+   note`; `fuzz-campaign`'s targets.md, "Sinks"), in place of the
+   hotspot's row.
 
 ## Choosing the next action
 

@@ -124,9 +124,12 @@ Not for writing the harness (`fuzz-harness`) or for threat modelling itself
      first statement (kind `hotspot`). Site
      groups come later, after the first plateau and only for hotspots
      reached but not triggered (`fuzz-coverage`, "Check the sinks").
-   - Write them to `sinks/<id>.tsv` (header: `id file line group kind note`,
-     tab-separated) and a summary ("20 of 140 groups tracked") into the
-     target file.
+   - Write them to `sinks/<id>.tsv` (header: `id file line code group kind
+     note`, tab-separated) and a summary ("20 of 140 groups tracked") into
+     the target file. `code` is the site's call or statement as written on
+     its line, such as `memcpy(out, d + 1, len)`: `coverage.py sites` finds
+     the line again by it after a fix or patch shifts the code, if no other
+     line in the file has the same text.
 7. **Present.** Interactive mode shows the ranked list with checks and
    scope at the targets checkpoint (`fuzz-campaign`), with a proposed
    stopping rule. Autonomous mode takes the candidates its stopping rule

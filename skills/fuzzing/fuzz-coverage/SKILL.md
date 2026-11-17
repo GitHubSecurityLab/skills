@@ -159,7 +159,9 @@ measures it. Without a sink list, step 7 only reads the gaps' code.
    ```sh
    python3 .seclab/fuzz/bin/coverage.py sites .seclab/fuzz/coverage/<h>/r<round>.lcov --sites .seclab/fuzz/sinks/<id>.tsv --root .
    ```
-   If `sites` marks a site *to confirm*: check that its call ran before
+   If `sites` reports moved sites: update their lines in the TSV. If it
+   can't find a site's code: find the site again and correct its row. If
+   it marks a site *to confirm*: check that its call ran before
    counting it (diagnosis.md, "Sites to confirm"). Tested and sanitized
    groups get no more inputs until their code changes. For the others:
    - A high-ranked group **not reached**: follow its call path back to the

@@ -1563,6 +1563,24 @@ def cmd_overlap(args) -> int:
 TO_CONFIRM = "reached (line; a branch on it is untaken: confirm)"
 
 
+def _locate(path: str, line: int, code: str) -> tuple:
+    """Where a site's code is now: (its line, 1) if the source still has `code`
+    on `line` or on exactly one other line, else (None, how many lines have
+    it). Whitespace doesn't count. Without code or a readable source: (line, 1)."""
+    want = "".join(code.split())
+    if not want:
+        return line, 1
+    try:
+        with open(path, encoding="utf-8", errors="replace") as handle:
+            source = ["".join(text.split()) for text in handle]
+    except OSError:
+        return line, 1
+    if 0 < line <= len(source) and want in source[line - 1]:
+        return line, 1
+    found = [number for number, text in enumerate(source, 1) if want in text]
+    return (found[0], 1) if len(found) == 1 else (None, len(found))
+
+
 def cmd_sites(args) -> int:
     mapper = PathMapper(args.root)
     files, _ = filter_scope(_load(args, args.lcov), mapper, [])
@@ -1577,13 +1595,18 @@ def cmd_sites(args) -> int:
         sites = list(reader)
     results = []
     groups: dict = {}
+    moved = []
     for index, site in enumerate(sites, 1):
         path = (site.get("file") or "").strip()
         try:
             line = int((site.get("line") or "").strip())
         except ValueError:
             continue
-        matches = [d for d in files if _entry_matches(d, path)]
+        now, count = _locate(os.path.join(args.root or ".", path), line, site.get("code") or "")
+        if now is not None and now != line:
+            moved.append("%s %d → %d" % ((site.get("id") or str(index)).strip(), line, now))
+            line = now
+        matches = [d for d in files if _entry_matches(d, path)] if now is not None else []
         hits = None
         untaken = False
         for display in matches:
@@ -1593,7 +1616,9 @@ def cmd_sites(args) -> int:
             untaken = untaken or any(
                 not h for (branch_line, _block, _branch), h in files[display].branches.items() if branch_line == line
             )
-        if matches and hits is not None:
+        if now is None:
+            state = "unknown (its code is on %s: find the site again)" % ("no line" if not count else "%d lines" % count)
+        elif matches and hits is not None:
             # Coverage is per line: in `if (x == 42) sink();` the line runs without the call.
             state = "not reached" if not hits else (TO_CONFIRM if untaken else "reached")
         elif matches:
@@ -1612,6 +1637,11 @@ def cmd_sites(args) -> int:
     confirm = sum(1 for r in results if r[4] == TO_CONFIRM)
     print("## Sink sites: %d of %d reached%s"
           % (reached, len(results), " (%d to confirm)" % confirm if confirm else ""))
+    if moved:
+        print()
+        print("**Moved:** %d %s code is on another line now (%s); update the %s in %s."
+              % (len(moved), "site's" if len(moved) == 1 else "sites'", ", ".join(moved),
+                 "line" if len(moved) == 1 else "lines", args.sites))
     if groups:
         print()
         print("| Group | Sites reached |")
@@ -1811,7 +1841,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--sites",
         required=True,
-        help="TSV with a header; needs 'file' and 'line', optional 'id' and 'group'",
+        help="TSV with a header; needs 'file' and 'line', optional 'id', 'group' and 'code' (text on the "
+        "site's line in the source under --root, to find the line again after an edit)",
     )
     p.set_defaults(func=cmd_sites)
     return parser
