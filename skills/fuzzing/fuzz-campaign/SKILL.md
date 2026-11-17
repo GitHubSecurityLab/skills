@@ -130,8 +130,9 @@ it after every step.
    ledger, only `--notice-shown`; `--disposable` if they say so) and
    install what the plan lists. Autonomous mode takes the
    defaults and shows the notice as a warning.
-2. **Baseline, started.** Find the existing harnesses and build all of
-   them ([references/targets.md](references/targets.md), "Recon of
+2. **Baseline, started.** The baseline is the existing harnesses'
+   coverage before the campaign changes anything. Find the harnesses and
+   build all of them ([references/targets.md](references/targets.md), "Recon of
    existing fuzzing", whose Baseline says how to record a harness that
    doesn't build): one library build per variant, each harness linked
    against it (`fuzz-harness`'s build.md). Their measured

@@ -187,6 +187,6 @@ Classic Jazzer targets (common in OSS-Fuzz): a class with
 `fuzzerTestOneInput(FuzzedDataProvider data)` and optionally
 `fuzzerInitialize()`. Keep their format when extending them, and run them
 with the standalone driver (`--target_class=<class>`). Ones kept in
-`google/oss-fuzz` are for the baseline only: compile copies from
-`.seclab/fuzz/oss-fuzz/` with `javac -cp "$CP" -d "$F/build/jazzer/oss-fuzz"`
-and put that directory in front of `$CP`.
+`google/oss-fuzz` only measure existing fuzzing (`fuzz-campaign`'s
+baseline): compile copies from `.seclab/fuzz/oss-fuzz/` with
+`javac -cp "$CP" -d "$F/build/jazzer/oss-fuzz"` and put that directory in front of `$CP`.

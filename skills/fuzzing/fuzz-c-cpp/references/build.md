@@ -140,9 +140,9 @@ with `upstream-<topic>-build/` for `build/` in `W` (`<checkout>` stays the campa
 for the steps and harness list. It expects `$CC`, `$CXX`, `$CFLAGS`,
 `$CXXFLAGS`, `$LIB_FUZZING_ENGINE`, `$SRC`, `$OUT`, `$WORK`; running it
 natively only works when it doesn't depend on the Docker image's layout.
-If the harnesses are kept there, not in the project: they're for the
-baseline only. Copy them to `.seclab/fuzz/oss-fuzz/`, and per variant,
-build the library as above and link each copy against it as `build.sh`
+If the harnesses are kept there, not in the project: they only measure existing
+fuzzing (`fuzz-campaign`'s baseline). Copy them to `.seclab/fuzz/oss-fuzz/`, and per
+variant, build the library as above and link each copy against it as `build.sh`
 does, in a script `.seclab/fuzz/build/<variant>.sh`. New harnesses, and copies you extend,
 go into the project's tree (`fuzz-campaign`'s upstreaming.md offers them for
 `projects/<name>/`).
