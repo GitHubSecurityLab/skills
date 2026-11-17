@@ -22,7 +22,7 @@ $L start --id repro-$H-<n> --harness $H --timeout <timeout_s> \
 |---|---|
 | libFuzzer (`runs/<id>/artifacts/copy-<i>/crash-*`, `timeout-*`, `oom-*`, `leak-*`) | the block above |
 | AFL++ (`runs/<id>/out/<instance>/crashes/id:*`, `hangs/id:*`) | the block above: same harness, symbolized report |
-| FuzzTest (reproducer in `runs/<id>/artifacts/copy-<i>/`) | the block below |
+| FuzzTest (reproducer in `runs/<id>/artifacts/copy-<i>/`) | `fuzztest.md`, "Triage" |
 | OSS-Fuzz or CI testcase | OSS-Fuzz's `helper.py reproduce` first (`fuzz-triage`'s oss-fuzz.md); build the matching sanitizer (`fuzz-harness`'s build.md), then as above |
 
 - A file argument runs the input once without fuzzing; `-runs=100` before
@@ -45,18 +45,6 @@ $L start --id repro-$H-<n> --harness $H --timeout <timeout_s> \
   `detect_leaks=1` in `ASAN_OPTIONS` and `-rss_limit_mb=0
   -malloc_limit_mb=<m>`; otherwise libFuzzer's own RSS thread shows up as a
   leak at exit.
-- If it's a FuzzTest reproducer: replay it in the fuzzing build. On macOS,
-  FuzzTest's `--rss_limit_mb` is `0` (`fuzztest.md`). To run it 100 times
-  in one process: `FUZZTEST_REPLAY` set to a directory of 100 copies of the
-  file.
-  <!-- ci: fuzztest-repro -->
-  ```sh
-  $L start --id repro-$H-<n> --harness $H --timeout <timeout_s> --env FUZZTEST_REPLAY="<finding>" \
-    --env ASAN_OPTIONS="$ASAN_OPTIONS" --env UBSAN_OPTIONS="$UBSAN_OPTIONS" --env PATH="$RUN_PATH" -- \
-    "<build>/fuzztest/<test_binary>" --gtest_filter=<fuzz_test> \
-    --time_limit_per_input=<input_timeout_s>s --rss_limit_mb=<memory_mb>
-  ```
-
 ## Minimize
 
 A libFuzzer harness. If it's a stack overflow: minimize it without
@@ -80,26 +68,7 @@ $L start --id min-$H-<n> --harness $H --timeout <timeout_s> --env PATH="$RUN_PAT
 - Replay the minimized input and compare its signature with
   `crash_buckets.py` before keeping it.
 - Look at the bytes: `xxd -g1 <file> | head -n 20`.
-- If the harness is a FuzzTest: `FUZZTEST_MINIMIZE_REPRODUCER` exits at the
-  first smaller input that crashes (any crash), so run it in a loop, each
-  result the next input, until a step finds nothing smaller within
-  `<timeout_s>` (20 to 60 s). Then replay and group the result as for
-  every engine (`fuzz-triage`, "Minimize"):
-  <!-- ci: fuzztest-minimize -->
-  ```sh
-  m="$F/crashes/<bucket>/minimized"; mkdir -p "$F/crashes/<bucket>"; cp "<finding>" "$m"
-  for i in $(seq 1 30); do
-    out="$F/runs/min-$H-<n>-$i/reproducers"; mkdir -p "$out"
-    $L start --id min-$H-<n>-$i --harness $H --timeout <timeout_s> --env FUZZTEST_MINIMIZE_REPRODUCER="$m" \
-      --env FUZZTEST_REPRODUCERS_OUT_DIR="$out" --env ASAN_OPTIONS="$ASAN_OPTIONS" \
-      --env UBSAN_OPTIONS="$UBSAN_OPTIONS" --env PATH="$RUN_PATH" -- \
-      "<build>/fuzztest/<test_binary>" --fuzz=<fuzz_test> \
-      --time_limit_per_input=<input_timeout_s>s --rss_limit_mb=<memory_mb> > /dev/null || :  # 134: smaller crash
-    next=$(ls -S "$out" | tail -n 1)
-    [ -n "$next" ] && [ "$(wc -c < "$out/$next")" -lt "$(wc -c < "$m")" ] || break
-    cp "$out/$next" "$m"
-  done
-  ```
+- If the harness is a FuzzTest: `fuzztest.md`, "Triage".
 
 ## Reading reports
 
@@ -112,11 +81,7 @@ $L start --id min-$H-<n> --harness $H --timeout <timeout_s> --env PATH="$RUN_PAT
 - **libFuzzer:** `deadly signal` (a crash without a sanitizer report, e.g.
   `abort()`, a trap, or an uncaught C++ exception, whose type the line
   before names), `timeout after <n> seconds`, `out-of-memory`.
-- **FuzzTest:** `=== BUG FOUND!`, the failing arguments, a regression test
-  draft and the reproducer path; a signal's stack (an `abort()`, a failed
-  `assert`) follows. Timeouts and memory limits print `[!] Per-input
-  timeout exceeded` or `[!] RSS limit exceeded` before the banner; any stack
-  after it is the watchdog's, not the input's.
+- **FuzzTest:** `fuzztest.md`, "Triage".
 
 `crash_buckets.py` reads all of these.
 

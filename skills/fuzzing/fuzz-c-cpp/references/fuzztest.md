@@ -235,7 +235,55 @@ python3 "$F/bin/coverage.py" overlap "$F/coverage/$H/gate-one.lcov" "$F/coverage
 
 Export as in `coverage.md`, "Export", with `<test_binary>`.
 
-## Long runs, crashes, OSS-Fuzz
+## Triage
+
+A report starts with `=== BUG FOUND!` and the failing arguments (`argument
+0: ...`), then a regression test draft and the reproducer's path (in
+FuzzTest's own serialization); a signal's stack (an `abort()`, a failed
+`assert`) follows. Timeouts and memory limits print `[!] Per-input timeout
+exceeded` or `[!] RSS limit exceeded` before the banner; any stack after it
+is the watchdog's, not the input's. `crash_buckets.py` reads them.
+
+- **Reproduce** a reproducer (`runs/<id>/artifacts/copy-<i>/`) in the
+  fuzzing build, with `--rss_limit_mb=0` on macOS (Run, above). To run it
+  100 times in one process: `FUZZTEST_REPLAY` set to a directory of 100
+  copies of the file.
+  <!-- ci: fuzztest-repro -->
+  ```sh
+  $L start --id repro-$H-<n> --harness $H --timeout <timeout_s> --env FUZZTEST_REPLAY="<finding>" \
+    --env ASAN_OPTIONS="$ASAN_OPTIONS" --env UBSAN_OPTIONS="$UBSAN_OPTIONS" --env PATH="$RUN_PATH" -- \
+    "<build>/fuzztest/<test_binary>" --gtest_filter=<fuzz_test> \
+    --time_limit_per_input=<input_timeout_s>s --rss_limit_mb=<memory_mb>
+  ```
+- **Minimize:** `FUZZTEST_MINIMIZE_REPRODUCER` exits at the first smaller
+  input that crashes (any crash), so run it in a loop, each result the
+  next input, until a step finds nothing smaller within `<timeout_s>` (20
+  to 60 s). Then replay and group the result as for every engine
+  (`fuzz-triage`, "Minimize"):
+  <!-- ci: fuzztest-minimize -->
+  ```sh
+  m="$F/crashes/<bucket>/minimized"; mkdir -p "$F/crashes/<bucket>"; cp "<finding>" "$m"
+  for i in $(seq 1 30); do
+    out="$F/runs/min-$H-<n>-$i/reproducers"; mkdir -p "$out"
+    $L start --id min-$H-<n>-$i --harness $H --timeout <timeout_s> --env FUZZTEST_MINIMIZE_REPRODUCER="$m" \
+      --env FUZZTEST_REPRODUCERS_OUT_DIR="$out" --env ASAN_OPTIONS="$ASAN_OPTIONS" \
+      --env UBSAN_OPTIONS="$UBSAN_OPTIONS" --env PATH="$RUN_PATH" -- \
+      "<build>/fuzztest/<test_binary>" --fuzz=<fuzz_test> \
+      --time_limit_per_input=<input_timeout_s>s --rss_limit_mb=<memory_mb> > /dev/null || :  # 134: smaller crash
+    next=$(ls -S "$out" | tail -n 1)
+    [ -n "$next" ] && [ "$(wc -c < "$out/$next")" -lt "$(wc -c < "$m")" ] || break
+    cp "$out/$next" "$m"
+  done
+  ```
+- **The reproducer's values:** the regression test draft (`=== Regression
+  test draft`) calls the property function with the failing arguments
+  (none for `FUZZ_TEST_F`). The property function is our harness, so take
+  only the argument values from it, for the reproducer's direct API call
+  (`regression.md`, "The bug's reproducer").
+- **Seeds in `.WithSeeds({...})`** run in every mode, including the short
+  unit-test run in normal CI: a harness check, not a bug's test.
+
+## Long runs and OSS-Fuzz
 
 - **Long runs:** N independent copies of the command (`--copies`), with
   `--tree "<tree>"` and the binary from `<tree_build>/fuzztest/` (`run.md`, "Long runs"),
@@ -244,8 +292,6 @@ Export as in `coverage.md`, "Export", with `<test_binary>`.
   named by content, so one directory is safe). With no duration, leave out
   `--fuzz_for`. (`--jobs=<n>` needs Bazel's Centipede.) At analysis, merge
   by minimizing the union of the persistent corpus and the run's (Run, above).
-- **Crashes** print the failing arguments (`argument 0: ...`); reproducers
-  use FuzzTest's own serialization. More: `triage.md`, `regression.md`.
 - **OSS-Fuzz** builds FuzzTest harnesses with Bazel. A CMake project can
   follow libavif, which builds them in libFuzzer compatibility mode with a
   pinned FuzzTest and a few patches (`tests/oss-fuzz/build.sh`); the

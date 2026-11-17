@@ -51,8 +51,9 @@ Every real bug gets one, written in triage on the build that found it: a
 small program in `crashes/<bucket>/repro.c` (or `.cc`) whose `main()` calls
 the project's API with the concrete values the harness derived from the
 input, not through the harness and not as a crash file. Print the values
-once from the harness, or read them in a debugger. `xxd -i <file>` prints
-a byte buffer as a C array.
+once from the harness, or read them in a debugger (FuzzTest prints them:
+`fuzztest.md`, "Triage"). `xxd -i <file>` prints a byte buffer as a C
+array.
 
 - **It includes the check that caught the bug,** so it fails before the
   fix: the sanitizer build, the harness's property check written out (e.g.
@@ -110,12 +111,3 @@ Run the test before the fix (it must fail with the sanitizer report) and
 after it (it must pass). `-fno-sanitize-recover=$UB` makes a UBSan
 report fail the test: by default UBSan prints it and exits 0, so ctest,
 CI and a bisect would pass.
-
-## FuzzTest
-
-- Each crash prints `=== Regression test draft`: a `TEST` calling the
-  property function with the failing arguments (none for `FUZZ_TEST_F`).
-  The property function is our harness, so take only the argument values
-  from it, for the reproducer's direct API call.
-- Seeds in `.WithSeeds({...})` run in every mode, including the short
-  unit-test run in normal CI: a harness check, not a bug's test.

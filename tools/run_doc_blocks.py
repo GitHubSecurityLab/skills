@@ -1656,7 +1656,7 @@ def c_fuzztest(ctx: Context) -> None:
     ctx.expect("2 logs in 1 bucket" in out and "no crash detected" not in out,
                "the minimized input stays in the original's bucket")
     # The in-process repeat (fuzz-triage, step 2): a directory of copies as FUZZTEST_REPLAY, replayed in one process.
-    copies = int(documented("fuzz-c-cpp", "triage.md", r"`FUZZTEST_REPLAY` set to a directory of (\d+) copies"))
+    copies = int(documented("fuzz-c-cpp", "fuzztest.md", r"`FUZZTEST_REPLAY` set to a directory of (\d+) copies"))
     repeat = os.path.join(ctx.F, "crashes", "assert", "repeat")
     ctx.sh('mkdir -p "{0}" && for i in $(seq 1 {1}); do cp "$F/corpus/$H/{2}" "{0}/$i"; done'
            .format(repeat, copies, ctx.files(".seclab/fuzz/corpus/record")[0]))
