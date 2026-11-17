@@ -54,7 +54,10 @@ checkout's `.cifuzz-corpus`.
    - If the engine is Jest: it needs no merge.
 5. **Measure** coverage once, after the swap, with the current coverage
    build: replay every harness's corpus, not only the long runs', then
-   combine them as in `SKILL.md`, "Combined coverage".
+   combine them as in `SKILL.md`, "Combined coverage". Then update each
+   target's sink states as `fuzz-coverage`, "Check the sinks", does: from
+   `sites` on its harnesses' new snapshots (it merges several lcov files)
+   and the buckets phase 1 triaged. Step 6 picks what follows.
 6. **Sort each harness.** Judge its growth on every copy that didn't end
    at a finding (`finished`, `stopped`, or `died` up to its last sample; a
    copy cut short by a finding always looks like it's growing) and has at
