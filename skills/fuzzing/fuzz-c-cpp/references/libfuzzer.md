@@ -19,10 +19,8 @@ flag with its default: `<fuzzer> -help=1`.
 | `-set_cover_merge=1` | corpus minimization (`-merge=1` keeps more inputs for the same features); add `-merge_control_file=<f>` to resume an interrupted merge |
 | `-minimize_crash=1 -runs=<n>` | crash minimization |
 
-Parallel runs are N separate copies sharing a corpus directory (`run.md`
-next to this file), not `-fork` or `-jobs`/`-workers`: those share one
-scratch directory, write `fuzz-<n>.log` files, and `-fork`'s exit status
-differs between macOS and Linux.
+Parallel runs are N separate copies sharing a corpus directory, not
+`-fork` or `-jobs`/`-workers` (`run.md`, "Long runs").
 
 ## Reading the output
 

@@ -99,9 +99,9 @@ Watch for:
 - On macOS with `detect_leaks=1`, libFuzzer reports a false leak in its RSS
   thread at exit. Fuzz with leaks off there; replaying a leak there:
   [references/triage.md](references/triage.md), "Reproduce".
-- libFuzzer `-fork` or `-jobs` for parallel runs: they share one scratch
-  directory, and `-fork`'s exit status differs between macOS and Linux.
-  Run N copies through the launcher instead.
+- libFuzzer `-fork` or `-jobs` for parallel runs: run N copies through
+  the launcher instead ([references/run.md](references/run.md), "Long
+  runs").
 - A merge's or replay's exit status as a crash signal: libFuzzer's merges
   exit 0 after crashes. Read the launcher's findings.
 - One `ASAN_OPTIONS` for both engines: AFL++ needs `symbolize=0`, libFuzzer

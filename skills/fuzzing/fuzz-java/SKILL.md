@@ -105,8 +105,8 @@ For the gate's working-tree comparison:
 - **Runs end after 5 minutes:** `@FuzzTest`'s default `maxDuration` also
   applies to standalone runs. Always pass `-max_total_time` (`0` for no
   limit).
-- **`-fork` or `-jobs` for parallel runs:** every job is a new JVM, and
-  they share one scratch directory. Run N copies through the launcher.
+- **`-fork` or `-jobs` for parallel runs:** run N copies through the
+  launcher instead (`run.md`, "Long runs").
 - **Only one fuzz test fuzzes per JVM;** select exactly one.
 - **Detectors run real code** except for their trigger values (e.g. the
   command `jazze`): other commands run and files are written for real

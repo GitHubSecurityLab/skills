@@ -112,8 +112,9 @@ directory (`fuzz-campaign`; projects that build only in-tree: `build.md`, "In-tr
   differently. The analysis merge keeps their inputs only where they add
   coverage.
 - Each copy stops at its first finding; the others continue.
-- No `-fork` or `-jobs`: they share one scratch directory, and `-fork`'s
-  exit status differs between macOS and Linux.
+- No `-fork` or `-jobs`/`-workers`: they share one scratch directory,
+  write `fuzz-<n>.log` files, and `-fork`'s exit status differs between
+  macOS and Linux.
 - If the run has no duration: drop `-max_total_time`.
 
 ## Merging a run's corpus back (analysis, `fuzz-campaign`)
