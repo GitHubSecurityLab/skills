@@ -38,10 +38,11 @@ gate run, and the corpus's coverage before fuzzing.
       GIT_ALTERNATE_OBJECT_DIRECTORIES="$O"; git add -A && git write-tree) > "$G/tree-before.txt"
   ```
 - **Replay the corpus** (at a harness's first gate, it's only the seeds) on
-  the coverage build, before the gate run, and export lcov to
-  the harness's next snapshot `coverage/<h>/r<round>.lcov` (`fuzz-coverage`,
-  "Snapshot"). After a harness, build or code change, it's the new baseline
-  (`fuzz-coverage`, "Measure the action"). "Reaches the target" uses it.
+  the coverage build, before the gate run, and export lcov to the
+  harness's next snapshot, `coverage/<h>/r<round>.lcov` (`r0` if it has
+  none), with the commands in the language skill's coverage.md. After a
+  harness, build or code change, it's the new baseline (`fuzz-coverage`,
+  "Measure the action"). "Reaches the target" uses it.
 
 ## 2. Reaches the target
 
