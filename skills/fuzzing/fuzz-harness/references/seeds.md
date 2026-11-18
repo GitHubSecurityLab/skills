@@ -9,8 +9,8 @@
 ## Steps
 
 1. **Collect seeds,** in this order. Put them in `corpus/<harness>/`
-   (Jest: the package's `.cifuzz-corpus/<file>/<describe>/<test>/`; see the
-   language skill).
+   (Jest: the test's directory in `.cifuzz-corpus/`; see the language
+   skill).
    1. The previous campaign's corpus for this harness (`archive/`, or a
       merged corpus carried into a new campaign).
    2. Inputs committed by existing harnesses (seed directories, regression

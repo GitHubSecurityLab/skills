@@ -131,11 +131,9 @@ describe("parseHeader", () => {
   synchronous targets (`run.md`).
 - One-time setup: module scope or `beforeAll`.
 - Property checks: `expect(...)` or `throw new Error(...)`.
-- Seeds go into the generated corpus,
-  `.cifuzz-corpus/<test file without .js>/<describe>/<test>/` at the package
-  root. Files in the regression directory next to the test file
-  (`<test file without .js>/<describe>/<test>/`) also seed fuzzing, but
-  they run in every normal test run: only regression inputs belong there.
+- Seeds go into the generated corpus (next section). The regression
+  directory, which every normal test run replays, gets only the seeds
+  worth keeping, at upstreaming (below).
 - Dictionaries: `dictionaryEntries: ["<!DOCTYPE", "xmlns"]` in the test's
   options, or `-dict=<file>` in the fuzzer options.
 - `jest.mock("fs")` with an in-memory implementation is an alternative for
@@ -146,14 +144,25 @@ describe("parseHeader", () => {
 
 ## Engine output locations in the project tree
 
-For the gate's working-tree comparison (the paths can't be changed):
-- `.cifuzz-corpus/<test file without .js>/<describe>/<test>/` at the
-  package root: the generated corpus (excluded by `init.py`);
-- `<test file directory>/<test file without .js>/<describe>/<test>/`: the
-  regression inputs (fuzzing mode writes crash files there too unless the
-  command passes `-exact_artifact_path`, as below); spaces in names
-  become `_`;
+For the gate's working-tree comparison:
+- `.cifuzz-corpus/<corpus_dir>/` in the package root (the nearest
+  directory above the test file with a `package.json`): the **generated
+  corpus**, the harness's persistent corpus, where fuzzing mode writes new
+  inputs (excluded by `init.py`);
+- `<corpus_dir>/` next to the test file: the **regression directory**
+  (`<regression_dir>` in the commands: its path from `$P`), where fuzzing
+  mode also writes crash files unless the command passes
+  `-exact_artifact_path` (Runs);
 - `coverage/` if coverage runs without `--coverageDirectory`.
+
+`<corpus_dir>` is the test file's name without its extension, then the
+describe and test titles with spaces turned into `_`: for the example
+above, `header-parser.fuzz/parseHeader/parses_untrusted_headers`.
+Neither input directory can be moved. Fuzzing mode reads both, and its
+log's `INFO: using inputs from:` lines show them. Regression mode (a normal
+`jest` run) runs the empty input and each file of the regression
+directory as its own test, named after the file; with `--coverage`, the
+generated corpus's files too.
 
 ## Runs
 
@@ -177,19 +186,13 @@ $L start --id r<round>-$H --harness $H --time <run_s> --corpus "$P/.cifuzz-corpu
   --testNamePattern '^<test_title>$'
 ```
 
-`<corpus_dir>` is `<test file without .js>/<describe>/<test>`, and
-`<test_title>` is `<describe> <test name>` with regex characters escaped.
+`<corpus_dir>` is as above, and `<test_title>` is `<describe> <test name>`
+with regex characters escaped.
 
-- **Corpus:** `.cifuzz-corpus/<test file without .js>/<describe>/<test>/`
-  at the package root (`--rootDir`), whatever the working directory: the
-  persistent corpus, where new inputs land. The regression directory next
-  to the test file is also read. These paths can't be changed; the log's
-  `INFO: using inputs from:` lines show them.
-- **Crash files:** without `-exact_artifact_path`, fuzzing mode writes them
-  into the regression directory, which it also reads as seeds: every later
-  run then stops at that input, and the file can get committed by
-  accident. The runner overrides `-artifact_prefix`, but
-  `-exact_artifact_path` works. A timeout lands at `finding-timeout`.
+- **Crash files:** `-exact_artifact_path` keeps them out of the regression
+  directory, where every later run would stop at them and they could get
+  committed by accident; `-artifact_prefix` can't, since the runner
+  overrides it. A timeout lands at `finding-timeout`.
 - **The name pattern** is anchored and escaped (regex characters in the
   titles, e.g. `parse()`): `^<describe> <test name>$` selects exactly one
   fuzz test, in fuzzing and regression mode alike.
@@ -218,16 +221,16 @@ cp -R "<worktree>/<package>/.cifuzz-corpus/." "<checkout>/<package>/.cifuzz-corp
 
 **No `-fork`, `-jobs` or `-merge`:** fork jobs "crash" with zero
 executions and the run exits 0; a merge adds nothing. No merge is needed:
-new inputs already land in `.cifuzz-corpus`. To minimize on request, write
-a temporary CLI target in scratch that calls the same code as the fuzz
-test (only if it needs no Jest mocks), merge with it into a new directory
-(`run.md`), and replace the `.cifuzz-corpus` test directory with it.
+new inputs already land in the generated corpus. To minimize on request,
+write a temporary CLI target in scratch that calls the same code as the
+fuzz test (only if it needs no Jest mocks), merge with it into a new
+directory (`run.md`), and replace the test's generated corpus with it.
 
 ## Coverage
 
 Replay in regression mode (no `JAZZER_FUZZ`), run id `cov-<h>-<n>`. With
-`--coverage`, it runs every input of `.cifuzz-corpus` and of the
-regression directory once, each as its own Jest test:
+`--coverage`, it runs every input of the generated corpus and the
+regression directory once:
 
 <!-- ci: jest-cov-replay -->
 ```sh
@@ -278,12 +281,10 @@ name.
 
 A long run's finding: `P` set to `<tree_package>` (`run.md`, "CLI target").
 
-**Reproduce:** copy the finding into the regression directory under a
-name of its own, run Jest in regression mode (without `JAZZER_FUZZ`) for
-just that file, and remove the copy again right after. Regression mode
-reads only the test's regression directory
-(`<test file without .js>/<describe>/<test>/` next to the test file) and,
-with `--coverage`, `.cifuzz-corpus/`; never `{run}/artifacts/`:
+**Reproduce:** regression mode never reads `{run}/artifacts/`, so copy
+the finding into the regression directory under a name of its own, run
+Jest in regression mode (without `JAZZER_FUZZ`) for just that file, and
+remove the copy again right after:
 
 <!-- ci: jest-repro -->
 ```sh
@@ -302,7 +303,7 @@ $L start --id repro-$H-<n> --harness $H --timeout <timeout_s> --env PATH="$RUN_P
 - **Frame names can be off:** source maps name a frame after the
   identifier at its location (`at length (src/parser.js:5:52)` for
   `o.length` inside `parse`). Trust `file:line`, not the name.
-- If the input is already in `.cifuzz-corpus`: it replays with
+- If the input is already in the generated corpus: it replays with
   `--coverage` added.
 - **A synchronous hang** ignores `JAZZER_TIMEOUT` in regression mode: the
   state `timed out` counts as a reproduced hang. No log has its JS stack:
@@ -313,15 +314,10 @@ $L start --id repro-$H-<n> --harness $H --timeout <timeout_s> --env PATH="$RUN_P
 
 ## Regression tests and upstreaming
 
-- In regression mode (a normal `jest` run), every `it.fuzz` test runs on
-  the empty input and on every file in its regression directory:
-  `<test file without .js>/<describe>/<test>/` next to the test file. Each
-  file becomes its own test, named after the file. The generated corpus in
-  `.cifuzz-corpus/` is replayed too, but only when Jest collects coverage
-  (`--coverage`); in CI it doesn't exist. That checks the harness on its
-  seeds; a fixed bug gets its own test instead (`regression.md`).
 - Once upstreamed, the project's CI runs the fuzz tests in regression mode
-  (`npm run test:fuzz`), next to its normal test job.
+  (`npm run test:fuzz`), next to its normal test job. That replays each
+  test's regression directory (above), which checks the harness on its
+  seeds; a fixed bug gets its own test instead (`regression.md`).
 - `.cifuzz-corpus/` isn't committed; seeds worth keeping go into the
   regression directories (only the project's own data or generated inputs,
   and never inputs reaching a held-back bug).
