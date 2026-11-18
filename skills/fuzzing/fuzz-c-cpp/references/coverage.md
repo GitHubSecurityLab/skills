@@ -95,9 +95,6 @@ It shows a template's instantiations apart.
   check that branch with this command. Those versions also export the
   instantiations' branches apart, so another instantiation may take it.
 
-**Macro branches** count at every expansion (macro-heavy files:
-`fuzz-coverage`, "Correct the scope").
-
 ## FuzzTest
 
 Replay, exact subsets and the state-leak check: `fuzztest.md`, "Coverage",

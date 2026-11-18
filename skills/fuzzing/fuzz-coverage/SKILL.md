@@ -130,9 +130,9 @@ measures it. Without a sink list, step 7 only reads the gaps' code.
      are paths from the repository root: fix the path, or find out why the
      file isn't compiled, linked or loaded (C/C++ libraries: the export's
      `-object`, in the language skill).
-   - If a file is macro-heavy C or also holds other API: judge its gaps by
-     lines and blocked branches, not the branch share (`fuzz-c-cpp`'s
-     coverage.md, "Macro branches").
+   - If a file is macro-heavy C (macro branches count at every expansion)
+     or also holds other API: judge its gaps by lines and blocked
+     branches, not the branch share.
 6. **Diagnose the gaps.** Read each top gap in scope in context and
    classify why it's uncovered, using
    [references/diagnosis.md](references/diagnosis.md); the reason decides
