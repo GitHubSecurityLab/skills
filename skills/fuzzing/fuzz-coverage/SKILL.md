@@ -70,10 +70,10 @@ Which steps run depends on the request:
 | Inputs for a branch, a corpus merge or minimization, such as "find inputs for this branch" | [references/corpus.md](references/corpus.md) |
 
 **If it's standalone use without a target file:** write the minimal one
-first (`fuzz-harness`, Reads). If the coverage variant is missing, check
-the toolchain with the language skill's install.md, then build the
-variant (`fuzz-harness`'s build.md). If the target file has no gate
-result for the harness: run the light gate (`fuzz-harness`'s gate.md,
+first (`fuzz-harness`'s target-file.md). If the coverage variant is
+missing, check the toolchain with the language skill's install.md, then
+build the variant (`fuzz-harness`'s build.md). If the target file has no
+gate result for the harness: run the light gate (`fuzz-harness`'s gate.md,
 "Light gate") before the first round; step 4 needs its executions per
 second. If the harness has a corpus elsewhere (its own fuzzing output,
 OSS-Fuzz's, a CI artifact): copy only that corpus into `corpus/<h>/`

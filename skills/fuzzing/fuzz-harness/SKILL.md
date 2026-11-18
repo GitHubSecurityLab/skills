@@ -53,18 +53,13 @@ python3 <this skill's directory>/../fuzz-campaign/scripts/init.py
 
 ## Reads
 
-- `targets/<id>.md`: Candidate (entry point, attacker control, checks,
-  setup, how to call), Scope files.
-- `CAMPAIGN.md`: Harnesses (workflow of each existing harness).
-- Standalone use without a target file: write a minimal
-  `targets/<id>.md` with the entry point, what the attacker controls there,
-  and the scope files, each with a one-line reason: from the entry point,
-  follow the calls and keep the files where attacker data is processed,
-  stopping at code the threat model excludes. Put the bare paths into
-  `targets/<id>.scope`, which the gate measures. Don't read targets.md for
-  it.
 - `.seclab/threat-model.md`. Without one, invoke `security-threat-model` in
   focused mode for this entry point.
+- `targets/<id>.md`: Candidate (entry point, attacker control, checks,
+  setup, how to call), Scope files. Without one (standalone use): write
+  the minimal one first
+  ([references/target-file.md](references/target-file.md)).
+- `CAMPAIGN.md`: Harnesses (workflow of each existing harness).
 - The language skill (`fuzz-c-cpp`, `fuzz-java`, `fuzz-js`): harness format,
   project conventions, input helpers, how checks signal failure.
 
