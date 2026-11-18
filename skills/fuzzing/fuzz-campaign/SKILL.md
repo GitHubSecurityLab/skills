@@ -185,7 +185,9 @@ index (Long sessions, above).
 3. **Inner loop.** Invoke `fuzz-coverage`. It returns when no action on the
    harness unlocks security-relevant code, or when a new target is worth
    more.
-4. **Combined coverage** of all harnesses, in `coverage/merged/<n>.lcov`:
+4. **Fix and report** the target's queued bugs, if any (`fuzz-triage`,
+   "Route").
+5. **Combined coverage** of all harnesses, in `coverage/merged/<n>.lcov`:
    the next target's ranking uses it. First replay every harness's
    corpus on the current coverage build (the language skill's
    coverage.md): snapshots from different builds can't be merged. Then merge
@@ -238,21 +240,9 @@ evidence is secured before anything changes the builds the runs used:
 
 ## Crash path
 
-Check for new findings after every run: the launcher's result line and
-`launcher.py status <id>` list them (`runs/<id>/artifacts/copy-<i>/`,
-AFL++ `out/<instance>/crashes/` and `hangs/`). Then:
-
-1. `fuzz-triage` groups, reproduces, minimizes and classifies them.
-2. `harness_bug` → `fuzz-harness` fixes the harness; the gate runs again.
-3. A real bug in the target → `fuzz-triage`: blocking bugs right away (its
-   blocking-bug rule), the others when their target's develop loop ends,
-   long-run findings during analysis, after which you offer a new run's
-   command (never restart one: safety rules).
-4. `fuzz-triage` writes the report draft. The **report** checkpoint comes
-   before a report is finished.
-
-If no safe fix is possible, the report goes without a patch and the
-bucket is marked `needs-decision` (`fuzz-triage`'s fix.md).
+After every run, hand its new findings to `fuzz-triage` (long runs: at
+their analysis). Its route says what happens to each bucket, and when
+(`fuzz-triage`, "Route").
 
 ## Finishing
 
