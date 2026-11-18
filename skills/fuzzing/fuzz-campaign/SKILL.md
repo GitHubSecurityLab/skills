@@ -105,10 +105,8 @@ it after every step.
 ## Setup
 
 1. **Setup card:** one question to the user, before any build or run of
-   project code. First check the toolchain (`fuzz-harness`'s build.md,
-   "Toolchain": the language skill's install.md, "Check without running
-   project code"). Then
-   show in one card:
+   project code. First check the toolchain and make the install plan
+   (`fuzz-harness`'s build.md, "Toolchain"). Then show in one card:
    - the first-build notice `init.py` printed;
    - where changes go: a new `seclab/fuzz-<date>` branch (default) or the
      current branch, which keeps its commit as the base;
