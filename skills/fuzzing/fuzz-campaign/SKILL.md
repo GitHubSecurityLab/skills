@@ -81,7 +81,7 @@ rules. Then:
   leaking between inputs" and "Respects the threat model", before its
   first round.
 - Status `finished`: offer a new campaign on a new release
-  ([references/analyze.md](references/analyze.md)).
+  ([references/new-release.md](references/new-release.md)).
 - Status `running`: **Resume** (below). If long runs have ended without analysis,
   offer to analyze them.
 

@@ -352,7 +352,7 @@ def check_checkout() -> None:
         raise InitError(
             "%s, and the campaign's work is there. Don't change the ledger or the branch yourself: ask the user "
             "whether to switch back (git switch %s) or to start a new campaign from here (fuzz-campaign, "
-            "analyze.md: a new release)." % (problem, branch)
+            "new-release.md)." % (problem, branch)
         )
 
 
@@ -475,7 +475,7 @@ def run(args: argparse.Namespace) -> int:
             "the ledger already records the branch (%s) and base commit (%s), and earlier work is on that "
             "branch; they don't change here (a standalone ledger moves to a new branch only once, before its "
             "first commit). Run init.py again without --branch and --base. To work from another base, start a new "
-            "campaign (fuzz-campaign, analyze.md: a new release)."
+            "campaign (fuzz-campaign, new-release.md)."
             % (ledger_line("- **Branch:**"), ledger_line("- **Base commit:**"))
         )
     state = State()
