@@ -1,7 +1,7 @@
 # Campaign ledger
 
-All campaign state lives in `.seclab/fuzz/`. `fuzz-campaign` owns these
-templates; other skills read and write only the headings they name.
+All campaign state lives in `.seclab/fuzz/`. `fuzz-campaign` owns the
+templates below; other skills read and write only the headings they name.
 
 Paths in the skills' prose, such as `targets/<id>.md`, are relative to
 `.seclab/fuzz/`. Shell commands run from the repository root and spell out
@@ -120,9 +120,10 @@ State from `launcher.py status`; analysis: no, phase 1, done (`references/analyz
 ```
 
 `init.py` rewrites the First-build notice and Disposable environment lines
-on every run from what `--notice-shown` and `--disposable` recorded in
-git's directory (`git rev-parse --git-path seclab`): editing the lines
-changes nothing, and a copied `.seclab/` doesn't carry them.
+on every run. It writes them from what `--notice-shown` and `--disposable`
+recorded in git's directory (`git rev-parse --git-path seclab`). Editing
+the lines changes nothing, and a copied `.seclab/` doesn't carry those
+records.
 
 ## `targets/<target>.md`
 

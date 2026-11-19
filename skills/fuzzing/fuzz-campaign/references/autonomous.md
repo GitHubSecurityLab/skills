@@ -1,9 +1,9 @@
 # Autonomous mode
 
 For an unattended campaign, the user starts the agent with full
-permissions: a skill can't grant them. Explain this, show the matching
-command, and warn once that the fuzzed code, its build scripts and its
-tests will run without further confirmation.
+permissions: a skill can't grant them. Explain this, and show the start
+command for the user's agent. Warn once that the fuzzed code, its build
+scripts and its tests will run without further confirmation.
 
 | Agent | Start command | Notes |
 |---|---|---|
@@ -13,26 +13,28 @@ tests will run without further confirmation.
 
 Recommend running autonomous campaigns in a codespace or VM, never on a
 machine with credentials that matter. The deny rules only guard against
-accidents (they match the command's text); without push credentials,
-nothing can be pushed.
+accidents, since they match the command's text. Without push
+credentials, nothing can be pushed.
 
 ## Behaviour
 
 - Take the top candidate at every choice and log it in `decisions.md`.
-- The stopping rule comes from the request ("autonomously, 3 targets": the
-  top 3; "for 4 hours": 4 hours of develop), otherwise the 10% cut-off
-  (`SKILL.md`, targets checkpoint) with at most 8 hours of develop. Record
-  it in Settings (`stop_rule`).
-- The first-build notice becomes a warning at the start, which also states
-  the stopping rule.
-- Before stopping, check every picked target against `fuzz-harness`'s and
-  `fuzz-coverage`'s Done when, and its findings against `fuzz-triage`'s: do
-  the step behind a missing item, or record why it can't be done.
+- The stopping rule comes from the request: "autonomously, 3 targets"
+  means the top 3, and "for 4 hours" means 4 hours of develop. If the
+  request gives no stopping rule, use the 10% cut-off (`SKILL.md`, targets
+  checkpoint) with at most 8 hours of develop. Record the rule in Settings
+  (`stop_rule`).
+- At the start, the first-build notice becomes a warning that also
+  states the stopping rule.
+- Before stopping, check every picked target against the Done when
+  sections of `fuzz-harness` and `fuzz-coverage`, and the target's
+  findings against `fuzz-triage`'s Done when. For a missing item, do the
+  step behind it, or record why it can't be done.
 - The safety rules (`SKILL.md`) still apply.
 - Never wait for input. When a decision truly needs the user (for example,
   no safe fix exists), record it as `needs-decision` and move on.
-- Long runs: when develop is done, give their commands and stop. The
-  status stays `running`: only the user ends a campaign. Never poll or
-  sleep for them; the user runs them and asks for the analysis.
+- Long runs: when develop is done, give the long-run commands and stop.
+  The status stays `running`: only the user ends a campaign. Never poll
+  or sleep for the runs; the user runs them and asks for the analysis.
 - Re-read the ledger index at the start of every loop iteration.
 - Keep tool output short (tails, summaries) to save context.

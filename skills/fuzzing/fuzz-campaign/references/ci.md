@@ -1,31 +1,36 @@
 # CI fuzzing job templates
 
-Offer one workflow for pull requests: a **blocking** replay of each
-harness's corpus (a change that crashes a committed input is a
-regression), then a short **non-blocking** fuzz run: a new finding may be
-an old bug the pull request didn't cause, so it's uploaded, not failed on.
-No corpus is kept between runs. A scheduled discovery run (the same with
-a longer fuzz run) comes only as the maintainers' choice: see Public
-repositories below.
+Offer one workflow for pull requests, in two parts:
+- a **blocking** replay of each harness's corpus: a change that crashes a
+  committed input is a regression;
+- then a short **non-blocking** fuzz run. A new finding may be an old bug
+  the pull request didn't cause, so it's uploaded, and the job doesn't
+  fail on it.
+
+No corpus is kept between runs. A scheduled discovery run, the same
+workflow with a longer fuzz run, comes only as the maintainers' choice:
+see Public repositories below.
 
 Reproducers made into regression tests run in the project's normal test
-job. Upload every artifact kind the engine writes (crashes, timeouts, OOMs,
-leaks), kept for a few days only (`retention-days`). Pin actions to commit
-SHAs if the project does so.
+job. Upload every kind of artifact the engine writes: crashes, timeouts,
+OOMs and leaks. Keep them for a few days only (`retention-days`). Pin
+actions to commit SHAs if the project does so.
 
 ## Public repositories
 
-A public repository's workflow runs are public: the uploaded artifacts and
-the job logs (libFuzzer and Jazzer print small crashing inputs as
-`Base64:`) show every bug the fuzz step finds, before anyone triages it.
-Say so in the offer and in the PR text that adds the workflow:
+A public repository's workflow runs are public. The uploaded artifacts
+and the job logs show every bug the fuzz step finds, before anyone
+triages it. In the logs, libFuzzer and Jazzer print small crashing inputs
+as `Base64:`. Give this visibility warning in both the offer and the PR
+text that adds the workflow:
 - **Default:** the pull-request jobs only. Their short runs rarely find a
   new bug, and the uploads expire after 7 days.
 - **Scheduled discovery** only when the maintainers choose it after
   reading this: uncomment the `schedule:` trigger. Its findings are public
   until they expire. For continuous fuzzing with private reports, point
-  them to OSS-Fuzz (CIFuzz below); ClusterFuzzLite keeps a corpus between
-  runs, but on a public repository its runs are public too.
+  the maintainers to OSS-Fuzz (CIFuzz below). ClusterFuzzLite keeps a
+  corpus between runs, but on a public repository its runs are public
+  too.
 
 ## C/C++ project in OSS-Fuzz: CIFuzz
 
@@ -33,8 +38,8 @@ OSS-Fuzz documents CIFuzz for integrated projects
 (https://google.github.io/oss-fuzz/getting-started/continuous-integration/).
 Copy the current example from that page and set the project name.
 Projects outside OSS-Fuzz can use ClusterFuzzLite
-(https://google.github.io/clusterfuzzlite/), which also keeps a corpus
-between runs, instead of the template below.
+(https://google.github.io/clusterfuzzlite/) instead of the template
+below; it also keeps a corpus between runs.
 
 ## C/C++ with libFuzzer
 
@@ -99,15 +104,17 @@ corpus by hand.
 
 ## Java with Jazzer (JUnit `@FuzzTest`)
 
-Steps for the C/C++ template's job, after its checkout. The project's
-`mvn test` already replays each fuzz test's inputs directory (regression
-mode, `fuzz-java`'s regression.md), which is the blocking part. The fuzz
-step runs Jazzer's standalone driver on the test classes; it adds the
-fuzz test's inputs directory and seed sources to the corpus itself.
-Unlike `JAZZER_FUZZ=1 mvn test`, it takes the per-input
-timeout and heap cap, and writes every finding (`crash-*`, `timeout-*`)
-to one directory. A JUnit timeout setting isn't a per-input timeout:
-JUnit fails the whole fuzzing run once it's longer.
+Keep the C/C++ template's job through its checkout step, then add these
+steps.
+The project's `mvn test` already replays each fuzz test's inputs
+directory in regression mode (`fuzz-java`'s regression.md); that replay
+is the blocking part. The fuzz step runs Jazzer's standalone driver on
+the test classes. The driver adds the fuzz test's inputs directory and
+seed sources to the corpus itself. Unlike `JAZZER_FUZZ=1 mvn test`, it
+takes the per-input timeout and heap cap, and writes every finding
+(`crash-*`, `timeout-*`) to one directory. A JUnit timeout setting isn't
+a per-input timeout: JUnit fails the whole fuzzing run once the run
+takes longer than that setting.
 
 ```yaml
       - uses: actions/setup-java@v6
@@ -132,19 +139,20 @@ JUnit fails the whole fuzzing run once it's longer.
           retention-days: 7
 ```
 
-One fuzz test per step (or matrix entry); inputs worth keeping from
-`new-corpus/` go into its inputs directory by hand. `-rss_limit_mb=0`
-because the JVM's own footprint would trip libFuzzer's limit; `-Xmx` caps
-the heap.
-Gradle: the test runtime classpath from the init script in `fuzz-java`
-(build.md) instead of the Maven step.
+Each step, or matrix entry, fuzzes one fuzz test. Inputs worth keeping
+from `new-corpus/` go into that fuzz test's inputs directory by hand. The
+fuzz step sets `-rss_limit_mb=0` because the JVM's own footprint would
+trip libFuzzer's limit; `-Xmx` caps the heap.
+
+Gradle: instead of the Maven step, take the test runtime classpath from
+the init script in `fuzz-java`'s build.md.
 
 ## JS/TS with Jazzer.js (CLI targets)
 
-Steps for the C/C++ template's job, after its checkout, one target per
-step. The blocking replay runs Jazzer.js, so its bug detectors apply; the
-replay test (`fuzz-js`'s regression.md) runs without them in the
-project's normal test job.
+Keep the C/C++ template's job through its checkout step, then add these
+steps, with one target per step. The blocking replay runs Jazzer.js, so
+Jazzer.js's bug detectors apply. The replay test (`fuzz-js`'s
+regression.md) runs in the project's normal test job, without them.
 
 ```yaml
       - uses: actions/setup-node@v7
@@ -174,5 +182,6 @@ project's normal test job.
           retention-days: 7
 ```
 
-`--sync` for a synchronous target (`fuzz-js`'s run.md). Node 24: Node 26
-deprecates the hook Jazzer.js uses for ES modules.
+`--sync` is for a synchronous target (`fuzz-js`'s run.md). The template
+uses Node 24 because Node 26 deprecates the hook Jazzer.js uses for ES
+modules.
