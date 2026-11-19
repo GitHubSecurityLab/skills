@@ -7,7 +7,7 @@ incomplete: check `<test binary> --helpfull`.
 ## When
 
 GoogleTest projects (Bazel or CMake) and projects with `FUZZ_TEST`s. CMake
-builds run on Linux and macOS (Homebrew LLVM, Ninja); FuzzTest's Bazel
+builds run on Linux and macOS (Homebrew LLVM, Ninja). FuzzTest's Bazel
 setup on macOS is experimental.
 
 ## Writing a fuzz test
@@ -36,24 +36,29 @@ FUZZ_TEST(ParserTest, ParseSerializeRoundTrips)
   bytes, `InRange`, `ElementOf({...})`, `VectorOf(...).WithMaxSize(n)`,
   `StructOf<T>(...)`, `InRegexp(...)`, `OneOf(...)`.
 - `.WithDomains` comes before `.WithSeeds`.
-- Seeds: literal tuples, a seed-provider lambda (needed when seeds depend
-  on globals from other files), or files:
-  `.WithSeeds(fuzztest::ReadFilesFromDirectory(dir))`, which fits fuzz
-  tests with one string parameter.
-- Dictionary on a string or container domain:
-  `fuzztest::Arbitrary<std::string>().WithDictionary(fuzztest::ReadDictionaryFromFile(path))`
-  (libFuzzer dictionary format).
-- Expensive setup: `FUZZ_TEST_F` with a fixture class; wrap an existing
-  GoogleTest fixture in `fuzztest::PerIterationFixtureAdapter<T>` (safe) or
-  `PerFuzzTestFixtureAdapter<T>` (faster; reset any state it mutates).
+- Seeds come in three forms:
+  - literal tuples;
+  - a seed-provider lambda, needed when seeds depend on globals from
+    other files;
+  - files: `.WithSeeds(fuzztest::ReadFilesFromDirectory(dir))`, which
+    fits fuzz tests with one string parameter.
+- Dictionary on a string or container domain, in libFuzzer's dictionary
+  format:
+  `fuzztest::Arbitrary<std::string>().WithDictionary(fuzztest::ReadDictionaryFromFile(path))`.
+- Expensive setup: `FUZZ_TEST_F` with a fixture class. To use an existing
+  GoogleTest fixture, wrap it in one of two adapters:
+  - `fuzztest::PerIterationFixtureAdapter<T>`: safe;
+  - `PerFuzzTestFixtureAdapter<T>`: faster, but reset any state the fuzz
+    test mutates.
 - `Map`, `FlatMap`, `ConstructorOf` domains take no seeds; `ReversibleMap`
   does.
 
 ## Build
 
-CMake, in the project's style. The flags macro goes in the
-**top-level** `CMakeLists.txt`, right after FuzzTest is made available and
-before any of the project's own `add_subdirectory()` or `add_library()`:
+For CMake, follow the project's style. The flags macro,
+`fuzztest_setup_fuzzing_flags()`, goes in the **top-level**
+`CMakeLists.txt`: right after FuzzTest is made available, and before any
+of the project's own `add_subdirectory()` or `add_library()`:
 
 ```cmake
 include(FetchContent)
@@ -69,21 +74,25 @@ link_fuzztest(parser_fuzz_test)
 gtest_discover_tests(parser_fuzz_test)
 ```
 
-The macro sets flags only for its directory and those below: a library in a
-sibling directory, or defined before it, stays uninstrumented. If the root
-can't be edited, pass the flags as cache variables. Check the library's
-objects either way (`build.md`), and make it static (a `fuzz(build)` change
-for these builds if the project builds it only shared): FuzzTest reads only
-the first module's counters (warning: `... was called multiple times`).
+The macro sets flags only for its own directory and the directories below
+it. A library in a sibling directory, or one defined before the macro,
+stays uninstrumented. If the top-level `CMakeLists.txt` can't be edited,
+pass the flags as cache variables instead.
 
-Two variants, each in its own build directory (`<test_target>`: the fuzz
-test's CMake target), with `clang` and `clang++` from the LLVM directory
-on `PATH` (`run.md`). The empty Release flags matter in both: FuzzTest's
-dependency `antlr_cpp` (and many projects) sets `CMAKE_BUILD_TYPE=Release`
-when it's empty, whose `-O3 -DNDEBUG` would compile the assertions out.
-- **Clang 20 or later:** with clang 18 the link
-  fails on `__sancov_cntrs` in a discarded section, and clang 19 with UBSan
-  on `__muloti4`. Ubuntu 24.04: `clang-20 lld-20 libclang-rt-20-dev
+Either way, check the library's objects (`build.md`), and make the
+library static: FuzzTest reads only the first module's counters (warning:
+`... was called multiple times`). If the project builds the library only
+shared, making it static for these builds is a `fuzz(build)` change.
+
+Build two variants, `fuzztest` and `coverage`, each in its own build
+directory. `<test_target>` is the fuzz test's CMake target. Put `clang`
+and `clang++` from the LLVM directory on `PATH` (`run.md`). The empty
+Release flags matter in both variants. FuzzTest's dependency `antlr_cpp`,
+like many projects, sets `CMAKE_BUILD_TYPE=Release` when it's empty.
+Release's `-O3 -DNDEBUG` would then compile the assertions out.
+- **Clang 20 or later:** with clang 18, the link fails on `__sancov_cntrs`
+  in a discarded section; with clang 19 and UBSan, it fails on
+  `__muloti4`. Ubuntu 24.04: `clang-20 lld-20 libclang-rt-20-dev
   llvm-20`, with `/usr/lib/llvm-20/bin` as the LLVM directory.
 
 `fuzztest`: fuzzing mode, which adds ASan and coverage instrumentation
@@ -111,20 +120,24 @@ CC=clang CXX=clang++ cmake -S . -B "$F/build/coverage" -DCMAKE_BUILD_TYPE= -DBUI
 
 - **UBSan** comes from the cache flags, with `$UB` (`build.md`); the macro
   adds only ASan.
-- **`-O1 -g` explicitly.** Upstream's `RelWithDebug` is an unknown build type
-  (no flags: `-O0`, no `-g`); plain `RelWithDebInfo` adds `-DNDEBUG`.
+- **`-O1 -g` explicitly.** Upstream's `RelWithDebug` is an unknown build
+  type, so it gets no flags: `-O0`, no `-g`. Plain `RelWithDebInfo` adds
+  `-DNDEBUG`.
 
-Bazel (untested in CI): `bazel_dep(name = "fuzztest", version = "20260629.0")`, generate the
-configs with `bazel run @fuzztest//bazel:setup_configs > fuzztest.bazelrc`
-(imported from `.bazelrc`), build with `bazel build --config=fuzztest
-//<package>:<test>`, and run the binary from `bazel-bin/` through the
-launcher.
+Bazel (untested in CI):
+1. Add `bazel_dep(name = "fuzztest", version = "20260629.0")`.
+2. Generate the configs with
+   `bazel run @fuzztest//bazel:setup_configs > fuzztest.bazelrc`, and
+   import `fuzztest.bazelrc` from `.bazelrc`.
+3. Build with `bazel build --config=fuzztest //<package>:<test>`.
+4. Run the binary from `bazel-bin/` through the launcher.
+
 Docs: `doc/quickstart-cmake.md`, `doc/quickstart-bazel.md`.
 
 ## Run
 
-A develop run (`L`, `F`, `H`, the environment: `run.md`; `<fuzz_test>`:
-`<Suite.Test>`):
+A develop run. `L`, `F`, `H` and the environment are as in `run.md`;
+`<fuzz_test>` is `<Suite.Test>`:
 
 <!-- ci: fuzztest-develop -->
 ```sh
@@ -136,22 +149,24 @@ $L start --id r<round>-$H --harness $H --time <run_s> --corpus "$F/corpus/$H" \
   --time_limit_per_input=<input_timeout_s>s --rss_limit_mb=<memory_mb>
 ```
 
-- **macOS: `--rss_limit_mb=0`** here and in every FuzzTest replay. The tag
-  `2026-06-29` reads macOS's peak RSS, which is in bytes, as KiB, so any
-  limit aborts at the first input (fixed upstream after that tag).
-
-- **One flat corpus directory** per fuzz test, as both `IN_DIR` (read at the
-  start) and `OUT_DIR` (new inputs). Inputs read from `IN_DIR` aren't written
-  again, so it grows only by new inputs.
+- **macOS: `--rss_limit_mb=0`** here and in every FuzzTest replay.
+  FuzzTest's tag `2026-06-29` reads macOS's peak RSS, which is in bytes,
+  as KiB, so any limit aborts at the first input. Upstream fixed this
+  after that tag.
+- **One flat corpus directory** per fuzz test serves as both `IN_DIR` and
+  `OUT_DIR`. The run reads `IN_DIR` at the start and writes new inputs to
+  `OUT_DIR`. Inputs read from `IN_DIR` aren't written again, so the
+  directory grows only by new inputs.
 - **No `--corpus_database`:** CMake builds read it but never write it.
-- `--list_fuzz_tests` lists the fuzz tests. Status: `[*] Corpus size: <n>
-  | Edges covered: <n> | ...`. Durations: `30s`, `5m`, `2h`, `inf`.
-- It stops at the first finding; `--continue_after_crash` only works with
-  Bazel's Centipede engine.
+- `--list_fuzz_tests` lists the fuzz tests. Status lines look like
+  `[*] Corpus size: <n> | Edges covered: <n> | ...`. Durations are
+  written `30s`, `5m`, `2h`, `inf`.
+- The run stops at the first finding; `--continue_after_crash` only works
+  with Bazel's Centipede engine.
 - **Minimizing a corpus, and merging a long run's** (undocumented
   upstream; re-check after an upgrade): minimize the union of the
-  persistent corpus and the run's, on the current build. It stops by
-  itself, and its result replaces the persistent
+  persistent corpus and the long run's corpus, on the current build. The
+  minimizing run stops by itself, and its result replaces the persistent
   corpus (`fuzz-campaign`):
   <!-- ci: fuzztest-merge -->
   ```sh
@@ -163,10 +178,10 @@ $L start --id r<round>-$H --harness $H --time <run_s> --corpus "$F/corpus/$H" \
     "$F/build/fuzztest/<test_binary>" --fuzz=<fuzz_test> \
     --time_limit_per_input=<input_timeout_s>s --rss_limit_mb=<memory_mb>
   ```
-  It keeps FuzzTest's edges, not every source branch: a branch compiled
-  without an edge of its own (a select instruction) can lose its only
-  input, so llvm-cov's branch count may drop a little after a merge (2 of
-  100 branches on a test). That's accepted.
+  The result keeps FuzzTest's edges, not every source branch. A branch
+  compiled without an edge of its own, such as a select instruction, can
+  lose its only input. So llvm-cov's branch count may drop a little after
+  a merge: 2 of 100 branches on a test. That's accepted.
 
 ## Coverage
 
@@ -182,11 +197,10 @@ $L start --id cov-$H-<n> --harness $H --timeout <timeout_s> --env PATH="$RUN_PAT
 ```
 
 - On macOS, `--rss_limit_mb=0` (Run, above).
-- It prints one `[.] Replaying ...` line per input. Check exit status 0
-  and that `profraw/*.profraw` exists before exporting.
-- If **it aborts** (exit 134, no profile) on a crashing input: replay one
-  file per process, so every other input counts (the log names the ones
-  that crashed; until the bug is fixed, the snapshot is partial):
+- The replay prints one `[.] Replaying ...` line per input. Check exit
+  status 0 and that `profraw/*.profraw` exists before exporting.
+- If **it aborts** on a crashing input (exit 134, no profile), replay one
+  file per process, so every other input counts:
   <!-- ci: fuzztest-cov-replay-files -->
   ```sh
   $L start --id cov-$H-<n> --harness $H --timeout <timeout_s> --env PATH="$RUN_PATH" \
@@ -196,12 +210,15 @@ $L start --id cov-$H-<n> --harness $H --timeout <timeout_s> --env PATH="$RUN_PAT
     sh "$F/build/coverage/<test_binary>" "$F/corpus/$H" --gtest_filter=<fuzz_test> \
     --time_limit_per_input=<input_timeout_s>s --rss_limit_mb=<memory_mb>
   ```
-- If the corpus directory is missing or empty: it aborts too; run without
-  `FUZZTEST_REPLAY` and with `--env FUZZTEST_FUZZ_FOR=0s` (the
-  `.WithSeeds` run, and no random inputs after them).
+  The log names the inputs that crashed. Until the bug is fixed, the
+  snapshot is partial.
+- If the corpus directory is missing or empty, the replay aborts too. Run
+  without `FUZZTEST_REPLAY` and with `--env FUZZTEST_FUZZ_FOR=0s` instead:
+  that runs the `.WithSeeds` seeds, and no random inputs after them.
 
-**Exact subset:** `FUZZTEST_REPLAY={dir}` (at least one input), e.g. for
-`reach.py`:
+**Exact subset:** to replay exactly the inputs in `{dir}`, set
+`FUZZTEST_REPLAY={dir}`; `{dir}` needs at least one input. For example,
+for `reach.py`:
 <!-- ci: fuzztest-reach -->
 ```sh
 python3 "$F/bin/reach.py" --harness $H --corpus "$F/corpus/$H" --file <file> --line <line> \
@@ -211,10 +228,10 @@ python3 "$F/bin/reach.py" --harness $H --corpus "$F/corpus/$H" --file <file> --l
   --export "sh -c 'llvm-profdata merge -sparse \$0/*.profraw -o \$0/p.profdata && llvm-cov export -format=lcov -instr-profile=\$0/p.profdata \$1 > \$2' {out} $F/build/coverage/<test_binary> {lcov}"
 ```
 
-**The gate's state-leak check** (`fuzz-harness`'s gate.md): the sample
-replayed as one directory in one process, then one file per process,
-compared without the fetched dependencies (`_deps/`): FuzzTest's own code
-replays a directory and a file differently.
+**The gate's state-leak check** (`fuzz-harness`'s gate.md): replay the
+sample as one directory in one process, then one file per process.
+Compare the two without the fetched dependencies (`_deps/`), since
+FuzzTest's own code replays a directory and a file differently:
 <!-- ci: fuzztest-leak-check -->
 ```sh
 G="$F/runs/gate-$H-<n>"; S="$G/sample"; B="$F/build/coverage/<test_binary>"; mkdir -p "$S" "$F/coverage/$H"
@@ -237,17 +254,19 @@ Export as in `coverage.md`, "Export", with `<test_binary>`.
 
 ## Triage
 
-A report starts with `=== BUG FOUND!` and the failing arguments (`argument
-0: ...`), then a regression test draft and the reproducer's path (in
-FuzzTest's own serialization); a signal's stack (an `abort()`, a failed
-`assert`) follows. Timeouts and memory limits print `[!] Per-input timeout
-exceeded` or `[!] RSS limit exceeded` before the banner; any stack after it
-is the watchdog's, not the input's. `crash_buckets.py` reads them.
+A report starts with `=== BUG FOUND!` and the failing arguments
+(`argument 0: ...`). Then come a regression test draft and the path of
+the reproducer, which is in FuzzTest's own serialization. For a signal,
+such as an `abort()` or a failed `assert`, its stack follows. A timeout
+or memory limit prints `[!] Per-input timeout exceeded` or
+`[!] RSS limit exceeded` before the banner; any stack after the banner is
+the watchdog's, not the input's. `crash_buckets.py` reads all of these
+reports.
 
-- **Reproduce** a reproducer (`runs/<id>/artifacts/copy-<i>/`) in the
-  fuzzing build, with `--rss_limit_mb=0` on macOS (Run, above). To run it
-  100 times in one process: `FUZZTEST_REPLAY` set to a directory of 100
-  copies of the file.
+- **Reproduce** a reproducer from `runs/<id>/artifacts/copy-<i>/` in the
+  fuzzing build. On macOS, pass `--rss_limit_mb=0` (Run, above). To run
+  it 100 times in one process, use `FUZZTEST_REPLAY` set to a directory of
+  100 copies of the file.
   <!-- ci: fuzztest-repro -->
   ```sh
   $L start --id repro-$H-<n> --harness $H --timeout <timeout_s> --env FUZZTEST_REPLAY="<finding>" \
@@ -256,10 +275,9 @@ is the watchdog's, not the input's. `crash_buckets.py` reads them.
     --time_limit_per_input=<input_timeout_s>s --rss_limit_mb=<memory_mb>
   ```
 - **Minimize:** `FUZZTEST_MINIMIZE_REPRODUCER` exits at the first smaller
-  input that crashes (any crash), so run it in a loop, each result the
-  next input, until a step finds nothing smaller within `<timeout_s>` (20
-  to 60 s). Then replay and group the result as for every engine
-  (`fuzz-triage`, "Minimize"):
+  input that crashes, whatever the crash. So run it in a loop that takes
+  each result as the next input, until a step finds nothing smaller
+  within `<timeout_s>` (20 to 60 s):
   <!-- ci: fuzztest-minimize -->
   ```sh
   m="$F/crashes/<bucket>/minimized"; mkdir -p "$F/crashes/<bucket>"; cp "<finding>" "$m"
@@ -275,28 +293,37 @@ is the watchdog's, not the input's. `crash_buckets.py` reads them.
     cp "$out/$next" "$m"
   done
   ```
-- **The reproducer's values:** the regression test draft (`=== Regression
-  test draft`) calls the property function with the failing arguments
-  (none for `FUZZ_TEST_F`). The property function is our harness, so take
-  only the argument values from it, for the reproducer's direct API call
-  (`regression.md`, "The bug's reproducer").
+  Then replay and group the result as for every engine (`fuzz-triage`,
+  "Minimize").
+- **The reproducer's values:** the regression test draft
+  (`=== Regression test draft`) calls the property function with the
+  failing arguments. A `FUZZ_TEST_F` gets no draft. The property function
+  is our harness, so take only the argument values from the draft, for
+  the reproducer's direct API call (`regression.md`, "The bug's
+  reproducer").
 - **Seeds in `.WithSeeds({...})`** run in every mode, including the short
-  unit-test run in normal CI: a harness check, not a bug's test.
+  unit-test run in normal CI. So they are a harness check, not a bug's
+  test.
 
 ## Long runs and OSS-Fuzz
 
-- **Long runs:** N independent copies of the command (`--copies`), with
-  `--tree "<tree>"` and the binary from `<tree_build>/fuzztest/` (`run.md`, "Long runs"),
-  `FUZZTEST_TESTSUITE_OUT_DIR={run}/corpus` and the persistent corpus as
-  `IN_DIR`. Copies don't share inputs while they run (no reload; files are
-  named by content, so one directory is safe). With no duration, leave out
-  `--fuzz_for`. (`--jobs=<n>` needs Bazel's Centipede.) At analysis, merge
-  by minimizing the union of the persistent corpus and the run's (Run, above).
+- **Long runs:** N independent copies of the develop run's command
+  (`--copies`), with:
+  - `--tree "<tree>"`, and the binary from `<tree_build>/fuzztest/`
+    (`run.md`, "Long runs");
+  - `FUZZTEST_TESTSUITE_OUT_DIR={run}/corpus`, and the persistent corpus
+    as `IN_DIR`.
+
+  With no duration, leave out `--fuzz_for`. Copies don't share inputs
+  while they run, since FuzzTest has no reload. Files are named by
+  content, so one output directory for all copies is safe. `--jobs=<n>`
+  needs Bazel's Centipede. At analysis, merge by minimizing the union of
+  the persistent corpus and the run's corpus (Run, above).
 - **OSS-Fuzz** builds FuzzTest harnesses with Bazel. A CMake project can
-  follow libavif, which builds them in libFuzzer compatibility mode with a
-  pinned FuzzTest and a few patches (`tests/oss-fuzz/build.sh`); the
-  upstreaming pull request says so and leaves the choice to the maintainers. The campaign
-  itself uses FuzzTest's standard mode only.
+  follow libavif, which builds them in libFuzzer compatibility mode, with
+  a pinned FuzzTest and a few patches (`tests/oss-fuzz/build.sh`). The
+  upstreaming pull request says so and leaves the choice to the
+  maintainers. The campaign itself uses FuzzTest's standard mode only.
 
 ## Pitfalls
 

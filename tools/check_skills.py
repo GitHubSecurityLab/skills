@@ -90,10 +90,10 @@ LANGUAGE_LINES = 150
 # Language-skill files past LANGUAGE_LINES, with the reason: path -> (lines allowed, why).
 # A new overrun, or a listed file growing past its cap, still warns.
 LONG_FILES = {
-    "skills/fuzzing/fuzz-c-cpp/references/build.md": (194, "variants, build-system recipes, in-tree builds, instrumentation checks"),
-    "skills/fuzzing/fuzz-c-cpp/references/aflpp.md": (215, "AFL++'s builds, checks and long runs, read only for AFL++ long runs"),
+    "skills/fuzzing/fuzz-c-cpp/references/build.md": (239, "variants, build-system recipes, in-tree builds, instrumentation checks"),
+    "skills/fuzzing/fuzz-c-cpp/references/aflpp.md": (236, "AFL++'s builds, checks and long runs, read only for AFL++ long runs"),
     "skills/fuzzing/fuzz-c-cpp/references/run.md": (165, "libFuzzer and AFL++ commands for each kind of run"),
-    "skills/fuzzing/fuzz-c-cpp/references/fuzztest.md": (306, "FuzzTest's whole path, coverage and triage included, read only for FuzzTest projects"),
+    "skills/fuzzing/fuzz-c-cpp/references/fuzztest.md": (333, "FuzzTest's whole path, coverage and triage included, read only for FuzzTest projects"),
     "skills/fuzzing/fuzz-java/references/build.md": (175, "Maven, and Gradle with one module or several"),
     "skills/fuzzing/fuzz-java/references/harness.md": (194, "parameter styles, seeds, the bug-detector table and the hook API"),
     "skills/fuzzing/fuzz-java/references/run.md": (200, "standalone runs and JUnit runs"),

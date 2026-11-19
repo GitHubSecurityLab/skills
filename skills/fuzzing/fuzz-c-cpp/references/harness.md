@@ -2,7 +2,7 @@
 
 ## `LLVMFuzzerTestOneInput`
 
-The entry point libFuzzer and AFL++ both call, once per input:
+libFuzzer and AFL++ both call this entry point, once per input:
 
 ```c
 #include <stddef.h>
@@ -22,8 +22,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
 - C++: never `catch (...)` (`fuzz-harness`, "Design the harness"). An
   uncaught exception is a `deadly signal` with the throw's stack.
 - `data` is read-only and exactly `size` bytes long. If the API needs a
-  NUL-terminated or writable buffer, copy into an exact-size heap buffer so
-  ASan still catches over-reads:
+  NUL-terminated or writable buffer, copy the input into an exact-size
+  heap buffer, so that ASan still catches over-reads:
   ```c
   char *s = malloc(size + 1);
   if (!s) return 0;
@@ -34,17 +34,17 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   ```
 - One-time setup: `int LLVMFuzzerInitialize(int *argc, char ***argv)`, or a
   static flag in the harness. Don't read configuration from `argv`.
-- Limit size to what the format needs (`if (size > MAX) return 0;`), and
-  record `MAX` as the harness's input cap in the target file: every
+- Limit the size to what the format needs (`if (size > MAX) return 0;`).
+  Record `MAX` as the harness's input cap in the target file: every
   libFuzzer command passes it as `-max_len` (`run.md`).
 - Docs: https://llvm.org/docs/LibFuzzer.html#fuzz-target
 
 ## Splitting the input
 
 C++: `FuzzedDataProvider` splits one input into as many typed values as
-the harness needs (header ships with clang, no `-I` needed). For example,
-the following harness parses a document and takes two options, so the
-options come from a prefix:
+the harness needs. Its header ships with clang, so no `-I` is needed. For
+example, the following harness parses a document and takes two options,
+so the options come from a prefix:
 
 ```cpp
 #include <fuzzer/FuzzedDataProvider.h>
@@ -60,8 +60,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
 }
 ```
 
-- Where its values come from in the input, and why a document's options
-  come from a prefix: `fuzz-harness`, "Design the harness".
+- Where `FuzzedDataProvider`'s values come from in the input, and why a
+  document's options come from a prefix: `fuzz-harness`, "Design the
+  harness".
 - `doc` is an exact-size copy, so reads past either end still trip ASan.
 - Header reference:
   https://github.com/llvm/llvm-project/blob/main/compiler-rt/include/fuzzer/FuzzedDataProvider.h
@@ -121,21 +122,24 @@ parse_path(path);  /* an API taking the fd itself: lseek(fd, 0, SEEK_SET) first 
 ## Where harnesses live
 
 Common places: `fuzz/`, `tests/fuzz/`, `test/fuzzing/`, `oss-fuzz/`, or a
-separate repository (`curl/curl-fuzzer`); file names are often
-`<thing>_fuzzer.c`. Register targets in the build as the neighbours are.
-If the project is in OSS-Fuzz: its `build.sh`
-(`google/oss-fuzz/projects/<name>/`) shows which files are harnesses and
+separate repository (`curl/curl-fuzzer`). File names are often
+`<thing>_fuzzer.c`. Register targets in the build the way their
+neighbours are registered. If the project is in OSS-Fuzz, its `build.sh`
+(`google/oss-fuzz/projects/<name>/`) shows which files are harnesses, and
 where seed corpora and dictionaries come from.
 
 ## Other formats
 
 - **FuzzTest** (`FUZZ_TEST`): see `fuzztest.md` next to this file.
 - **Native AFL++** harnesses: `aflpp.md` next to this file.
-- **Custom mutators** (`LLVMFuzzerCustomMutator`: decode, mutate the
-  structure, re-encode; structure-aware escalation in `fuzz-coverage`)
-  keep compressed, checksummed or grammar-bound input valid
+- **Custom mutators** (`LLVMFuzzerCustomMutator`) keep compressed,
+  checksummed or grammar-bound input valid: they decode the input, mutate
+  its structure and re-encode it
   (https://github.com/google/fuzzing/blob/master/docs/structure-aware-fuzzing.md).
-  A FuzzTest domain can replace one; a `FuzzedDataProvider` split can't.
-  AFL++'s custom-mutator API differs, so such a harness's long runs use
-  libFuzzer, as do libprotobuf-mutator's `DEFINE_PROTO_FUZZER` harnesses,
-  kept as they are.
+  Structure-aware escalation: `fuzz-coverage`.
+  - A FuzzTest domain can replace a custom mutator; a `FuzzedDataProvider`
+    split can't.
+  - AFL++'s custom-mutator API differs, so the long runs of a harness
+    with an `LLVMFuzzerCustomMutator` use libFuzzer.
+  - libprotobuf-mutator's `DEFINE_PROTO_FUZZER` harnesses are kept as they
+    are, and their long runs use libFuzzer too.

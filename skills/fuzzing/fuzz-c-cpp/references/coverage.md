@@ -5,8 +5,9 @@ sanitizers, with the fuzzing build's fuzzing-mode macro and patches.
 
 ## libFuzzer harnesses
 
-1. **Replay** the corpus in the coverage build, through the launcher (run
-   id `cov-<h>-<n>`), with `L`, `F`, `H` and the environment as in `run.md`
+1. **Replay** the corpus in the coverage build, through the launcher,
+   with run id `cov-<h>-<n>`. `L`, `F`, `H` and the environment are as in
+   `run.md`
    next to this file:
    <!-- ci: c-cov-replay -->
    ```sh
@@ -16,25 +17,28 @@ sanitizers, with the fuzzing build's fuzzing-mode macro and patches.
      -artifact_prefix="{run}/artifacts/copy-{copy}/" "{scratch}/out" "$F/corpus/$H"
    ```
    - `-merge=1` into the empty `{scratch}/out` runs every input once, in
-     child processes, and **continues past an input that crashes**: the
+     child processes. It **continues past an input that crashes**: the
      crash is a finding for `fuzz-triage`, the input stays in the corpus,
      and the snapshot is still complete.
-   - `%c` (continuous mode) writes counters as they change, so the crashed
-     child's coverage is kept; `%p` gives each process its own file, and
-     `%m` each module (a shared library is one), which continuous mode needs
-     on Linux.
+   - The `LLVM_PROFILE_FILE` pattern:
+     - `%c` (continuous mode) writes counters as they change, so the
+       crashed child's coverage is kept.
+     - `%p` gives each process its own file.
+     - `%m` gives each module its own file; a shared library is one
+       module. Continuous mode needs `%m` on Linux.
    - If the host is Linux: `%c` needs the coverage variant's
      `-mllvm -runtime-counter-relocation` (`build.md`).
-   - If other corpora count too (e.g. a long run's corpus, or AFL++
-     `queue/` directories, to measure what it found): add their
-     directories at the end.
+   - If other corpora count too, add their directories at the end. For
+     example, add a long run's corpus or AFL++ `queue/` directories to
+     measure what a run found.
 2. **Check** the result line: `finished` (exit 0), and any findings.
-   `LLVM Profile Error` in the log (e.g. one naming
-   `__llvm_profile_counter_bias`: built without the relocation flag)
-   means the profile is empty: rebuild and replay.
+   `LLVM Profile Error` in the log means the profile is empty: rebuild and
+   replay. For example, an error that names
+   `__llvm_profile_counter_bias` means the build lacks the relocation
+   flag.
 3. **Export** the profile to lcov (reads files only, no target code).
-   `<objects>`: `-object=<lib>` for each library the target lives in, from
-   the coverage build:
+   `<objects>` is `-object=<lib>` for each library the target lives in,
+   from the coverage build:
    <!-- ci: c-cov-export -->
    ```sh
    R="$F/runs/cov-$H-<n>"; mkdir -p "$F/coverage/$H"
@@ -42,22 +46,24 @@ sanitizers, with the fuzzing build's fuzzing-mode macro and patches.
    llvm-cov export -format=lcov -instr-profile="$F/coverage/$H/r<round>.profdata" \
      "$F/build/coverage/<binary>" <objects> > "$F/coverage/$H/r<round>.lcov"
    ```
-   The binary's coverage map has only the code linked into it: not a
-   shared library's, nor a static `.a`'s objects it doesn't reference (the
-   link drops them), so without `-object` their files would be missing
-   (`summary`: no coverage data). Then continue with `coverage.py` as the
-   calling skill says.
-   - If LLVM is older than 12: the export has no branch records (`BRDA`);
-     they need LLVM 12 or later.
+   The binary's coverage map has only the code linked into it. It lacks a
+   shared library's code. It also lacks a static `.a`'s objects that the
+   binary doesn't reference, since the link drops them. Without
+   `-object`, the files of that code would be missing (`summary`: no
+   coverage data).
+   - If LLVM is older than 12: the export has no branch records (`BRDA`),
+     which need LLVM 12 or later.
+
+   Then continue with `coverage.py` as the calling skill says.
 
 **Exact subset** (`reach.py`, the gate's state-leak check): to run
-exactly the inputs in `{dir}`, use the same command with `{dir}` instead
+exactly the inputs in `{dir}`, use step 1's command with `{dir}` instead
 of the corpus directories, i.e. `-merge=1 "{scratch}/out" "{dir}"`. A
 `-runs=0` directory replay adds an empty input, and `-merge=1` refuses
 file arguments.
 
-**Inputs that reach a line** (`reach.py`, for targeted inputs:
-`fuzz-coverage`'s corpus.md; `<objects>` as above):
+**Inputs that reach a line**: `reach.py` finds them, for targeted inputs
+(`fuzz-coverage`'s corpus.md). `<objects>` is as in step 3:
 
 <!-- ci: c-reach -->
 ```sh
@@ -67,9 +73,11 @@ python3 "$F/bin/reach.py" --harness $H --corpus "$F/corpus/$H" --file <file> --l
   --export "sh -c 'llvm-profdata merge -sparse \$0/*.profraw -o \$0/p.profdata && llvm-cov export -format=lcov -instr-profile=\$0/p.profdata \$1 <objects> > \$2' {out} $F/build/coverage/<binary> {lcov}"
 ```
 
-**The gate's state-leak check** (`fuzz-harness`'s gate.md, "No state leaking between inputs"):
-a sample replayed in one process (A), then each input in a fresh process
-(B), as files, which run exactly those inputs (`<objects>` as above):
+**The gate's state-leak check** is the block below, for `fuzz-harness`'s
+gate.md, "No state leaking between inputs". It replays a sample in one
+process (A). Then it replays each input of the sample in a fresh process
+(B). Both sides pass the inputs as files, which run exactly those inputs.
+`<objects>` is as in step 3:
 
 <!-- ci: c-leak-check -->
 ```sh
@@ -90,22 +98,25 @@ python3 "$F/bin/coverage.py" overlap "$F/coverage/$H/gate-one.lcov" "$F/coverage
 
 **One function,** with its branch counts:
 `llvm-cov show -instr-profile=<profdata> <binary> <objects> -name=<function> -show-branches=count`.
-It shows a template's instantiations apart.
-- If `gaps` lists a template's branch as blocked, on LLVM 20 or older:
+The command shows a template's instantiations apart.
+- If LLVM is 20 or older and `gaps` lists a template's branch as blocked:
   check that branch with this command. Those versions also export the
-  instantiations' branches apart, so another instantiation may take it.
+  instantiations' branches apart, so another instantiation may take the
+  branch.
 
 ## FuzzTest
 
-Replay, exact subsets and the state-leak check: `fuzztest.md`, "Coverage",
-next to this file.
+For replay, exact subsets and the state-leak check, see `fuzztest.md`,
+"Coverage", next to this file.
 
 ## Optional tools
 
-`fuzz-reachability` (functions an entry point can statically reach) and
-`cov-analysis` (replays, stability, report diffs), both from the AFL++
-project: not run here, and AGPL-3.0, so only invoke them; never commit or
-propose code they generate.
+Two optional tools come from the AFL++ project:
+- `fuzz-reachability`: the functions an entry point can statically reach.
+- `cov-analysis`: replays, stability, report diffs.
+
+They're not run here. They're AGPL-3.0, so only invoke them; never commit
+or propose code they generate.
 - If `fuzz-reachability` is installed: it separates "reachable but not
-  reached" (an input problem) from "unreachable from this harness" (a
-  harness problem).
+  reached", an input problem, from "unreachable from this harness", a
+  harness problem.

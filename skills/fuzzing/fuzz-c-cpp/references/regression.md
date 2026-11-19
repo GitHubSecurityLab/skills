@@ -2,10 +2,10 @@
 
 ## Seed replay: the harness as a test (upstreaming, `fuzz-campaign`)
 
-A small driver lets the project's CI run a `LLVMFuzzerTestOneInput` harness
-without a fuzzing engine, with any compiler. Many projects already have one
-(look for a `main` next to the harnesses). Otherwise add this, in the
-project's style:
+A small driver lets the project's CI run a `LLVMFuzzerTestOneInput`
+harness without a fuzzing engine, with any compiler. Many projects already
+have one (look for a `main` next to the harnesses). Otherwise add this, in
+the project's style:
 
 ```c
 /* Runs LLVMFuzzerTestOneInput once on each file named on the command line,
@@ -32,8 +32,8 @@ int main(int argc, char **argv) {
 }
 ```
 
-If the harness defines `LLVMFuzzerInitialize`, call it first. Register the
-test, e.g. with CMake:
+If the harness defines `LLVMFuzzerInitialize`, make the driver call it
+first. Register the test, e.g. with CMake:
 
 ```cmake
 add_executable(parse_fuzzer_replay parse_fuzzer.c replay_main.c)
@@ -48,27 +48,32 @@ In a libFuzzer build, the fuzz binary itself replays files the same way
 ## The bug's reproducer (`fuzz-triage`)
 
 Every real bug gets one, written in triage on the build that found it: a
-small program in `crashes/<bucket>/repro.c` (or `.cc`) whose `main()` calls
-the project's API with the concrete values the harness derived from the
-input, not through the harness and not as a crash file. Print the values
-once from the harness, or read them in a debugger (FuzzTest prints them:
-`fuzztest.md`, "Triage"). `xxd -i <file>` prints a byte buffer as a C
-array.
+small program in `crashes/<bucket>/repro.c` (or `.cc`). Its `main()`
+calls the project's API with the concrete values the harness derived from
+the input, not through the harness and not as a crash file. To get the
+values, print them once from the harness, or read them in a debugger.
+FuzzTest prints them itself (`fuzztest.md`, "Triage"). `xxd -i <file>`
+prints a byte buffer as a C array.
 
 - **It includes the check that caught the bug,** so it fails before the
   fix: the sanitizer build, the harness's property check written out (e.g.
   `assert(decoded == original)`), or the time or memory limit. A plain
   call with the same values often passes.
 - **It runs against a tree's existing build output,** without rebuilding
-  that tree (another run may use it): link the tree's libFuzzer ASan+UBSan
-  library (a FuzzTest project: the `fuzztest` build's); libFuzzer itself
-  isn't needed. `<repro_leaks>`: `1`, so a leak fails on macOS too
-  (`run.md` turns leak detection off there only for libFuzzer); `0` in a
-  sandbox that blocks `ptrace`. If the reproducer is C++: `clang++`,
-  without `-fno-sanitize=function` (`$HARDEN` keeps the standard library's
-  checks; C ignores it). Build into scratch; after the library, add the
-  project's other libraries in link order (a shared one with
-  `-Wl,-rpath,<its directory>`, as for the first), then system ones such as `-lz`:
+  that tree, since another run may use it. Build the reproducer into
+  scratch, as the block below does:
+  - Link the tree's libFuzzer ASan+UBSan library; in a FuzzTest project,
+    the `fuzztest` build's. libFuzzer itself isn't needed.
+  - `<repro_leaks>`: `1`, so a leak fails on macOS too (`run.md` turns
+    leak detection off there only for libFuzzer). Use `0` in a sandbox
+    that blocks `ptrace`.
+  - If the reproducer is C++: use `clang++`, without
+    `-fno-sanitize=function`. `$HARDEN` keeps the standard library's
+    checks; C ignores it.
+  - After the tree's library, add the project's other libraries in link
+    order, a shared one with `-Wl,-rpath,<its directory>` as the block
+    does for the tree's library. Then add system libraries such as
+    `-lz`.
 
 <!-- ci: c-reproducer -->
 ```sh
@@ -81,33 +86,38 @@ $L start --id poc-$H-<n> --harness $H --timeout <timeout_s> \
 
 An allocation above `<memory_mb>` aborts, as in the fuzzer, instead of
 returning NULL to code that checks for it. The state `exited <code>` with
-the bug's report means it reproduced; `finished` means it passes. The fix
-(`fuzz-triage`) turns it into a test of the project's framework
-(GoogleTest, Check, cmocka, a CTest program) in the fix commit, with a
-comment naming the bug class and the function, and saying that memory bugs
-fail reliably only in a sanitizer build.
+the bug's report means the bug reproduced; `finished` means the
+reproducer passes.
+
+The fix (`fuzz-triage`) turns the reproducer into a test of the project's
+framework, such as GoogleTest, Check, cmocka or a CTest program. The test
+goes in the fix commit, with a comment that names the bug class and the
+function, and says that memory bugs fail reliably only in a sanitizer
+build.
 
 ## Sanitizer build for the tests
 
-Use the project's existing option first: a CMake option such as
-`ENABLE_ASAN` or `<PROJECT>_SANITIZE`, Meson's
-`-Db_sanitize=address,undefined`, Bazel `--config=asan`, a configure flag
-such as `--enable-asan`, or a CI job that already builds with sanitizers.
-If there's none:
-- for the regression test in the project, give the commands in the test's
-  comment or the PR text (e.g. `CFLAGS="-fsanitize=address,$UB
-  -fno-sanitize-recover=$UB -fno-sanitize=function -g"` with the
-  project's normal build, C++ adding `$HARDEN`, both written out,
-  `build.md`),
-  rather than adding an option the
-  maintainers didn't ask for;
-- for the report's reproducer package (`fuzz-triage`), ship a short build
-  script with it that builds the library and the test with
-  `-fsanitize=address,$UB -fno-sanitize-recover=$UB -g -O1` (C: and
-  `-fno-sanitize=function`; C++: and `$HARDEN`), both written out, and
-  runs it.
+Use the project's existing option first:
+- a CMake option such as `ENABLE_ASAN` or `<PROJECT>_SANITIZE`;
+- Meson's `-Db_sanitize=address,undefined`;
+- Bazel `--config=asan`;
+- a configure flag such as `--enable-asan`;
+- a CI job that already builds with sanitizers.
 
-Run the test before the fix (it must fail with the sanitizer report) and
-after it (it must pass). `-fno-sanitize-recover=$UB` makes a UBSan
-report fail the test: by default UBSan prints it and exits 0, so ctest,
-CI and a bisect would pass.
+If there's none:
+- For the regression test in the project, give the commands in the
+  test's comment or the PR text, rather than adding an option the
+  maintainers didn't ask for. For example, `CFLAGS="-fsanitize=address,$UB
+  -fno-sanitize-recover=$UB -fno-sanitize=function -g"` with the
+  project's normal build; C++ adds `$HARDEN`. Write `$UB` and `$HARDEN`
+  out (`build.md`).
+- For the report's reproducer package (`fuzz-triage`), ship a short build
+  script with it. The script builds the library and the test with
+  `-fsanitize=address,$UB -fno-sanitize-recover=$UB -g -O1`, and runs the
+  test. C adds `-fno-sanitize=function`, and C++ adds `$HARDEN`. Write
+  `$UB` and `$HARDEN` out.
+
+Run the test before the fix (it must fail with the sanitizer report)
+and after the fix (it must pass). `-fno-sanitize-recover=$UB` makes a
+UBSan report fail the test. By default UBSan prints the report and exits
+0, so ctest, CI and a bisect would pass.
