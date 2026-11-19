@@ -24,6 +24,9 @@ Errors (exit code 1):
     stopping" and "Standalone: stop") differs
   - a section several skills state alike (SHARED_SECTIONS: the standalone
     skills' Start) differs
+  - a fuzzing skill's Reads or Writes section that doesn't open with its
+    sentence (SECTION_INTROS: what the section lists, and that paths are
+    relative to .seclab/fuzz/ unless they start with .seclab/)
   - a term in another meaning or a retired one (TERMS: "leak check" for the
     state-leak check, an action's "target" for its aim, "hand-off" for upstreaming,
     "directed inputs" for targeted inputs, "crash ledger" for the crash buckets)
@@ -231,6 +234,14 @@ SHARED_LINES = (
 SHARED_SECTIONS = (
     ("Start", tuple(os.path.join("skills", "fuzzing", name, "SKILL.md") for name in sorted(STANDALONE_SKILLS))),
 )
+# The sentence that opens every Reads and Writes section of the fuzzing skills: what the section lists, and
+# what its paths are relative to. Shared skills don't use the fuzzing workspace, so they're left out.
+SECTION_INTROS = {
+    "Reads": "What the steps in this file read. Paths are relative to `.seclab/fuzz/` unless they start with "
+             "`.seclab/`:",
+    "Writes": "What the steps in this file write or change. Paths are relative to `.seclab/fuzz/` unless they "
+              "start with `.seclab/`:",
+}
 
 
 def strip_code(text: str) -> str:
@@ -472,6 +483,7 @@ def check(root: str) -> Report:
     check_shared_skills(report, root)
     check_shared_lines(report, root)
     check_shared_sections(report, root)
+    check_section_intros(report, root)
     check_failure_tables(report, root)
     check_launcher_commands(report, root)
     check_pointers(report, root, skills)
@@ -741,6 +753,26 @@ def check_shared_sections(report: Report, root: str) -> None:
                 first = (rel, found[0])
             elif found[0] != first[1]:
                 report.error(rel, "its '## %s' section differs from %s's" % (title, first[0]))
+
+
+def check_section_intros(report: Report, root: str) -> None:
+    """Every Reads and Writes section of the fuzzing skills opens with its SECTION_INTROS sentence."""
+    for path in sorted(glob.glob(os.path.join(root, "skills", "fuzzing", "**", "*.md"), recursive=True)):
+        with open(path, encoding="utf-8") as handle:
+            text = handle.read()
+        for title, intro in SECTION_INTROS.items():
+            for lines in _sections(text, title):
+                first = []
+                for line in lines:
+                    if not line.strip():
+                        if first:
+                            break
+                        continue
+                    if re.match(r"\s*(?:[-*]|\d+\.)\s", line):
+                        break
+                    first.append(line.strip())
+                if " ".join(first) != intro:
+                    report.error(os.path.relpath(path, root), "its '## %s' section must open with: %s" % (title, intro))
 
 
 def check_failure_tables(report: Report, root: str) -> None:

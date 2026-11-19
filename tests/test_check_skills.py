@@ -300,6 +300,15 @@ class CheckSkillsTests(unittest.TestCase):
         self.assertIn("fuzz-triage/SKILL.md", errors[0])
         self.assertIn("differs", errors[0])
 
+    def test_reads_and_writes_open_with_their_sentence(self):
+        reads = cs.SECTION_INTROS["Reads"].replace(" are relative", "\nare relative")
+        self.add("fuzzing", "fuzz-harness", skill("fuzz-harness", body="# H\n\n## Reads\n\n" + reads
+                                                  + "\n- `CAMPAIGN.md`.\n\n## Writes\n\n- `CAMPAIGN.md`.\n"))
+        self.add("shared", "security-threat-model", skill("security-threat-model", body="# T\n\n## Reads\n\n- x\n"))
+        errors = [e for e in cs.check(self.root).errors if "must open with" in e]
+        self.assertEqual(len(errors), 1, errors)
+        self.assertIn("'## Writes'", errors[0])
+
     def test_standalone_skills_have_the_same_before_stopping_check(self):
         line = "- **Before stopping,** check the Done when items that this request's steps produce.\n"
         self.add("fuzzing", "fuzz-harness", skill("fuzz-harness", body="# H\n\n## Next\n\n" + line))
