@@ -1,8 +1,9 @@
 # Jazzer.js fuzz tests
 
 Jest `it.fuzz` tests: write them as `jest.md`, "Writing a fuzz test",
-says, which also says where their seeds and dictionaries go; the rest of
-this file applies to them too, with an example's body inside `it.fuzz`.
+says. That section also says where their seeds and dictionaries go. The
+rest of this file applies to them too; an example's body goes inside
+`it.fuzz`.
 
 ## CLI targets
 
@@ -19,16 +20,18 @@ module.exports.fuzz = function (data) {
 };
 ```
 
-Libraries often throw plain `Error` for invalid input. Filter on the class,
-`if (e?.constructor !== Error) throw e;`: `instanceof Error` also catches
-`TypeError` and `RangeError` (stack overflows too), the bugs worth finding.
+Libraries often throw plain `Error` for invalid input. Filter on the
+class, `if (e?.constructor !== Error) throw e;`. A filter on
+`instanceof Error` also catches `TypeError` and `RangeError`, stack
+overflows included, and those are the bugs worth finding.
 
 **ES modules:** ESM targets use `export function fuzz(data)` and need
 Node 20.6+ (20.11+ for hooks and detectors). In ES modules, named imports
-of Node's built-ins (`import { execSync } from "node:child_process"`)
-bypass the detectors and hooks, and the real call runs, unless the harness
-calls `syncBuiltinESMExports()` before loading the target with `import()`
-(a static import would load it first):
+of Node's built-ins, such as
+`import { execSync } from "node:child_process"`, bypass the detectors and
+hooks, and the real call runs. To prevent that, the harness calls
+`syncBuiltinESMExports()` first and then loads the target with
+`import()`, since a static import would load the target before that call:
 
 ```javascript
 // fuzz/header.fuzz.mjs
@@ -38,23 +41,26 @@ const { parseHeader, HeaderError } = await import("../src/header.js");
 export function fuzz(data) { /* as above */ }
 ```
 
-If a CommonJS harness `require`s an ES module: it calls
+If a CommonJS harness `require`s an ES module, it calls
 `require("node:module").syncBuiltinESMExports()` first. The ESM loader
-leaves a module without branches uninstrumented, compare hooks included:
-`export const isMagic = (s) => s === "magic"` never finds
-`magic` unless the dictionary has it; CommonJS instruments it.
+leaves a module without branches uninstrumented, compare hooks
+included. So the fuzzer never finds `magic` in
+`export const isMagic = (s) => s === "magic"` unless the dictionary has
+it. CommonJS instruments such a module.
 
-**TypeScript:** target the compiled JavaScript (`build.md`). Node 22.18 and
-later import `.ts` files natively, uninstrumented (the gate's `SF:` check
-shows it), and a `require` of one fails with a `SyntaxError`.
+**TypeScript:** target the compiled JavaScript (`build.md`). Node 22.18
+and later import `.ts` files natively, uninstrumented, and a `require` of
+one fails with a `SyntaxError`. The gate's `SF:` check shows the missing
+instrumentation.
 
 ## HTTP handlers
 
-Inject one request per input in process, without a socket:
-`light-my-request` (a pinned dev dependency) takes an Express app or any
-`(req, res)` handler (Fastify has `app.inject()`). Frameworks answer an
-exception with a 500, so check the status. The target is async: run it
-without `--sync`, with which requests pile up until memory runs out.
+Inject one request per input in process, without a socket.
+`light-my-request`, a pinned dev dependency, takes an Express app or any
+`(req, res)` handler; Fastify has `app.inject()`. Frameworks answer an
+exception with a 500, so check the status. The target is async, so run
+it without `--sync`. With `--sync`, requests pile up until memory runs
+out.
 
 <!-- ci: js-http -->
 ```javascript
@@ -71,11 +77,12 @@ module.exports.fuzz = async function (data) {
 
 ## Objects
 
-An API that takes an object (options, a document to merge or set) gets
-the parsed input, with seeds in that shape (the project's test fixtures).
-`JSON.parse` keeps a `__proto__` key as an own property, as an attacker's
-JSON does, so merge and set APIs meet the prototype-pollution detector.
-Functions, `undefined` and class instances need a `FuzzedDataProvider`.
+An API that takes an object, such as options or a document to merge or
+set, gets the parsed input. Give the harness seeds in that shape (the
+project's test fixtures). `JSON.parse` keeps a `__proto__` key as an own
+property, as an attacker's JSON does, so merge and set APIs meet the
+prototype-pollution detector. Functions, `undefined` and class instances
+need a `FuzzedDataProvider`.
 
 <!-- ci: js-object-input -->
 ```javascript
@@ -89,10 +96,11 @@ module.exports.fuzz = function (data) {
 };
 ```
 
-**Shadowing keys:** where the API promises plain data keys (qs drops such
-keys by default), check its result. An own key that shadows
-`Object.prototype` (`toString`, `hasOwnProperty`) breaks callers that use
-it, and the detector doesn't see it: no prototype changed.
+**Shadowing keys:** where the API promises plain data keys, check its
+result for own keys that shadow `Object.prototype`, such as `toString` or
+`hasOwnProperty` (qs drops them by default). Such a key breaks callers
+that use the shadowed property. The detector doesn't see it, since no
+prototype changed.
 
 <!-- ci: js-shadowing -->
 ```javascript
@@ -116,15 +124,17 @@ module.exports.fuzz = function (data) {
 
 ## `FuzzedDataProvider` (`@jazzer.js/core`)
 
-`consumeBoolean()`, `consumeIntegralInRange(min, max)`,
-`consumeNumberInRange(min, max)`, `consumeString(maxLength)` (one
-argument, always UTF-8 since 4.0; older docs show a second argument),
-`consumeBytes(maxLength)`, `consumeRemainingAsString()`,
-`consumeRemainingAsBytes()`, `consumeStringArray(maxCount, maxLength)`,
-`remainingBytes`. Nothing can be read after a `consumeRemaining*` call.
-The `*Bytes` methods return arrays of numbers: `Buffer.from(...)` where
-the code needs a buffer. The provider's input layout: `fuzz-harness`,
-"Design the harness".
+The provider offers `consumeBoolean()`,
+`consumeIntegralInRange(min, max)`, `consumeNumberInRange(min, max)`,
+`consumeString(maxLength)`, `consumeBytes(maxLength)`,
+`consumeRemainingAsString()`, `consumeRemainingAsBytes()`,
+`consumeStringArray(maxCount, maxLength)` and `remainingBytes`.
+- `consumeString(maxLength)` takes one argument. It's always UTF-8
+  since 4.0. Older docs show a second argument.
+- Nothing can be read after a `consumeRemaining*` call.
+- The `*Bytes` methods return arrays of numbers. Use `Buffer.from(...)`
+  where the code needs a buffer.
+- The provider's input layout: `fuzz-harness`, "Design the harness".
 
 ## Seeds and dictionaries
 
@@ -135,8 +145,9 @@ the code needs a buffer. The provider's input layout: `fuzz-harness`,
 
 ## Bug detectors
 
-On by default. What each one checks (Jazzer.js 4.0.0); a sink it sees
-only partly needs a custom check (`fuzz-coverage`, "Check the sinks"):
+Bug detectors are on by default. A sink that a detector sees only partly
+needs a custom check (`fuzz-coverage`, "Check the sinks"). What each
+detector checks, as of Jazzer.js 4.0.0:
 
 | Detector | Reports when | Doesn't see |
 |---|---|---|
@@ -153,7 +164,7 @@ A call without the trigger value runs for real.
   const { getBugDetectorConfiguration } = require("@jazzer.js/bug-detectors");
   getBugDetectorConfiguration("ssrf")?.addPermittedTCPConnection("localhost", 8080);
   ```
-- Disable one only with a recorded reason:
+- Disable a detector only with a recorded reason:
   `JAZZER_DISABLE_BUG_DETECTORS='["prototype-pollution"]'`, or
   `"disableBugDetectors"` in `.jazzerjsrc.json`.
 
@@ -163,30 +174,38 @@ Add a hook only after reading the code, for a known reason: e.g. a random
 or time-dependent value made constant, or a checksum check
 (`fuzz-harness`'s build.md, "Fuzzing-only patches").
 
-- `registerBeforeHook`, `registerReplaceHook`, `registerAfterHook` from
-  `@jazzer.js/hooking`: target function (dotted path for nested
-  functions), package name (`""` for globals), async flag, hook function.
-  An after hook gets the result as its fourth argument; on a Node
-  built-in, its return value replaces the result, so return it.
+- `registerBeforeHook`, `registerReplaceHook` and `registerAfterHook`
+  from `@jazzer.js/hooking` take these arguments:
+  - the target function, a dotted path for nested functions;
+  - the package name, `""` for globals;
+  - the async flag;
+  - the hook function.
+- An after hook gets the result as its fourth argument. On a Node
+  built-in, the after hook's return value replaces the result, so return
+  the result.
 - Load a hooks file with `--env JAZZER_CUSTOM_HOOKS="[\"<abs path>\"]"`.
-  Hooks must be JavaScript, also in TypeScript projects.
+  Hooks must be JavaScript, even in TypeScript projects.
 - A replace hook also silences the built-in detector on that function.
 - Report from a hook with `reportAndThrowFinding(message)` from
-  `@jazzer.js/core`; put values on the second line of the message so
-  findings group by the first.
+  `@jazzer.js/core`. Put values on the second line of the message, so
+  that findings group by the first line.
 - An in-process fake must keep the oracle: a stub that never fails hides
-  the bug it stands in for.
-- `JAZZER_VERBOSE=true` (a JSON value; `1` is rejected) or `--verbose`
-  lists the applied hooks (`DEBUG: Applied Before-hook in ...`).
+  the bug that the code it stands in for would reveal.
+- `JAZZER_VERBOSE=true` or `--verbose` lists the applied hooks
+  (`DEBUG: Applied Before-hook in ...`). `JAZZER_VERBOSE` takes a JSON
+  value; `1` is rejected.
 
 ## What gets instrumented
 
-`includes` (default `["*"]`) and `excludes` (default `["node_modules"]`)
-are substrings of the absolute file path, and excludes win. Set both:
-setting only `includes` empties `excludes`, and setting only `excludes`
-empties `includes`, so nothing is instrumented. To fuzz a dependency too,
-list it with absolute paths (`"src/"` alone also matches every package's
-`src/`), and don't exclude `node_modules`:
+`includes` and `excludes` are substrings of the absolute file path, and
+excludes win. `includes` defaults to `["*"]`, and `excludes` to
+`["node_modules"]`. Set both:
+- Setting only `includes` empties `excludes`.
+- Setting only `excludes` empties `includes`, so nothing is
+  instrumented.
+
+To fuzz a dependency too, list it with absolute paths (`"src/"` alone
+also matches every package's `src/`), and don't exclude `node_modules`:
 `JAZZER_INCLUDES='["<pkg>/src/","<pkg>/node_modules/<dep>/"]' JAZZER_EXCLUDES='[]'`.
-Instrumenting all of `node_modules` slows fuzzing a lot. Environment values
-are JSON.
+Instrumenting all of `node_modules` slows fuzzing a lot. Environment
+values are JSON.

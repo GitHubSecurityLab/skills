@@ -1,7 +1,7 @@
 # Jazzer.js coverage
 
-Jest `it.fuzz` tests: `jest.md`, "Coverage", which points back here for
-the export and the state-leak check.
+Jest `it.fuzz` tests: see `jest.md`, "Coverage", which points back here
+for the export and the state-leak check.
 
 Jazzer.js writes lcov through Istanbul. Coverage instrumentation slows
 fuzzing, so it's only used for replays. `L`, `F`, `H` and `P` are as in
@@ -19,27 +19,29 @@ fuzzing, so it's only used for replays. `L`, `F`, `H` and `P` are as in
    ```
    - `--mode=regression` runs every input once. More corpus directories go
      after the first.
-   - **A finding stops it** with a partial report; a timeout or native
-     abort loses the report. Either way the finding file names the input,
-     a blocking bug: replay a copy of the corpus without it, and mark the
-     snapshot partial until the bug is fixed.
+   - **A finding stops it** with a partial report. A timeout or a native
+     abort loses the report. Either way, the finding file names the
+     input, and the finding is a blocking bug. Replay a copy of the
+     corpus without that input, and mark the snapshot partial until the
+     bug is fixed.
 2. **Export** (reads files only). Istanbul writes `SF:` paths relative to
-   the replay's working directory, the copy's scratch. Resolve them against
-   it and make them relative to the repository root, which also works
-   after the scratch is deleted:
+   the replay's working directory, the copy's scratch. Resolve them
+   against that directory, and make them relative to the repository
+   root. Paths relative to the root still work after the scratch is
+   deleted:
    <!-- ci: js-cov-export -->
    ```sh
    R="$F/runs/cov-$H-<n>"; mkdir -p "$F/coverage/$H"
    python3 "$F/bin/coverage.py" merge "$R/raw/lcov.info" --sf-base "$R/copy-0/work" \
      --root "$F/../.." -o "$F/coverage/$H/r<round>.lcov"
    ```
-   - If `gaps` lists a function as `(anonymous_<n>)` (Istanbul's name for
-     class methods, object methods and arrow functions), with its start
-     line: to show it, pass `coverage.py show` its lines,
-     `--lines <first>-<last>`, instead of `--function`.
+   - `gaps` lists some functions as `(anonymous_<n>)`, with their start
+     line. To show such a function, pass `coverage.py show` its lines,
+     `--lines <first>-<last>`, instead of `--function`. Istanbul gives
+     that name to class methods, object methods and arrow functions.
 
-**Exact subset:** `{files}` instead of the corpus directories runs exactly
-those inputs:
+**Exact subset:** to run exactly the inputs in `{files}`, pass `{files}`
+instead of the corpus directories, as the `reach.py` command below does:
 
 <!-- ci: js-cli-reach -->
 ```sh
@@ -73,6 +75,6 @@ python3 "$F/bin/coverage.py" overlap "$F/coverage/$H/gate-one.lcov" "$F/coverage
 ## TypeScript
 
 lcov names the compiled files (`.seclab/fuzz/build/ts/src/<file>.js`,
-`build.md`), even with source maps. Scope files, sinks and `reach.py` use
-those paths and their line numbers; the target file's reasons name the
-`.ts` files.
+`build.md`), even with source maps. Scope files, sinks and `reach.py`
+use those paths and their line numbers. The target file's reasons name
+the `.ts` files.

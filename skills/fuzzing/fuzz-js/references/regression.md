@@ -1,12 +1,13 @@
 # Jazzer.js regression tests
 
 Jest `it.fuzz` tests replace the seed replay below with `jest.md`,
-"Regression tests and upstreaming"; the rest applies to them too.
+"Regression tests and upstreaming". The rest of this file applies to them
+too.
 
 ## Seed replay: the harness as a test
 
 **CLI targets:** a replay test in the project's own runner calls the
-exported `fuzz` function on every seed, so the project's normal test job
+exported `fuzz` function on every seed. The project's normal test job then
 checks that the harness still runs. With `node:test` (Node 20+, no
 dependency):
 
@@ -23,8 +24,8 @@ for (const name of fs.existsSync(dir) ? fs.readdirSync(dir) : []) {
 }
 ```
 
-It runs without Jazzer.js, so bug detectors don't apply: a seed passes
-unless the call throws.
+The replay test runs without Jazzer.js, so bug detectors don't apply: a
+seed passes unless the call throws.
 - If the project tests with Jest, Vitest or Mocha: the same loop works
   with their `test`/`it`.
 - If the project is ESM: `import` the target.
@@ -32,7 +33,7 @@ unless the call throws.
 ## The bug's reproducer (`fuzz-triage`)
 
 Every real bug gets one, written in triage on the build that found it: a
-Node script in `crashes/<bucket>/repro.js` that calls the project's API
+Node script in `crashes/<bucket>/repro.js`. It calls the project's API
 with the concrete values the harness derived from the input, not through
 the harness and not as a crash file. It loads the package from
 `process.env.PKG`, so it runs against any tree (the checkout, a worktree,
@@ -50,8 +51,7 @@ assert.strictEqual(parseRecord(Buffer.from("REC1\x05a,b", "latin1")), null);
   an explicit assertion of a bug detector's effect (e.g. that
   `Object.prototype` is unchanged after the call). A plain call often
   passes.
-- Run it through the launcher; the state `exited 1` with the bug's error
-  means it reproduced, `finished` means it passes:
+- Run the reproducer through the launcher:
 
 <!-- ci: js-reproducer -->
 ```sh
@@ -59,13 +59,17 @@ $L start --id poc-$H-<n> --harness $H --timeout <timeout_s> --env PATH="$RUN_PAT
   node --max-old-space-size=<memory_mb> "$F/crashes/<bucket>/repro.js"
 ```
 
-The fix (`fuzz-triage`) turns it into a test of the project's framework (Jest, Mocha,
-Vitest, `node:test`) in the fix commit, with the bug named in a comment.
+The state `exited 1` with the bug's error means the bug reproduced;
+`finished` means the reproducer passes.
+
+The fix (`fuzz-triage`) turns the reproducer into a test of the project's
+framework, such as Jest, Mocha, Vitest or `node:test`. The test goes in
+the fix commit, with the bug named in a comment.
 
 ## Upstreaming (`fuzz-campaign`)
 
 - CLI targets: the replay test above joins the project's normal test job,
-  with the seeds in `fuzz/corpus/<thing>/`; add the npm script that fuzzes
-  them.
-- Hooks used only for the campaign stay off the upstreaming branches unless
-  the fuzz test needs them.
+  with the seeds in `fuzz/corpus/<thing>/`. Also add the npm script
+  that fuzzes the target.
+- Hooks used only for the campaign stay off the upstreaming branches
+  unless the fuzz test needs them.

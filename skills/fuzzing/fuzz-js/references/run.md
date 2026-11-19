@@ -1,8 +1,8 @@
 # Running Jazzer.js
 
-Jest `it.fuzz` tests: `jest.md`, "Runs", instead of the settings, CLI
-target and merging sections below; the environment and the run check
-apply to both.
+Jest `it.fuzz` tests: follow `jest.md`, "Runs", instead of the settings,
+CLI target and merging sections below. The environment and the run check
+apply to both formats.
 
 Every run goes through `launcher.py` (`fuzz-harness`'s runs.md explains `F`,
 `L` and placeholders like `{run}`), and every command starts with
@@ -16,13 +16,13 @@ Every run goes through `launcher.py` (`fuzz-harness`'s runs.md explains `F`,
 | `input_timeout_s` | `--timeout=<s × 1000>` (milliseconds) |
 | run time (the launcher's `--time`) | `-max_total_time=<s>` after `--` |
 
-The libFuzzer `-timeout` flag is ignored; use Jazzer.js's `timeout`. If
-the run has no duration: leave `-max_total_time` out.
+- The libFuzzer `-timeout` flag is ignored; use Jazzer.js's `timeout`.
+- If the run has no duration: leave out `-max_total_time`.
 
 ## Environment (`--env`)
 
-Add this block, filled in, to `.seclab/fuzz/env.sh` below `F` and `L`.
-The shell keeps its own `PATH` behind Node's; the commands below pass
+Fill in this block and add it to `.seclab/fuzz/env.sh`, below `F` and
+`L`. The shell keeps its own `PATH` behind Node's; the commands below pass
 `RUN_PATH` as the run's `PATH`:
 <!-- ci: js-env -->
 ```sh
@@ -32,22 +32,25 @@ P=<package_dir>
 ```
 
 `<package_dir>` is the absolute path of the package directory in the
-checkout (a long run's is in its worktree, below). Call the project's
-binary directly (`$P/node_modules/.bin/jazzer`).
-- If `npx` or `npm` run: pass `npm_config_cache=<real home>/.npm` too.
+checkout. A long run's package directory is in its worktree ("Long runs",
+below). Call the project's binary directly
+(`$P/node_modules/.bin/jazzer`).
+- If `npx` or `npm` run: pass `npm_config_cache=<real home>/.npm`
+  too.
 - If the package is in an npm workspace: the binary is usually in the
-  root's `node_modules/.bin` instead;
+  root's `node_modules/.bin` instead.
   `npm exec -w <pkg> -c 'command -v jazzer'` prints the path to use.
 
 ## CLI target
 
 **Synchronous targets** (no promise returned, the common case) run with
-`--sync`, 5 to 50 times faster; the commands below have it. Drop it for an
-async target, and record which in the target file (Harness). The gate's log
-tells: Jazzer.js ends an async-mode run of a synchronous target with
-"Fuzzing in synchronous mode seems beneficial!".
+`--sync`, which makes them 5 to 50 times faster. The commands below have
+it. Drop it for an async target, and record in the target file (Harness)
+which kind the target is. The gate's log tells which: Jazzer.js ends an
+async-mode run of a synchronous target with "Fuzzing in synchronous mode
+seems beneficial!".
 
-**Develop runs:** one process, writing into the persistent corpus.
+**Develop runs:** one process, which writes into the persistent corpus.
 
 <!-- ci: js-cli-develop -->
 ```sh
@@ -57,22 +60,28 @@ $L start --id r<round>-$H --harness $H --time <run_s> --corpus "$F/corpus/$H" --
   -artifact_prefix="{run}/artifacts/copy-{copy}/" -dict="$F/dict/$H.dict"
 ```
 
-- Corpus directories come after the target; new inputs go into the first.
-- Exit status: 77 for a finding, 70 for a timeout, 0 when the time ran out.
+- Corpus directories come after the target. New inputs go into the
+  first.
+- Exit status: 77 for a finding, 70 for a timeout, 0 when the time ran
+  out.
 - **Comparisons:** compare hooks pass libFuzzer the literal of a
-  comparison with a string or number literal (`===`, `!==`, ...) and the
-  cases of a `switch` on a variable; others (a named constant,
-  `startsWith`, `includes`, a `Set`) need the dictionary. After a plateau
-  on comparisons of computed values, add `-use_value_profile=1` after
-  `--`.
+  comparison with a string or number literal (`===`, `!==`, ...). They
+  also pass the cases of a `switch` on a variable. Other comparisons (a
+  named constant, `startsWith`, `includes`, a `Set`) need the dictionary.
+  After a plateau on comparisons of computed values, add
+  `-use_value_profile=1` after `--`.
 
-**Long runs:** N copies, with the run's own corpus first (where every copy
-writes and re-reads new inputs) and the persistent corpus second. An async
-target's copy uses about two cores: give its long runs half as many
-copies. Each copy stops at its first finding; the others continue. A known
-bug without a fix would stop them again and again: fix it first
-(`fuzz-triage`, "Blocking bugs"). `<tree>` is the run's worktree, and
-`<tree_package>` the package directory in it (`fuzz-campaign`):
+**Long runs:** N copies. List the run's own corpus first and the
+persistent corpus second. Every copy writes new inputs into the run's
+corpus and re-reads them from there.
+- An async target's copy uses about two cores: give its long runs half as
+  many copies.
+- Each copy stops at its first finding; the others continue. A known bug
+  without a fix would stop the copies again and again: fix it first
+  (`fuzz-triage`, "Blocking bugs").
+
+`<tree>` is the run's worktree, and `<tree_package>` the package directory
+in it (`fuzz-campaign`):
 
 <!-- ci: js-cli-long -->
 ```sh
@@ -89,8 +98,9 @@ seed.
 
 ## Merging a run's corpus back (analysis, `fuzz-campaign`)
 
-`-merge=1` on the **current** code, into the merge run's own corpus, which
-then replaces the persistent corpus (`fuzz-campaign`):
+Merge with `-merge=1` on the **current** code, into the merge run's own
+corpus. That corpus then replaces the persistent corpus (`fuzz-campaign`):
+
 <!-- ci: js-cli-merge -->
 ```sh
 $L start --id merge-$H-<n> --harness $H --timeout <timeout_s> --env PATH="$RUN_PATH" -- \
@@ -98,8 +108,10 @@ $L start --id merge-$H-<n> --harness $H --timeout <timeout_s> --env PATH="$RUN_P
   "$F/runs/<long_run>/corpus" --timeout=<input_timeout_ms> --sync \
   -- -merge=1 -rss_limit_mb=<memory_mb> -artifact_prefix="{run}/artifacts/copy-{copy}/"
 ```
-It records crashing inputs as findings and keeps them in the result.
-Check `MERGE-OUTER: <n> new files` in the log.
+
+- The merge records crashing inputs as findings and keeps them in the
+  result.
+- Check the log: `MERGE-OUTER: <n> new files`.
 
 ## Checking a run
 

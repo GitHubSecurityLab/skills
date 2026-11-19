@@ -3,7 +3,7 @@
 ## Check without running project code
 
 Run the tools from outside the repository. The check runs before the
-first-build notice, so it must not run project files: inside the
+first-build notice, so it must not run project files. Inside the
 repository, Yarn runs the release that `.yarnrc` or `.yarnrc.yml` names
 (`yarnPath`), and Corepack and Volta fetch the versions that
 `package.json` pins.
@@ -14,20 +14,24 @@ repository, Yarn runs the release that `.yarnrc` or `.yarnrc.yml` names
 (cd / && yarn --version)     # or pnpm: the package manager of the project's lockfile
 ```
 
-- Node.js 24 LTS (20.11 at least: ESM hooks and detectors need it). Node 26
-  deprecates `module.register()`, which Jazzer.js uses to instrument ES
-  modules, so pin 24 even after 26 becomes LTS. Check the project's
-  `engines` field too.
-- The project's package manager (`npm`, `pnpm`, `yarn`), from its lockfile.
+- Node.js 24 LTS (20.11 at least: ESM hooks and detectors need it).
+  Node 26 deprecates `module.register()`, which Jazzer.js uses to
+  instrument ES modules, so pin 24 even after 26 becomes LTS. Check the
+  project's `engines` field too.
+- The project's package manager (`npm`, `pnpm`, `yarn`), from its
+  lockfile.
 
-On Linux, the C library too: Jazzer.js 4.0.0 ships only prebuilt native
-addons, which need glibc 2.38 or later (Ubuntu 24.04, Debian 13, Fedora 39
-and later; none for musl, as on Alpine). It can't build them from source.
+On Linux, check the C library too. Jazzer.js 4.0.0 ships only prebuilt
+native addons, which need glibc 2.38 or later (Ubuntu 24.04, Debian 13,
+Fedora 39 and later). It ships none for musl, as on Alpine, and it can't
+build the addons from source.
+
 <!-- ci: js-glibc-check -->
 ```sh
 [ "$(uname)" != Linux ] || ldd --version 2>&1 | awk 'NR == 1 { v = $NF; split(v, p, ".")
   print "glibc " v ((p[1] > 2 || p[2] >= 38) ? "" : ": too old for Jazzer.js, which needs 2.38") }'
 ```
+
 If the glibc is older: fuzz in the codespace or in a `node:24-trixie`
 container.
 
@@ -43,7 +47,8 @@ a fast network; slower machines take a few times longer.
 | Jazzer.js | always | dev dependencies (`build.md`) | same | a minute |
 
 Jest fuzz tests also need `@jazzer.js/jest-runner`, installed the same
-way (`jest.md`, "Setup"): list it with Jazzer.js.
+way (`jest.md`, "Setup"). List it with Jazzer.js.
 
-Ubuntu's own `nodejs` package (18) is too old. Node's `bin` directory, for
-`PATH` in the agent's commands: `fnm exec --using=24 -- which node`.
+Ubuntu's own `nodejs` package (18) is too old. To find Node's `bin`
+directory for `PATH` in the agent's commands, run
+`fnm exec --using=24 -- which node`.
