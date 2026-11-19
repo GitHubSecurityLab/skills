@@ -41,30 +41,33 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
 
 ## Splitting the input
 
-C++: `FuzzedDataProvider` splits one input into options and a document
-(header ships with clang, no `-I` needed):
+C++: `FuzzedDataProvider` splits one input into as many typed values as
+the harness needs (header ships with clang, no `-I` needed). For example,
+the following harness parses a document and takes two options, so the
+options come from a prefix:
 
 ```cpp
 #include <fuzzer/FuzzedDataProvider.h>
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
-  FuzzedDataProvider fdp(data, size);
-  int mode = fdp.ConsumeIntegralInRange<int>(0, 2);  // a choice deployments make
-  bool strict = fdp.ConsumeBool();
-  std::vector<uint8_t> doc = fdp.ConsumeRemainingBytes<uint8_t>();
+  if (size < 8) return 0;  // shorter than the options prefix
+  FuzzedDataProvider options(data, 8);  // the options' bytes, plus spare
+  int mode = options.ConsumeIntegralInRange<int>(0, 2);  // a choice deployments make
+  bool strict = options.ConsumeBool();
+  std::vector<uint8_t> doc(data + 8, data + size);  // the rest
   parse(doc.data(), doc.size(), mode, strict);
   return 0;
 }
 ```
 
-- Where its values come from in the input, and formats whose end
-  matters: `fuzz-harness`, "Design the harness".
-- Copies from `ConsumeBytes`/`ConsumeRemainingBytes` are exact-size, so
-  over-reads still trip ASan.
+- Where its values come from in the input, and why a document's options
+  come from a prefix: `fuzz-harness`, "Design the harness".
+- `doc` is an exact-size copy, so reads past either end still trip ASan.
 - Header reference:
   https://github.com/llvm/llvm-project/blob/main/compiler-rt/include/fuzzer/FuzzedDataProvider.h
 
-If the harness is C: take option bytes the same way, then pass the rest.
+If the harness is C: the same, but read the options from the prefix's
+bytes directly.
 
 ## Call sequences
 

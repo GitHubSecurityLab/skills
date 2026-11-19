@@ -72,10 +72,8 @@ unless they start with `.seclab/`:
    existing harness's workflow. This rule, not coverage, decides whether a
    new variant is kept:
    - If an existing harness's workflow contains the planned one, extend
-     that harness instead. For example, add a selector byte for the new
-     variant where the format ignores it: after the document or in a fixed
-     prefix, never in bytes the format needs, such as a closing `]` or a
-     ZIP trailer.
+     that harness instead, e.g. with an option that selects the new
+     variant (step 3, "Adding an option").
    - If the planned workflow contains an existing harness's workflow,
      replace that harness. Its corpus becomes seeds if the input format
      matches.
@@ -85,7 +83,7 @@ unless they start with `.seclab/`:
    coverage or a recorded new dimension: configuration, state, call order,
    input format, or oracle. A slow or noisy property, for example, may get
    its own harness. A specialist for one configuration is the alternative
-   to a selector byte; it starts from the other harness's corpus when the
+   to such an option; it starts from the other harness's corpus when the
    input format matches.
 
    Each target keeps a short configuration matrix in its file: which
@@ -141,18 +139,50 @@ unless they start with `.seclab/`:
      strings from the front. Nothing can be read after
      `ConsumeRemainingBytes` or similar calls.
 
-     A raw format file used as a seed therefore loses its last bytes to
-     the options. That breaks formats whose end matters, such as JSON,
-     XML, ZIP's end record or PNG's `IEND`. For those formats, take the
-     options from a fixed-size prefix or from bytes after the document, or
-     write the seeds in the harness's layout (seeds.md).
-   - Changing the layout: new options go before the final
-     consume-remaining call, and the change reinterprets old seeds. Where
-     the document marks its own end, prefer an option read after that end,
-     with the old behaviour when the option is absent: the old seeds then
-     keep their meaning. Otherwise the reinterpretation is fine:
-     `fuzz-coverage` replays the corpus on the new build for a new
-     baseline, and the rounds restart.
+     So a harness that parses a document (a file in the target's format)
+     and also takes options doesn't take them from the end: each seed
+     would lose its last bytes to them, e.g. `[1,2]` would become the
+     document `[1,`. It takes them from an options prefix instead
+     (`fuzz-c-cpp`'s harness.md shows it; Java gives a parser's options a
+     typed fuzz test instead, `fuzz-java`'s harness.md):
+     - the prefix is a fixed number of bytes at the start of the input,
+       e.g. 8: what the options read, plus spare bytes for options added
+       later. Options read after its bytes run out get their lowest value
+       (or `false`) every time, so the fuzzer never varies them;
+     - the options come only from the prefix, through a
+       `FuzzedDataProvider` over just those bytes or from the bytes
+       themselves;
+     - everything after the prefix is the document. The input cap counts
+       the prefix too;
+     - each seed is a format file with the prefix's bytes in front
+       (seeds.md), whatever the options read.
+   - Adding an option to a harness that parses a document, by the first
+     case that applies:
+     - if it's a project's harness with inputs saved outside the campaign
+       (on OSS-Fuzz or ClusterFuzzLite, in CI corpus artifacts, or
+       committed in the project, such as Jest's regression directory),
+       don't add the option, not even from spare bytes: add a specialist
+       for the new configuration instead (step 1). Those inputs can't all
+       be converted, and their spare bytes hold arbitrary values, so the
+       option would change what they do. OSS-Fuzz treats a testcase that
+       stops reproducing as fixed, then discloses its bug;
+     - in Java, the option goes into a typed fuzz test instead, as above;
+     - if the whole input is the document (no options yet), add an
+       options prefix and put its bytes in front of every input saved in
+       the old layout: the corpus (Jest: also the regression directory).
+       Update the harness's generators in `generators/` too. Otherwise
+       the prefix takes each input's first bytes: `[1,2]` would leave an
+       empty document;
+     - if it has a prefix, read the new option after the existing ones,
+       from spare bytes, so the corpus stays valid. If the prefix must
+       grow, add the extra bytes where no old option reads: in front for
+       a `FuzzedDataProvider` over the prefix, which reads from its end;
+       right after the old prefix for a harness that reads the bytes
+       directly;
+     - if it takes its options from the end (a project's harness), the
+       new option moves the document's end and reinterprets the corpus:
+       `fuzz-coverage` replays it on the new build for a new baseline,
+       and the rounds restart.
 4. **Build** the needed variants as
    [references/build.md](references/build.md) says.
 5. **Seeds and dictionary,** as

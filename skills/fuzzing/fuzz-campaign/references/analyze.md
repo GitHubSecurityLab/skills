@@ -33,7 +33,9 @@ checkout's `.cifuzz-corpus`.
    input, and a killed merge leaves its corpus empty. After the fixes,
    inputs of fixed bugs no longer crash, so the merge keeps them if they
    add coverage. The run's inputs are read by the current harness, which
-   may differ from the run's; they're still valid inputs.
+   may differ from the run's; they're still valid inputs, unless the
+   harness got an options prefix after the run started: put its bytes in
+   front of them first (`fuzz-harness`, "Design the harness").
    - **Swap only after a merge that `finished`** (not `timed out`,
      `stopped` or `died`), **with no new findings and a non-empty
      corpus.** Findings of known open buckets (Progress `queued` or

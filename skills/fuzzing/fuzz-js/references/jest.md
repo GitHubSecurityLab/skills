@@ -110,9 +110,9 @@ const { parseHeader, HeaderError } = require("../src/header");
 
 describe("parseHeader", () => {
   it.fuzz("parses untrusted headers", (data) => {
-    const fdp = new FuzzedDataProvider(data);
-    const strict = fdp.consumeBoolean();
-    const header = fdp.consumeRemainingAsString();
+    const options = new FuzzedDataProvider(data.subarray(0, 8)); // the options prefix
+    const strict = options.consumeBoolean();
+    const header = data.subarray(8).toString("utf8");
     try {
       parseHeader(header, { strict });
     } catch (e) {

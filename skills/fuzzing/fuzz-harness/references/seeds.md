@@ -48,11 +48,18 @@ unless they start with `.seclab/`:
    - raw-bytes harnesses (a format parser taking `bytes`, `byte[]`,
      `Buffer`, or one Java `String` with a length above the largest seed)
      take the format's files as they are;
-   - a byte-provider split (`FuzzedDataProvider`: `SKILL.md`, "Design the
-     harness"): the generator appends the option values to each of the
-     format's files, valid or broken, with the first call's value as the
-     file's last bytes. For a harness that reads its options from a fixed
-     prefix, the generator prepends them instead;
+   - a harness designed with an options prefix (`SKILL.md`, "Design the
+     harness"): put the prefix's bytes in front of each format file as it
+     goes into the corpus, valid or broken. Zeros will do; the fuzzer
+     varies them. Inputs this harness saved since it got its prefix go in
+     as they are;
+   - any other project's harness with options, whatever its layout: seed
+     it from its own inputs (sources 1–3 and 5), which are in its layout
+     already. Add a format file only where its layout is simple to write:
+     the bytes its prefix accepts in front (`cjson_read_fuzzer`: four
+     ASCII `0` or `1` characters, and a NUL at the end), or one zero byte
+     appended per option it reads from the end, if each reads one byte
+     (`ConsumeBool`, a range of up to 256 values);
    - typed harnesses (FuzzTest domains, Jazzer typed parameters) don't map
      files to arguments: use the engine's seed mechanism (`.WithSeeds`,
      Jazzer's `@ValuePool`; the language skill).
