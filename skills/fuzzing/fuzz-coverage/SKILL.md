@@ -13,9 +13,9 @@ license: MIT
 
 This skill measures source coverage after each round, explains why code in
 the target's scope stays uncovered, and picks the action that unlocks the
-most security-relevant code. It owns the inner loop:
-develop round → snapshot → (plateau) diagnose → act → round, until no
-action left unlocks security-relevant code or a new target is worth more.
+most security-relevant code. It owns the inner loop: develop round →
+snapshot → (plateau) diagnose → act → round, until no action left unlocks
+security-relevant code or a new target is worth more (step 10).
 
 **Run every step** this skill gives for the request; skip one only when the user asks. Later steps rely on what earlier ones measured and recorded, so a skipped step makes later results wrong, not the work faster.
 
@@ -50,8 +50,10 @@ python3 <this skill's directory>/../fuzz-campaign/scripts/init.py
 
 ## Reads
 
+What the steps in this file read. Paths are relative to `.seclab/fuzz/`
+unless they start with `.seclab/`:
 - `targets/<id>.md`: Scope files, Sinks, Harness, Coverage rounds.
-  `targets/<id>.scope`, `sinks/<id>.tsv`.
+- `targets/<id>.scope`, `sinks/<id>.tsv`.
 - `CAMPAIGN.md`: Settings (`round_minutes`, `plateau`), Open crashes.
 - `.seclab/threat-model.md`: what's attack surface, for scope corrections
   (step 5) and the gaps it excludes.
@@ -69,164 +71,214 @@ Which steps run depends on the request:
 | **Measure only:** a baseline, combined coverage, or another skill asks for a number | 2–3 on the current corpus, without a round; return the number. Before any target exists (a campaign's baseline): `summary` without `--scope`, and no Coverage rounds row |
 | Inputs for a branch, a corpus merge or minimization, such as "find inputs for this branch" | [references/corpus.md](references/corpus.md) |
 
-**If it's standalone use without a target file:** write the minimal one
-first (`fuzz-harness`'s target-file.md). If the coverage variant is
-missing, check the toolchain with the language skill's install.md, then
-build the variant (`fuzz-harness`'s build.md). If the target file has no
-gate result for the harness: run the light gate (`fuzz-harness`'s gate.md,
-"Light gate") before the first round; step 4 needs its executions per
-second. If the harness has a corpus elsewhere (its own fuzzing output,
-OSS-Fuzz's, a CI artifact): copy only that corpus into `corpus/<h>/`
-first (Jest: the test's directory in `.cifuzz-corpus/`), so the replay
-measures it. Without a sink list, step 7 only reads the gaps' code.
+**Standalone use** may lack what the steps need. Supply each missing item
+before the steps that need it:
+- No target file: write the minimal one first (`fuzz-harness`'s
+  target-file.md).
+- No coverage variant: check the toolchain with the language skill's
+  install.md, then build the variant (`fuzz-harness`'s build.md).
+- The harness has a corpus elsewhere, such as its own fuzzing output,
+  OSS-Fuzz's or a CI artifact: copy only that corpus into `corpus/<h>/`
+  (Jest: the test's directory in `.cifuzz-corpus/`), so the replay
+  measures it.
+- No gate result for the harness in the target file: run the light gate
+  (`fuzz-harness`'s gate.md, "Light gate") before the first round. Step 4
+  needs its executions per second.
 
-1. **Run a round.** Each round is one develop run: how to run it in
-   `fuzz-harness`'s runs.md, its command and environment in the
-   language skill's run.md. It lasts the next value of the
-   `round_minutes` schedule (1, 2, 4, 8 minutes by default), with the id
-   `r<round>-<h>`, where `<round>` is the number its snapshot gets
-   (step 2), and resumes from the harness's corpus. Rounds are short; the
-   hours go into long runs. Hand findings to `fuzz-triage`.
-   - If a crash cut the round short: it doesn't count toward the plateau;
-     rerun it after triage (blocking bugs: `fuzz-triage`).
-2. **Snapshot.** Replay the corpus in the coverage build and export lcov to
-   `coverage/<harness>/r<round>.lcov` (commands in the language skill).
-   Every replay of a harness's corpus (the gate's, a new baseline, a
-   round's) takes the next `<round>`, from 0, and it never restarts: no
-   snapshot or run id is overwritten, and `r<round-1>` is the one before.
-3. **Measure.** One `summary` call gives the scope's coverage and its
-   change since the previous snapshot; between rounds, that's all the
-   analysis (no full diagnosis). Run it on the scope files and against
-   the previous snapshot (without `--prev` for a harness's first). If the
-   scope code differs between them, as after a fix or a build patch,
-   `summary` says so and gives no change: this snapshot is a new baseline,
-   and if it's a round's, that round doesn't count toward the plateau.
+A missing sink list needs nothing supplied: step 7 then skips `sites` and
+only reads the gaps' code.
+
+1. **Run a round.** Each round is one develop run, as `fuzz-harness`'s
+   runs.md describes, with the command and environment from the language
+   skill's run.md. It resumes from the harness's corpus.
+   - It lasts the next value of the `round_minutes` schedule (1, 2, 4, 8
+     minutes by default). Rounds are short; the hours go into long
+     runs.
+   - Its id is `r<round>-<h>`, where `<h>` is the harness id and `<round>`
+     is the number its snapshot gets (step 2).
+   - Hand findings to `fuzz-triage`. If a crash cut the round short, the
+     round doesn't count toward the plateau: take its snapshot (step 2)
+     before any rebuild or other replay, add its row (step 3), and rerun
+     it after triage. For a blocking bug, follow `fuzz-triage`, "Blocking
+     bugs".
+2. **Snapshot.** Replay the corpus in the coverage build and export lcov
+   to `coverage/<h>/r<round>.lcov`, with the commands in the language
+   skill's coverage.md. Every replay of a harness's corpus takes the next
+   `<round>`: the gate's, a new baseline's and each round's. Numbering
+   starts at 0 and never restarts, so no snapshot or run id is
+   overwritten, and `r<round-1>` is always the snapshot before.
+3. **Measure.** One `summary` call on the scope files gives the scope's
+   coverage and its change since the previous snapshot. Between rounds,
+   that's all the analysis. Leave out `--prev` for a harness's first
+   snapshot:
    ```sh
    python3 .seclab/fuzz/bin/coverage.py summary .seclab/fuzz/coverage/<h>/r<round>.lcov --prev .seclab/fuzz/coverage/<h>/r<round-1>.lcov --scope .seclab/fuzz/targets/<id>.scope --root .
    ```
-   Add a row to Coverage rounds, with the run's executions; for a round
-   that doesn't count toward the plateau (cut short by a crash, on
-   different code, or too slow: step 4), its Change says why instead.
-4. **Plateau?** This decides when rounds stop and diagnosis starts; gaps
-   diagnosed earlier may be code the fuzzer would still reach. A round
-   that ran at less than half the harness's last measured executions per
-   second (the last round that counted, or the gate if it ran later)
-   doesn't count: a busy host or a slow input held it back. Rerun it once;
-   if the rerun is slow too, the harness got slower: count the rerun, and
-   find the cause (`fuzz-harness`'s gate.md, "Fast enough"). A round
-   **stalls** when it adds no new scope branches and found no crash. The
-   engine has plateaued after two stalled rounds in a row that ran at
-   least 100,000 inputs together (fewer: run the next round), or when the
-   schedule ends. Then diagnose (steps 5–8; a plateau isn't saturation);
-   otherwise run the next round.
-5. **Correct the scope.** Gaps and coverage count only the scope files,
-   so first make the scope match the attack surface the harness reaches.
-   Run `summary` without `--scope` to see the files the harness reaches;
-   add each attack-surface file the scope doesn't list, with a reason. A
-   scope file still at 0% after a plateau either stays as a gap for an
-   action, or the estimate was wrong and it's removed with a reason. Log
-   every change in the target's Notes.
-   - If `summary` marks a scope entry as having no coverage data: entries
-     are paths from the repository root: fix the path, or find out why the
-     file isn't compiled, linked or loaded (C/C++ libraries: the export's
-     `-object`, in the language skill).
+   - If the scope code differs between the two snapshots, as after a fix
+     or a build patch: `summary` says so and gives no change. This
+     snapshot is a new baseline, and if it's a round's, that round doesn't
+     count toward the plateau.
+
+   Add a row to Coverage rounds, with the run's executions. If the row is
+   for a round that doesn't count toward the plateau, its Change says why
+   instead. The reason is a crash that cut it short, different code, or
+   step 4's "Too slow" rule.
+4. **Plateau?** This decides when rounds stop and diagnosis starts. Don't
+   diagnose earlier: a gap found before the plateau may be code the fuzzer
+   would still reach.
+   - **Too slow:** a round that ran at less than half the harness's last
+     measured executions per second doesn't count; a busy host or a slow
+     input held it back. The last measurement is the most recent one, from
+     the gate or a round that counted. Rerun the round once. If the rerun
+     is slow too, the harness got slower: count the rerun, and find the
+     cause (`fuzz-harness`'s gate.md, "Fast enough").
+   - **Stalled:** a round that covers no new scope branches and finds no
+     crash.
+   - **Plateau:** two stalled rounds in a row with at least 100,000
+     executions together, or the end of the schedule. With fewer
+     executions, run the next round if the schedule has one left.
+
+   On a plateau, diagnose (steps 5–8); otherwise, run the next round. A
+   plateau isn't saturation.
+5. **Correct the scope.** Gaps and coverage count only the scope files, so
+   first make the scope match the attack surface the harness reaches:
+   - Run `summary` without `--scope` to see the files the harness reaches,
+     and add each reached attack-surface file the scope doesn't list, with
+     a reason.
+   - A scope file still at 0% after a plateau is one of two things. If
+     it's a gap for an action, it stays. If it was a wrong estimate, remove
+     it, with a reason.
+   - If step 3's `summary` marks a scope entry as having no coverage data,
+     check that the entry is a path from the repository root, and fix it
+     if not. If the path is right, find out why the file isn't compiled,
+     linked or loaded; for a C/C++ library, check the export's `-object`
+     arguments (the language skill).
    - If a file is macro-heavy C (macro branches count at every expansion)
-     or also holds other API: judge its gaps by lines and blocked
-     branches, not the branch share.
-6. **Diagnose the gaps.** Read each top gap in scope in context and
-   classify why it's uncovered, using
-   [references/diagnosis.md](references/diagnosis.md); the reason decides
-   the action (step 8). List them with `gaps`, then `show` each top gap's
-   function:
+     or also holds API the harness doesn't target: judge its gaps by lines
+     and blocked branches, not the branch share.
+
+   Log every scope change in the target's Notes.
+6. **Diagnose the gaps.** List them with `gaps`, then `show` each top
+   gap's function:
    ```sh
    python3 .seclab/fuzz/bin/coverage.py gaps .seclab/fuzz/coverage/<h>/r<round>.lcov --scope .seclab/fuzz/targets/<id>.scope --root .
    python3 .seclab/fuzz/bin/coverage.py show .seclab/fuzz/coverage/<h>/r<round>.lcov --root . --file <file> --function <function>
    ```
-   `gaps` lists **blocked branches** first: a branch never taken at a point
-   where another branch was taken, with the guard's source line, ranked by
-   an estimate of the uncovered lines it blocks (JaCoCo: blocked lines).
-   Each also lists the never-called functions those lines call; such
-   a callee blocks a whole function, more than the estimate shows. Then the
-   remaining gaps per function.
+   `gaps` lists **blocked branches** (JaCoCo: blocked lines) first, with
+   their guards' source lines, ranked by an estimate of the uncovered
+   lines each blocks. A blocked branch is one never taken at a point where
+   another branch was taken. Each blocked branch also lists its
+   never-called callees: functions that never ran and are called from the
+   lines it blocks. Such a callee is a whole function that the branch
+   blocks, so the branch blocks more than its estimate shows. The
+   remaining gaps follow, per function.
+
+   Read each top gap in scope in context and classify why it's uncovered,
+   using [references/diagnosis.md](references/diagnosis.md). The reason
+   decides the action (step 8).
 7. **Check the sinks.** A sink group's state says whether it still needs
-   inputs. Run `sites`, then update each group's state: not reached,
-   reached, triggered (a bucket in `crashes/` has its crash location or
-   root cause at one of the group's sites), **tested**: its trigger or
-   boundary inputs ran on the sanitizer or detector build without a
-   finding, or **sanitized**: the code blocks the attack before the sink,
-   recorded with the `file:line` that does.
+   inputs. Run `sites`:
    ```sh
    python3 .seclab/fuzz/bin/coverage.py sites .seclab/fuzz/coverage/<h>/r<round>.lcov --sites .seclab/fuzz/sinks/<id>.tsv --root .
    ```
-   If `sites` reports moved sites: update their lines in the TSV. If it
-   can't find a site's code: find the site again and correct its row. If
-   it marks a site *to confirm*: check that its call ran before
-   counting it (diagnosis.md, "Sites to confirm"). Tested and sanitized
-   groups get no more inputs until their code changes. For the others:
+   - If it reports moved sites: update their lines in the TSV.
+   - If it can't find a site's code: find the site again and correct its
+     row.
+   - If it marks a site *to confirm*: check that its call ran before
+     counting it (diagnosis.md, "Sites to confirm").
+
+   Update each group's state: not reached, reached, or one of these:
+   - **triggered:** a bucket in `crashes/` has its crash location or root
+     cause at one of the group's sites;
+   - **tested:** its trigger or boundary inputs ran on the sanitizer or
+     detector build without a finding;
+   - **sanitized:** the code blocks the attack before the sink, recorded
+     with the `file:line` that does.
+
+   Tested and sanitized groups get no more inputs until their code
+   changes. For the others:
    - A high-ranked group **not reached**: follow its call path back to the
-     deepest covered call (`show`) and diagnose the branch there as a gap
-     (step 6).
-   - Groups **reached but not triggered**: reach, then trigger
-     ([references/corpus.md](references/corpus.md), targeted inputs), as
-     [references/diagnosis.md](references/diagnosis.md), "Sinks reached but
-     not triggered", says for each language and sink kind (Java/JS regular
-     expressions: [references/redos.md](references/redos.md)).
-8. **Choose the next action** by the rule in
-   [references/diagnosis.md](references/diagnosis.md), "Choosing the next action".
-   A gap that got 3 actions without gain is "hard": mark it so in the
-   target's Notes, and aim no further action at it until there's new
-   evidence.
-   Record the action and its **aim** (the blocked branch, function or
-   condition it should cover; for a sink reached but not triggered, the
-   untaken branch or condition at the sink). A request only for a
-   diagnosis, such as "why is coverage stuck?", stops here: propose the
-   action, don't apply it. Otherwise, where each action goes:
+     deepest covered call with `show`, and diagnose the branch there as a
+     gap (step 6).
+   - Groups **reached but not triggered**: step 8 chooses the action that
+     triggers them. [references/diagnosis.md](references/diagnosis.md),
+     "Sinks reached but not triggered", gives that action for each
+     language and sink kind (targeted inputs:
+     [references/corpus.md](references/corpus.md)). For Java/JS regular
+     expressions, that action follows
+     [references/redos.md](references/redos.md).
+8. **Choose the next action.** A gap that got 3 actions without gain is
+   **hard**: mark it so in the target's Notes, and aim no further action
+   at it until there's new evidence. Choose the action by the rule in
+   [references/diagnosis.md](references/diagnosis.md), "Choosing the next
+   action".
+   - Record the action and its **aim** in the target file: the blocked
+     branch, function or condition it should cover. For a sink reached but
+     not triggered, the aim is the untaken branch or condition at the
+     sink.
+   - A request only for a diagnosis, such as "why is coverage stuck?",
+     stops here: propose the action, don't apply it.
+
+   Otherwise, apply the action:
    - seeds, dictionary or targeted inputs for a blocked branch or a sink
      reached but not triggered →
      [references/corpus.md](references/corpus.md);
    - structure-aware escalation → `fuzz-harness`;
-   - harness change (a variant it never selects, a stateful sequence, speed,
-     determinism) → `fuzz-harness` (rebuild and gate);
-   - build patch (checksum, signature, randomness) → `fuzz-harness` (build.md) → gate;
+   - harness change for a variant it never selects, a stateful sequence,
+     speed or determinism → `fuzz-harness`, then rebuild and gate; the
+     gate's corpus replay is the new baseline (step 9);
+   - build patch for a checksum, a signature or randomness →
+     `fuzz-harness`'s build.md, then the gate, whose corpus replay is the
+     new baseline (step 9);
    - a new target worth more than every action left → leave the loop.
 9. **Measure the action,** always on the same coverage build, against the
    snapshot before it: coverage that rises after an action may have risen
    without it.
-   - **Seeds, dictionary, flags (same build):** replay right away only if
-     inputs were added (dictionary and flag changes act only while
-     fuzzing), and compare with the snapshot before the action. They stay.
-   - **A code, build or harness change made to reach something (new
-     build):** replay the corpus on the new build first, before the gate's
-     fuzzing or any round; this is the new baseline. New variants are kept
-     by `fuzz-harness`'s overlap rule instead, and bug fixes aren't judged
-     here. **Keep any other change only if its aim becomes covered or scope
-     coverage clearly rises:** the aim by that replay, by the restarted
-     rounds, or by targeted inputs written for it right after
-     ([references/corpus.md](references/corpus.md)); scope coverage when
-     the next plateau covers at least 5% more scope branches than the last
-     snapshot before the change (compare `summary`'s covered counts, not
-     percentages: the change can add or remove branches). Otherwise revert
-     its commit, rebuild, and replay the corpus again for a new baseline.
    - **When an action is applied,** the round schedule restarts at its
-     first value (not after a rollback); snapshot numbers keep counting.
+     first value; reverting a change doesn't restart it. Snapshot numbers
+     keep counting.
+   - **Seeds, dictionary, flags (same build):** they stay. Replay right
+     away only if inputs were added, and compare with the snapshot before
+     the action; dictionary and flag changes act only while fuzzing.
+   - **A code, build or harness change made to reach something (new build):**
+     replay the corpus on the new build first, before the gate's fuzzing
+     or any round. That replay is the new baseline. New harness variants,
+     added to a harness or as a harness of their own, are kept or dropped
+     by `fuzz-harness`'s rule instead (`fuzz-harness`, "No unjustified
+     duplication"). Bug fixes aren't judged here. **Keep any other change
+     made to reach something only if its aim becomes covered or scope
+     coverage clearly rises:**
+     - The aim counts as covered when that replay, the restarted rounds,
+       or targeted inputs written for it right after the change
+       ([references/corpus.md](references/corpus.md)) cover it.
+     - Scope coverage clearly rises when the next plateau covers at least
+       5% more scope branches than the last snapshot before the change.
+       Compare `summary`'s covered counts, not percentages: the change can
+       add or remove branches.
+
+     Otherwise revert its commit, rebuild, and replay the corpus again for
+     a new baseline.
 10. **Leave the loop** when no action left unlocks security-relevant code,
     or a new target beats every action left; the harness is then ready for
-    a long run.
-    Minimize its corpus first ([references/corpus.md](references/corpus.md), corpus upkeep).
-    Write a short summary into the target file: final scope coverage, main
+    a long run. First minimize its corpus
+    ([references/corpus.md](references/corpus.md), corpus upkeep). Then
+    write a short summary into the target file: final scope coverage, main
     remaining gaps with their classification, sink states, and whether a
     long run is worthwhile (reached-but-untriggered sinks, deep code still
     being found).
-11. **Overlap check** when the target has more than one harness, or after a
-    new harness for an existing workflow, to find harnesses that duplicate
-    each other. Java adds `--union`, the report of both harnesses' merged
-    `.exec` files (`fuzz-java`'s coverage.md, "Combining Java coverage"):
+11. **Overlap check** when the target has more than one harness, or after
+    a new harness for an existing workflow: it finds harnesses that
+    duplicate each other. `<last>` is each harness's latest snapshot. For
+    Java, also pass `--union` with the report from merging the two
+    harnesses' `.exec` files (`fuzz-java`'s coverage.md, "Combining Java
+    coverage"):
     ```sh
     python3 .seclab/fuzz/bin/coverage.py overlap .seclab/fuzz/coverage/<a>/<last>.lcov .seclab/fuzz/coverage/<b>/<last>.lcov --scope .seclab/fuzz/targets/<id>.scope --root .
     ```
     A harness that covers nothing the other doesn't is a hint, not a
-    decision: a recorded specialist stays (`fuzz-harness`, "No unjustified
-    duplication"); propose merging or removing the others.
+    decision. A recorded specialist stays (`fuzz-harness`, "No unjustified
+    duplication"); for any other such harness, propose merging or removing
+    it.
 
 ## Done when
 
@@ -250,7 +302,9 @@ measures it. Without a sink list, step 7 only reads the gaps' code.
 
 ## Writes
 
-- `coverage/<harness>/r<round>.lcov`.
+What the steps in this file write or change. Paths are relative to
+`.seclab/fuzz/` unless they start with `.seclab/`:
+- `coverage/<h>/r<round>.lcov`.
 - `targets/<id>.md`: Coverage rounds, Scope files (corrections), Sinks
   (states), Notes; `targets/<id>.scope`. The target file's layout:
   `fuzz-campaign`'s ledger.md, "`targets/<target>.md`".
