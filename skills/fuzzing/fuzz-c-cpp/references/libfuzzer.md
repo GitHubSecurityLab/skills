@@ -1,6 +1,6 @@
 # libFuzzer tips
 
-Docs: https://llvm.org/docs/LibFuzzer.html. The installed binary lists
+Docs: https://llvm.org/docs/LibFuzzer.html. Any built fuzz binary lists
 every flag with its default: `<fuzzer> -help=1`.
 
 ## Flags worth knowing
