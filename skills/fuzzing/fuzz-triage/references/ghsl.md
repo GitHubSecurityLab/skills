@@ -14,8 +14,8 @@ draft:
   one subsection per issue with its own identifier, each with impact, CWEs
   and resources (proof of concept).
 - **PoC:** the harness-independent reproducer, with complete instructions
-  to build it (with sanitizers) and run it; the fuzzer input and harness
-  only for reference.
+  to build it with sanitizers and run it. Add the fuzzer input and the
+  harness only for reference.
 - **Impact.**
 - **Remediation:** the tested fix, marked as a suggestion.
 - **GitHub Security Advisories:** ask the maintainers to open a private
@@ -26,5 +26,5 @@ draft:
 The coordinated disclosure timeline is added at publication, not in the
 draft.
 
-Identifiers such as `GHSL-YYYY-NNN` are assigned by GitHub Security Lab;
-leave a placeholder.
+GitHub Security Lab assigns identifiers such as `GHSL-YYYY-NNN`; leave a
+placeholder.

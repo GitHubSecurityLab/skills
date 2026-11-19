@@ -1,17 +1,18 @@
 # Finding the introducing commit
 
 1. **Good tag.** Find the newest release tag where the reproducer builds
-   and passes (the last release itself for new code): the good end of the
-   bisect.
-2. **Test script.** Write `bisect.sh` in `crashes/<bucket>/`. It builds
-   the library at the commit the bisect checks out, with the reproducer's
-   sanitizer flags, using the project's own build (old commits don't have
-   our build changes); `exit 125` if that fails, which skips the commit.
-   It then runs the reproducer and exits 1 if the bug shows, 0 otherwise.
-   Never pass on the reproducer's own exit status: 128 or more (ASan's 134
-   on macOS) aborts the bisect.
-3. **Run the bisect.** Bisect from the good tag to the base in its own
-   worktree, never in the checkout, which develop keeps changing:
+   and passes: the good end of the bisect. For new code, that's the last
+   release itself.
+2. **Test script.** Write `bisect.sh` in `crashes/<bucket>/`:
+   - It builds the library at the commit the bisect checks out, with the
+     reproducer's sanitizer flags. It uses the project's own build, since
+     old commits don't have our build changes. If the build fails, it
+     runs `exit 125`, which skips the commit.
+   - It then runs the reproducer, and exits 1 if the bug shows and 0 if
+     not. It must never forward the reproducer's exit status: a status of
+     128 or more (ASan's 134 on macOS) aborts the bisect.
+3. **Run the bisect.** Bisect from the good tag to the base in a worktree
+   of its own. Never bisect in the checkout, which develop keeps changing:
    ```sh
    W="<checkout>/../<repo>.seclab-worktrees/bisect"
    git worktree add --detach "$W" <base>
