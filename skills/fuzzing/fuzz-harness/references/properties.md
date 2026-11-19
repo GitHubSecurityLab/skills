@@ -13,9 +13,9 @@ example values to the seeds.
 
 How to signal a failure: `abort()` (or `__builtin_trap()`) in C/C++, a
 thrown exception or failed assertion in Java and JS, a failing `EXPECT_*` or
-`ASSERT_*` in FuzzTest. The language skill shows the idiom. Java/JS: raise
-the check's failure outside the `try` that catches the target's documented
-exceptions, or the catch swallows it.
+`ASSERT_*` in FuzzTest. The language skill shows the idiom. In Java and JS,
+raise the check's failure outside the `try` that catches the target's
+documented exceptions; otherwise that catch swallows the failure.
 
 ## Patterns
 

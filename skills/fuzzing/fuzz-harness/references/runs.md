@@ -2,16 +2,20 @@
 
 Every run of project code during a campaign goes through `launcher.py`:
 gate runs, fuzzing rounds, coverage replays, merges, reproductions, fix
-validation and long runs. The launcher runs the command it's given, as one
-or more copies, each with an empty environment, its own scratch directory,
-its own findings directory and a bounded log, and records the run in
-`runs/<id>/`. Builds, installs and the project's own tests don't go
-through it: they run with the user's environment. The agent runs develop
-runs itself; long runs are commands the agent hands to the user, who runs
+validation and long runs. The launcher runs the command it's given as one
+or more copies. Each copy gets an empty environment, its own scratch
+directory, its own findings directory and a bounded log. The launcher
+records the run in `runs/<id>/`.
+
+Builds, installs and the project's own tests don't go through the
+launcher: they run with the user's environment. The agent runs develop
+runs itself. Long runs are commands the agent hands to the user, who runs
 them in a terminal.
 
 ## Reads
 
+What the steps in this file read. Paths are relative to `.seclab/fuzz/`
+unless they start with `.seclab/`:
 - `CAMPAIGN.md`: Settings (`memory_mb`, `input_timeout_s`, `round_minutes`,
   `long_run_hours`), Long runs.
 - `targets/<id>.md`: Harness (engine, build variants, corpus, dictionary).
@@ -52,9 +56,9 @@ begin with `. .seclab/fuzz/env.sh;`, which sets `F` (the absolute path of
 - **Caps** from Settings: memory per process (`memory_mb`), per-input
   timeout (`input_timeout_s`), and the engine's own time limit set to the
   run's `--time`. The launcher sets none of them: every command passes
-  them as engine flags (the language skill's run.md does), and a
-  reproducer, which runs one input, has the run's `--timeout` as its time
-  limit. For what they don't cap, see `fuzz-campaign`'s long-runs.md,
+  them as engine flags, as the language skill's run.md commands do. A
+  reproducer runs one input, so its time limit is the run's `--timeout`.
+  For what the caps don't limit, see `fuzz-campaign`'s long-runs.md,
   "Cores and memory".
 
 Options, `spec.json`, states and exit codes:
@@ -108,24 +112,27 @@ $L wait <id> --max 100    # blocks at most 100 s
 $L stop <id>              # TERM, a grace period, then KILL
 ```
 
-- `status --all` adds ended develop runs (a `reach.py` search as one
-  row). States: `running`, `running (unsupervised)` (copies alive,
-  supervisor gone), the end states above,
-  `died` (all gone without an end record), and `unverified` (process
-  identities can't be read here, e.g. in a sandbox: never taken for ended).
+- `status --all` adds ended develop runs; a `reach.py` search shows as
+  one row.
+- **States:** `running`, `running (unsupervised)` (copies alive,
+  supervisor gone), the end states above, `died` (all gone without an end
+  record), and `unverified`. A run is `unverified` when process
+  identities can't be read here, e.g. in a sandbox; it's never taken for
+  ended.
 - Never `kill` PIDs from old records: PIDs get reused. `stop` checks each
-  process's identity first. If a process is left, `stop` says which copy's
-  and exits 1, without recording the run as stopped. It reaches each
-  copy's process group only: a process that left it (`setsid`, a daemon)
-  runs on, with `SECLAB_RUN=<id>/...` in its environment.
+  process's identity first. If a process is left, `stop` says which copy
+  it belongs to and exits 1, without recording the run as stopped.
+- `stop` reaches only each copy's process group. A process that left its
+  group (`setsid`, a daemon) runs on, with `SECLAB_RUN=<id>/...` in its
+  environment.
 - If the run is AFL++: each instance's `out/<instance>/fuzzer_stats` and
   `plot_data` show its progress.
 
 ## Environment pitfalls
 
 - **Tool caches:** `HOME` and the working directory are the copy's
-  scratch, so a command passes the real caches as absolute paths, runs
-  Java and JS builds offline, and names the build file or project
+  scratch. A command therefore passes the real caches as absolute paths,
+  runs Java and JS builds offline, and names the build file or project
   directory, as the language skill's run.md commands do.
 - **Codex** blocks network access in its default sandbox, which breaks
   dependency installs.
@@ -152,6 +159,8 @@ $L stop <id>              # TERM, a grace period, then KILL
 
 ## Writes
 
+What the steps in this file write or change. Paths are relative to
+`.seclab/fuzz/` unless they start with `.seclab/`:
 - `runs/<id>/`: `spec.json`, `meta.json`, `progress.tsv`, `artifacts/`,
   `copy-<i>/log`.
 - `CAMPAIGN.md`: Long runs. `targets/<id>.md`: Coverage rounds, Notes.

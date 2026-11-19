@@ -5,6 +5,8 @@ harnesses can be contributed upstream and maintainers can rebuild them.
 
 ## Reads
 
+What the steps in this file read. Paths are relative to `.seclab/fuzz/`
+unless they start with `.seclab/`:
 - `CAMPAIGN.md`: Settings, Disposable environment, Harnesses.
 - The language skill for exact flags and commands: `fuzz-c-cpp`,
   `fuzz-java` or `fuzz-js`.
@@ -25,7 +27,7 @@ harnesses can be contributed upstream and maintainers can rebuild them.
    "Setup card").
 2. **Toolchain.** Check what the language skill requires (compilers,
    engine versions, build tools) with the check in its `install.md`, which
-   runs no project code, and record the versions in the target file.
+   runs no project code. Record the versions in the target file.
    - **Install plan** from the language skill's `install.md`: only what's
      missing for this project, each item with the command for this OS and
      the expected time. Record what was installed in `decisions.md`.
@@ -50,28 +52,29 @@ harnesses can be contributed upstream and maintainers can rebuild them.
 5. **Build each variant in its own directory** under
    `.seclab/fuzz/build/<variant>/`: CMake `-B`, a Meson build directory, an
    autotools build directory (`../configure` from there), or the build tool's
-   output option. Use the same compiler and flags for the library across
-   variants, build libraries static where possible, and don't build the project's
-   CLI tools or tests with fuzzer flags.
-   - **Before the first build,** add the block in the language skill's
-     run.md, "Environment (`--env`)", filled in, to `.seclab/fuzz/env.sh`
-     below `F` and `L`. Every command from here on starts with
-     `. .seclab/fuzz/env.sh;`: an agent's commands don't keep shell
-     variables.
+   output option. Use the same compiler and flags for the library in
+   every variant, and build libraries static where possible. Don't build
+   the project's CLI tools or tests with fuzzer flags.
+   - **Before the first build,** fill in the block from the language
+     skill's run.md, "Environment (`--env`)", and add it to
+     `.seclab/fuzz/env.sh`, below `F` and `L`. Every command from here on
+     starts with `. .seclab/fuzz/env.sh;`: an agent's commands don't keep
+     shell variables.
    - If the project can only build in-tree: build each variant in its own
      git worktree outside the checkout, synced to the checkout's working
      tree before each rebuild (`fuzz-c-cpp`'s build.md, "In-tree builds").
-   - If the build is for another worktree (for a long run, `base` or the
-     freshness check): its builds go into its own
-     `.seclab/fuzz/build/` (`<tree_build>`), and the checkout's stay as they are.
-     Start each build command with this line instead of
+   - If the build is for another worktree `<tree>` (for a long run,
+     `base` or the freshness check), its builds go into that worktree's
+     own `.seclab/fuzz/build/` (`<tree_build>`). The checkout's builds stay
+     as they are. Start each build command with this line instead of
      `. .seclab/fuzz/env.sh;`, and in JS also set `P` to the package
-     directory there:
+     directory in that worktree:
      <!-- ci: worktree-build -->
      ```sh
      . .seclab/fuzz/env.sh; cd "<tree>" && F="$PWD/.seclab/fuzz" && mkdir -p "$F/build";
      ```
-     If the project builds only in-tree: `fuzz-c-cpp`'s build.md, "In-tree builds".
+     If the project builds only in-tree: `fuzz-c-cpp`'s build.md, "In-tree
+     builds".
 6. **Verify each variant.** The fuzz binary or test class exists, and the
    target library itself is instrumented: C/C++ by its object files'
    symbols, Java by plain `INFO: Instrumented <class>` lines (not
@@ -89,15 +92,19 @@ harnesses can be contributed upstream and maintainers can rebuild them.
      with a valid checksum or signature during triage.
 8. **Commit and record.** Build changes become `fuzz(build): <what>`
    commits on the campaign branch. Record the variants and their build
-   commands in the target file (Harness, Build variants), and after each
-   build the commit it came from, in its directory under
-   `.seclab/fuzz/build/` (C/C++: the variant's; Java: `jazzer/`, after the
-   project's build and its classpath file; TypeScript: `ts/`; plain JS
-   builds nothing there):
+   commands in the target file (Harness, Build variants).
+
+   After each build, record the commit it came from:
    <!-- ci: build-record -->
    ```sh
    git rev-parse HEAD > .seclab/fuzz/build/<variant>/built-from
    ```
+   `<variant>` is the build's directory under `.seclab/fuzz/build/`:
+   - C/C++: the variant's directory;
+   - Java: `jazzer/`; write it after the project's build and its classpath
+     file;
+   - TypeScript: `ts/`;
+   - plain JS builds nothing there.
 9. **Before reusing builds** (Resume, or after anything switched or reset
    the checkout), rebuild every variant this check calls stale; builds are
    incremental, so it's cheap:
@@ -139,6 +146,8 @@ to the next target.
 
 ## Writes
 
+What the steps in this file write or change. Paths are relative to
+`.seclab/fuzz/` unless they start with `.seclab/`:
 - `targets/<id>.md`: Harness (build variants and commands), tool versions.
 - `CAMPAIGN.md`: Targets status (`set-aside` when it applies).
 - `decisions.md`: integration choice, installs.
