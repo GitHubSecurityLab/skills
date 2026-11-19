@@ -3,8 +3,9 @@
 ## JDK
 
 Use a JDK the installed Jazzer can instrument: Jazzer 0.30.0 works on JDK
-21 and 25. On JDK 27 it logged `Failed to instrument java/...` for JDK
-classes (e.g. `java/lang/ProcessBuilder`), which silently disables the detectors hooking them.
+21 and 25. On JDK 27, it logged `Failed to instrument java/...` for JDK
+classes (e.g. `java/lang/ProcessBuilder`). That failure silently disables
+the detectors that hook those classes.
 
 - Maven and Gradle may use another JDK than `java` on `PATH`: check
   `mvn -v` and `gradle -v`, and set `JAVA_HOME` (Gradle projects with a
@@ -37,8 +38,8 @@ Maven:
   rule picks `jazzer-junit`'s older `junit-platform-*` 1.9 jars, and test
   discovery fails with `NoSuchMethodError`.
 - `junit-jupiter` brings the engine that standalone runs need, even when
-  the project declares only `junit-jupiter-api`: `jazzer-junit` has none,
-  and Surefire 3.x adds one to `mvn test` runs only.
+  the project declares only `junit-jupiter-api`. `jazzer-junit` has no
+  engine, and Surefire 3.x adds one to `mvn test` runs only.
 
 Gradle:
 
@@ -52,25 +53,31 @@ dependencies {
 test { useJUnitPlatform() }
 ```
 
-Jazzer's README shows `implementation`; it belongs in test scope.
+Jazzer's README shows `implementation`; the dependency belongs in test
+scope.
 
-If the project uses JUnit 4 or TestNG: add JUnit 5 (`junit-jupiter`) plus
-`org.junit.vintage:junit-vintage-engine` (JUnit 4) or
-`org.junit.support:testng-engine` (TestNG), all in test scope, so existing
-tests keep running next to the fuzz tests. JUnit 6 with Jazzer 0.30.0 is
-untested.
+If the project uses JUnit 4 or TestNG, add JUnit 5 (`junit-jupiter`)
+plus the engine that keeps the existing tests running next to the fuzz
+tests, all in test scope:
+- for JUnit 4, `org.junit.vintage:junit-vintage-engine`;
+- for TestNG, `org.junit.support:testng-engine`.
+
+JUnit 6 with Jazzer 0.30.0 is untested.
 
 ## Classpath for standalone runs
 
-Write it once per build into `.seclab/fuzz/build/jazzer/<module>.classpath`;
-rebuild it when dependencies change. Another worktree (a long run's, `base`)
-gets one built there, in its `.seclab/fuzz/build/` (`fuzz-harness`'s build.md),
-so its class directories are the worktree's. Both commands below run project
-build code: the first-build notice applies.
+Write the classpath once per build into
+`.seclab/fuzz/build/jazzer/<module>.classpath`, and rebuild it when
+dependencies change. Another worktree (a long run's, `base`) gets its own
+file, built in that worktree, so that the file's class directories are
+the worktree's. The file goes into that worktree's `.seclab/fuzz/build/`
+(`fuzz-harness`'s build.md). Both commands below run project build code:
+the first-build notice applies.
 
-Maven, from the root (multi-module: add `-pl <module> -am`; in the module
-directory, uninstalled sibling modules don't resolve); `<module_dir>` is
-the module's absolute path, since runs start in their scratch directory:
+Maven: run the commands from the root. In a multi-module build, add
+`-pl <module> -am` rather than running in the module directory, where
+uninstalled sibling modules don't resolve. `<module_dir>` is the module's
+absolute path, since runs start in their scratch directory:
 <!-- ci: java-maven-classpath -->
 ```sh
 mvn -q test-compile dependency:build-classpath -Dmdep.includeScope=test -Dmdep.outputFile=target/seclab.deps
@@ -78,10 +85,9 @@ mkdir -p "$F/build/jazzer" && echo "<module_dir>/target/test-classes:<module_dir
   > "$F/build/jazzer/<module>.classpath"
 ```
 
-Gradle, through an init script; `<gradle>` is `./gradlew`, or `gradle`
-without a wrapper, and `<task>` is `:seclabTestClasspath` in a
-single-project build, `:<module>:seclabTestClasspath` in a multi-project
-one:
+Gradle uses an init script. `<gradle>` is `./gradlew`, or `gradle`
+without a wrapper. `<task>` is `:seclabTestClasspath` in a single-project
+build, and `:<module>:seclabTestClasspath` in a multi-project one:
 <!-- ci: java-gradle-classpath -->
 ```sh
 mkdir -p "$F/build/jazzer" && cat > "$F/build/jazzer/classpath.gradle" <<'EOF'
@@ -102,30 +108,32 @@ EOF
 
 The fuzzer gets coverage feedback only from instrumented classes.
 
-- **`@FuzzTest`:** by default, the packages of classes found in classpath
-  **directories** (the project's own `classes` output), not classes in
-  JARs. Maven's sibling modules built with `-am` arrive as their
-  `target/classes` directories; Gradle's arrive as JARs, like libraries and
-  modules installed in `~/.m2`, and get no coverage feedback. Widen or
-  narrow it with `-Djazzer.instrument=com.example.**,org.lib.**` (commas)
-  in `JOPTS` (`run.md`), which every command and JUnit run takes:
+- **`@FuzzTest`:** by default, Jazzer instruments the packages of classes
+  found in classpath **directories** (the project's own `classes`
+  output), not classes in JARs. Maven's sibling modules built with `-am`
+  arrive as their `target/classes` directories. Gradle's arrive as JARs,
+  like libraries and modules installed in `~/.m2`, and get no coverage
+  feedback.
+
+  Every command and JUnit run takes `JOPTS` (`run.md`). To widen or
+  narrow the set, add `-Djazzer.instrument=com.example.**,org.lib.**`
+  (commas) to `JOPTS`:
   - for a multi-module Gradle build, list every module's packages;
   - add a library's package too when scope code extends it or passes it
     the input to parse (Commons CSV's lexer reads through a commons-io
     class).
-- **Classic `fuzzerTestOneInput` targets:** every class, JARs included,
-  and `--instrument` is ignored. Narrow it with
+- **Classic `fuzzerTestOneInput` targets:** Jazzer instruments every
+  class, JARs included, and ignores `--instrument`. Narrow the set with
   `--instrumentation_includes=com.example.**:org.lib.**` (colons; with
   commas nothing matches).
-- Exclude large dependencies the fuzzer gets lost in with
-  `--instrumentation_excludes=` (colons).
+- Use `--instrumentation_excludes=` (colons) to exclude large
+  dependencies that the fuzzer gets lost in.
 
 ## Instrumentation checks
 
-The gate's instrumentation check, on a run's log (the replay's or the
-gate run's): each
-target class needs a plain `INFO: Instrumented <class> (took ...)` line.
-With `F` as in `run.md`:
+The gate's instrumentation check reads a run's log (the replay's or the
+gate run's). Each target class needs a plain
+`INFO: Instrumented <class> (took ...)` line. `F` is as in `run.md`:
 
 <!-- ci: java-instrumented -->
 ```sh
@@ -134,9 +142,9 @@ for c in <target_classes>; do grep -qF "INFO: Instrumented $c (took" "$log" || {
 ! grep -E 'Failed to instrument|Error retransforming|VerifyError' "$log" && [ $bad = 0 ]
 ```
 
-- `INFO: Instrumented <class> with custom hooks only` means hooks but no
-  coverage feedback: the fuzzer is blind there, while JaCoCo still shows
-  the class covered.
+- `INFO: Instrumented <class> with custom hooks only` means the class
+  has hooks but no coverage feedback. The fuzzer is blind there, while
+  JaCoCo still shows the class covered.
 - `Error retransforming` with a `VerifyError` means a hook broke a class,
   which then runs uninstrumented and unhooked (`harness.md`, hooks).
 
@@ -144,15 +152,16 @@ for c in <target_classes>; do grep -qF "INFO: Instrumented $c (took" "$log" || {
 
 Check a project's own `src/test/resources/junit-platform.properties` for
 `jazzer.*` keys that hide findings, such as `jazzer.ignore` or
-`jazzer.disabled_hooks`: the file configures JUnit runs, and standalone
-runs of the module's fuzz tests too (command-line flags override it).
+`jazzer.disabled_hooks`. The file configures JUnit runs, and also
+standalone runs of the module's fuzz tests. Command-line flags override
+it.
 
 Useful keys: `jazzer.instrument`, `jazzer.custom_hooks`,
-`jazzer.disabled_hooks`, `jazzer.keep_going`, `jazzer.max_duration`;
-standalone runs take them as `--instrument=` and so on (lists separated
-by `:`, except `--instrument`'s `,`). `jazzer.valueprofile=true` has no
-such flag (`--valueprofile` fails): standalone runs pass libFuzzer's
-`-use_value_profile=1`. Full list:
+`jazzer.disabled_hooks`, `jazzer.keep_going`, `jazzer.max_duration`.
+Standalone runs take them as flags: `--instrument=` and so on. The flags
+separate lists with `:`, except `--instrument`, which uses `,`.
+`jazzer.valueprofile=true` has no such flag, and `--valueprofile` fails:
+standalone runs pass libFuzzer's `-use_value_profile=1`. Full list:
 https://github.com/CodeIntelligenceTesting/jazzer/blob/main/docs/arguments-and-configuration-options.md
 
 ## Fuzzing-only changes

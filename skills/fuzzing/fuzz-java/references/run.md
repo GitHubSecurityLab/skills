@@ -1,23 +1,30 @@
 # Running Jazzer
 
 Every run goes through `launcher.py` (`fuzz-harness`'s runs.md explains `F`,
-`L` and placeholders like `{run}`) with the standalone driver, and every
-command starts with `. .seclab/fuzz/env.sh; H=<harness>;`.
+`L` and placeholders like `{run}`), and every command starts with
+`. .seclab/fuzz/env.sh; H=<harness>;`. Runs use the standalone driver.
 
 ## Settings to flags
 
 | Setting | Flag |
 |---|---|
-| `memory_mb` | `-Xmx<m>m` for the JVM (in `JOPTS`), plus `-rss_limit_mb=0` (the JVM's own footprint would trip libFuzzer's RSS limit); a heap overflow becomes an `OutOfMemoryError` finding |
+| `memory_mb` | `-Xmx<m>m` for the JVM (in `JOPTS`), plus `-rss_limit_mb=0` |
 | `input_timeout_s` | `-timeout=<s>` |
-| run time (the launcher's `--time`) | `-max_total_time=<s>`; with no duration, `-max_total_time=0`. Always pass it: `@FuzzTest`'s `maxDuration` (default 5 minutes) otherwise ends the run |
+| run time (the launcher's `--time`) | `-max_total_time=<s>`; with no duration, `-max_total_time=0` |
+
+- `memory_mb`: a heap overflow becomes an `OutOfMemoryError` finding.
+  `-rss_limit_mb=0` keeps the JVM's own footprint from tripping
+  libFuzzer's RSS limit.
+- Run time: always pass `-max_total_time`. Otherwise `@FuzzTest`'s
+  `maxDuration` (default 5 minutes) ends the run.
 
 ## Environment (`--env`)
 
-Add this block, filled in, to `.seclab/fuzz/env.sh` below `F` and `L`.
-The shell keeps its own `PATH`, which finds Maven or Gradle (often in
-Homebrew or user directories), and the exported `JAVA_HOME` picks their
-JDK; the commands below pass `RUN_PATH` as the run's `PATH`:
+Fill in this block and add it to `.seclab/fuzz/env.sh`, below `F` and
+`L`. The shell keeps its own `PATH`, which finds Maven or Gradle (often in
+Homebrew or user directories). The exported `JAVA_HOME` picks the JDK
+that Maven or Gradle uses. The commands below pass `RUN_PATH` as the
+run's `PATH`:
 <!-- ci: java-env -->
 ```sh
 export JAVA_HOME=<java_home>
@@ -26,23 +33,28 @@ JOPTS="-Xmx<memory_mb>m -XX:+EnableDynamicAgentLoading -XX:-OmitStackTraceInFast
 CP=$(cat "$F/build/jazzer/<module>.classpath" 2>/dev/null)
 ```
 
-`<java_home>` is a JDK Jazzer supports (`build.md`, JDK), e.g. macOS's
-`/usr/libexec/java_home -v 21`. `JOPTS` are the JVM flags of every
-command: the heap, no agent warning, and stack traces even for hot
-exceptions (without them, a continuous run reported a hot
-`ArrayIndexOutOfBoundsException` again, without frames, as a new
-finding). A multi-module Gradle build adds
-`-Djazzer.instrument=<packages>` (`build.md`, What gets instrumented).
+- `<java_home>`: a JDK Jazzer supports (`build.md`, "JDK"), e.g. macOS's
+  `/usr/libexec/java_home -v 21`.
+- `JOPTS`: the JVM flags of every command. They set the heap, turn off
+  the agent warning, and keep stack traces even for hot exceptions.
+  Without `-XX:-OmitStackTraceInFastThrow`, a continuous run reported a
+  hot `ArrayIndexOutOfBoundsException` again, without frames, as a new
+  finding.
+- If the build is a multi-module Gradle build: add
+  `-Djazzer.instrument=<packages>` to `JOPTS` (`build.md`, "What gets
+  instrumented").
 
 The launcher points `java.io.tmpdir` and `user.home` into the copy's
 scratch through `JAVA_TOOL_OPTIONS` (the log starts with `Picked up
-JAVA_TOOL_OPTIONS`); Jazzer writes helper scripts there.
-`<fuzz_class>` is the fully qualified test class, `<fuzz_method>` the
+JAVA_TOOL_OPTIONS`). Jazzer writes helper scripts into that scratch.
+
+`<fuzz_class>` is the fully qualified test class, and `<fuzz_method>` the
 `@FuzzTest` method.
 
 ## Develop runs (gate, rounds)
 
-One JVM, writing new inputs into the persistent corpus:
+A develop run is one JVM, which writes new inputs into the persistent
+corpus:
 
 <!-- ci: java-develop -->
 ```sh
@@ -54,32 +66,42 @@ $L start --id r<round>-$H --harness $H --time <run_s> --corpus "$F/corpus/$H" \
   -artifact_prefix="{run}/artifacts/copy-{copy}/" -dict="$F/dict/$H.dict" "$F/corpus/$H"
 ```
 
-- Without `-artifact_prefix`, crash files land in the test's inputs
-  directory under `src/test/resources`; always pass it.
+- Always pass `-artifact_prefix`. Without it, crash files land in the
+  test's inputs directory under `src/test/resources`.
 - The fuzz test's inputs directory and `.cifuzz-corpus/` are read as extra
   seeds if they exist.
-- The run stops at the first finding (`crash-*`, `timeout-*`; exit 77);
-  the next round resumes from the corpus.
-- Status lines are libFuzzer's (`#<n> NEW cov: <n> ft: <n> corp: ...
-  exec/s: <n>`), and the final statistics give executions per second.
-- Instrumentation check (`build.md`): a plain `INFO: Instrumented <class>
-  (took ...)` line for each target class, not `with custom hooks only`.
+- The run stops at the first finding (`crash-*`, `timeout-*`; exit 77).
+  The next round resumes from the corpus.
+- Status lines are libFuzzer's: `#<n> NEW cov: <n> ft: <n> corp: ...
+  exec/s: <n>`. The final statistics give executions per second.
+- Instrumentation check (`build.md`): each target class needs a plain
+  `INFO: Instrumented <class> (took ...)` line, not
+  `with custom hooks only`.
 - `--list_fuzz_tests=` (empty value) lists the fuzz tests of a class.
-- Useful extras: `-use_value_profile=1` after a plateau on comparisons,
-  `--instrument=<globs>` (classic targets: `--instrumentation_includes`,
-  `build.md`), `--custom_hooks=<classes>`, `--ignore=<tokens>` (queued
-  findings, `triage.md`).
+- Useful extras:
+  - `-use_value_profile=1` after a plateau on comparisons;
+  - `--instrument=<globs>`, or `--instrumentation_includes` for classic
+    targets (`build.md`);
+  - `--custom_hooks=<classes>`;
+  - `--ignore=<tokens>` for findings whose fix is queued (`triage.md`).
 - If the target is a classic `fuzzerTestOneInput` class: leave out
   `--target_method`.
 
 ## Long runs
 
-N copies of the develop command (`--copies`), with the run's own corpus
-first (where every copy writes and re-reads new inputs) and the persistent
-corpus second (read only). First set `CP` from the worktree's classpath
-file (`build.md`, "Classpath for standalone runs"), `<tree_build>` being its
-`.seclab/fuzz/build`: `CP=$(cat "<tree_build>/jazzer/<module>.classpath")`.
-`env.sh` sets it from the checkout's, whose classes develop keeps rebuilding.
+A long run is N copies of the develop command (`--copies`). List the
+run's own corpus first and the persistent corpus second. Every copy writes
+new inputs into the run's corpus and re-reads them from there; the
+persistent corpus is only read.
+
+**The run's worktree** (`fuzz-campaign`) is `<tree>`, and `<tree_build>`
+its `.seclab/fuzz/build` directory. Build there, and write a classpath
+file there too (`build.md`, "Classpath for standalone runs"). That file's
+class directories are the worktree's. Then set `CP` from it:
+`CP=$(cat "<tree_build>/jazzer/<module>.classpath")`. The `CP` that
+`env.sh` sets comes from the checkout's classpath file, and develop keeps
+rebuilding the checkout's classes. Each copy loads classes lazily, so on
+the checkout's classpath it would pick up those rebuilds.
 
 <!-- ci: java-long -->
 ```sh
@@ -91,29 +113,29 @@ $L start --prepare --id $H-long<n> --harness $H --copies <copies> --time <run_s>
   -artifact_prefix="{run}/artifacts/copy-{copy}/" -dict="{run}/$H.dict" "{run}/corpus" "$F/corpus/$H"
 ```
 
-With no duration, `-max_total_time=0` and no `--time`.
-
-- Copies share inputs through libFuzzer's `-reload` (on by default, about
-  once a second), and each picks its own random seed.
-- **`continuous`** (the default): with `--keep_going=0` a copy continues
-  past findings, skipping stack traces it has already reported, and exits
-  0 at its time limit; crashing inputs with new coverage also enter the
-  corpus. **Stop at the first finding** (the user's choice): leave it out;
-  each copy then stops at its first finding while the others continue.
-- **Memory:** each copy is a JVM with its own heap (`-Xmx`) plus several
-  hundred MB for the JVM and Jazzer; cap the copies by it.
-- **The run's worktree** (`fuzz-campaign`): build there and write a classpath file
-  for it (`build.md`), whose class directories are the worktree's. Each
-  copy loads classes lazily, so the checkout's classpath would pick up
-  develop's rebuilds.
+- If the run has no duration: use `-max_total_time=0`, and leave out
+  `--time`.
+- Copies share inputs through libFuzzer's `-reload`, which is on by
+  default and reloads about once a second. Each copy picks its own random
+  seed.
+- **`continuous`** (the default): with `--keep_going=0`, a copy continues
+  past findings and skips stack traces it has already reported. It exits
+  0 at its time limit. Crashing inputs with new coverage also enter the
+  corpus.
+- **Stop at the first finding** (the user's choice): leave out
+  `--keep_going=0`. Each copy then stops at its first finding, while the
+  others continue.
+- **Memory:** each copy is a JVM with its own heap (`-Xmx`), plus several
+  hundred MB for the JVM and Jazzer. Cap the number of copies by that
+  memory.
 - No `-fork` or `-jobs`: every job is a new JVM that pays start-up and
-  warm-up again, and they share one scratch directory.
+  warm-up again, and the jobs share one scratch directory.
 
 ## Merging a run's corpus back (analysis, `fuzz-campaign`)
 
-On the **current** build, as one `merge-<h>-<n>` run: first a replay that
-reports findings, then `-merge=1` into the merge run's own corpus, which
-then replaces the persistent corpus (`fuzz-campaign`):
+Merge on the **current** build, as one `merge-<h>-<n>` run. It first runs
+a replay that reports findings, then `-merge=1` into the merge run's own
+corpus. That corpus then replaces the persistent corpus (`fuzz-campaign`):
 
 <!-- ci: java-merge -->
 ```sh
@@ -125,26 +147,32 @@ $L start --id merge-$H-<n> --harness $H --timeout <timeout_s> --env PATH="$RUN_P
   -timeout=<input_timeout_s> -rss_limit_mb=0 -artifact_prefix="{run}/artifacts/copy-{copy}/"
 ```
 
-- `-merge=1` reports nothing and keeps crashing inputs; the replay before
-  it is what records them as findings (exit 0 with `--keep_going=0`).
+- `-merge=1` reports nothing and keeps crashing inputs. The replay
+  before it records them as findings, still exiting 0 with
+  `--keep_going=0`.
 - Check the log: `MERGE-OUTER: <n> new files`.
 - If the log shows repeated `MERGE-OUTER: attempt` lines: the inner runs
-  failed, e.g. on a path with a space (the launcher refuses those).
-- If a timeout ended the replay's JVM (exit 70): the merge doesn't run; the
-  `timeout-` file names the input, a blocking bug (`fuzz-triage`).
+  failed, e.g. on a path with a space. The launcher refuses such paths.
+- If a timeout ended the replay's JVM (exit 70): the merge doesn't run.
+  The `timeout-` file names the input; the timeout is a blocking bug
+  (`fuzz-triage`).
 
 ## JUnit runs (regression, CI, upstreaming)
 
 Regression mode replays the empty input, the seed sources and the inputs
-directories. The run is offline (`-o`, `--offline`): run the project's
-tests once online first (a build step, `mvn -q test -Dtest=<fuzz_class>`),
-which also fetches Surefire's JUnit provider.
+directories. The run is offline (`-o`, `--offline`), so first run the
+project's tests once online, as a build step. For Maven, use
+`mvn -q test -Dtest=<fuzz_class>`, which also fetches Surefire's JUnit
+provider.
 
-Through the launcher, the working directory and `HOME` are in scratch:
-name the build with an absolute path (`-f`, `-p`), and pass the real tool
-caches (`<home>`, the user's home) and the shell's `PATH` with the JDK
-first, which finds the build tool. `JAVA_TOOL_OPTIONS` carries `JOPTS` to
-every JVM of the run, the test JVM too:
+Through the launcher, the working directory and `HOME` are in scratch. So:
+- Name the build with an absolute path (`-f`, `-p`).
+- Pass the real tool caches. `<home>` is the user's home.
+- Pass the shell's `PATH` with the JDK first. That `PATH` finds the build
+  tool.
+
+`JAVA_TOOL_OPTIONS` carries `JOPTS` to every JVM of the run, the test JVM
+too:
 
 <!-- ci: java-junit -->
 ```sh
@@ -153,9 +181,10 @@ $L start --id <run_id> --harness $H --timeout <timeout_s> --env PATH="$JAVA_HOME
   mvn -f "<module_dir>/pom.xml" -o -Dmaven.repo.local="<home>/.m2/repository" test -Dtest='<fuzz_class>#<fuzz_method>'
 ```
 
-If the module's sibling modules in a multi-module project aren't installed:
-`mvn -f "<root>/pom.xml" -pl <module> -am ... -Dsurefire.failIfNoSpecifiedTests=false`
-(from the module's own POM, the siblings don't resolve).
+If the module's sibling modules in a multi-module project aren't
+installed, use
+`mvn -f "<root>/pom.xml" -pl <module> -am ... -Dsurefire.failIfNoSpecifiedTests=false`.
+From the module's own POM, uninstalled siblings don't resolve.
 
 <!-- ci-skip: for the project's own runs; the campaign and the CI template run the standalone driver -->
 ```sh
@@ -165,17 +194,19 @@ gradle -p "<abs project>" --no-daemon --offline test --rerun --tests '<package>.
 JAZZER_FUZZ=1 JAZZER_MAX_DURATION=2m mvn test -Dtest='<Class>#<method>'
 ```
 
-No Gradle daemon, so none outlives the run. Fuzzing mode writes its
-corpus to `.cifuzz-corpus/` and crash files into the inputs directory, in
-the source tree, and takes no libFuzzer flags; neither the campaign nor
-the CI template (`fuzz-campaign`'s ci.md) fuzzes with it.
+The Gradle command starts no daemon, so none outlives the run.
+
+Fuzzing mode writes its corpus to `.cifuzz-corpus/` and crash files into
+the inputs directory, in the source tree. It takes no libFuzzer flags.
+Neither the campaign nor the CI template (`fuzz-campaign`'s ci.md) fuzzes
+with it.
 
 ## Seeds from the project
 
-Inputs in `src/test/resources/...Inputs/` already run as seeds; files from
-`src/test/resources` of the code under test can be copied into
-`corpus/$H/` for harnesses that take a raw file (one `byte[]` or
-`String`, `harness.md`).
+Inputs in `src/test/resources/...Inputs/` already run as seeds. For
+harnesses that take a raw file (one `byte[]` or `String`, `harness.md`),
+files from `src/test/resources` of the code under test can be copied into
+`corpus/$H/`.
 
 ## Checking a run
 

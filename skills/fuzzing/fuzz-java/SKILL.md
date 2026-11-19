@@ -13,8 +13,8 @@ Fuzz tests are JUnit 5 `@FuzzTest` methods in the project's test
 sources. The campaign runs them in two ways:
 
 - **Standalone driver** (`com.code_intelligence.jazzer.Jazzer` with
-  `--target_class` and `--target_method`) for every fuzzing run, replay
-  and reproduction: it takes all libFuzzer flags and explicit corpus and
+  `--target_class` and `--target_method`), for every fuzzing run, replay
+  and reproduction. It takes all libFuzzer flags and explicit corpus and
   crash paths, and needs no build tool at run time.
 - **JUnit** (`mvn test`, `gradle test`) for regression replays, regression
   tests and the project's CI.
@@ -34,6 +34,8 @@ Not for deciding what to do next; that's the workflow skills.
 
 ## Reads
 
+What the steps in this file read. Paths are relative to `.seclab/fuzz/`
+unless they start with `.seclab/`:
 - `targets/<id>.md`: Harness (test class and method, build tool, module).
 - `CAMPAIGN.md`: Settings (`memory_mb`, `input_timeout_s`).
 
@@ -46,14 +48,15 @@ Not for deciding what to do next; that's the workflow skills.
    | `@FuzzTest` methods | keep them |
    | Classic `fuzzerTestOneInput` classes (often for OSS-Fuzz) | keep them; run them with the standalone driver |
    | No fuzz tests, and the user names a format | that one |
-   | JUnit 5, and the target parses a file format (binary or text) | `@FuzzTest` with one `byte[]` or `@NotNull @WithUtf8Length(max = …) String` parameter; a parser with options also gets a typed one for them (`harness.md`) |
+   | JUnit 5, and the target parses a file format (binary or text) | `@FuzzTest` with one `byte[]` or `@NotNull @WithUtf8Length(max = …) String` parameter; a parser with options also gets a second, typed fuzz test for them (`harness.md`) |
    | JUnit 5 | `@FuzzTest` with typed parameters |
    | JUnit 4 or TestNG | add JUnit 5 and `jazzer-junit` in test scope (`build.md`) |
 
-2. **Check the toolchain** and propose installs for what's missing
-   ([references/install.md](references/install.md)): JDK, build tool; then
-   dependencies and the standalone classpath ([references/build.md](references/build.md)).
-   Record versions.
+2. **Check the toolchain** with
+   [references/install.md](references/install.md): check the JDK and
+   the build tool, and propose installs for what's missing. Then follow
+   [references/build.md](references/build.md) for the dependencies and
+   the standalone classpath. Record the versions.
 3. **Look up the command** for the step:
 
    | Step | Reference |
@@ -77,8 +80,8 @@ Not for deciding what to do next; that's the workflow skills.
 | JaCoCo | 0.8.14 (the first with Java 25 support) | CI |
 
 Pin these versions exactly, unless the project already pins Jazzer or
-JUnit: then keep its versions and say so. A newer release only when the
-user asks.
+JUnit: then keep its versions and say so. Pin a newer release only when
+the user asks.
 
 ## Engine output locations in the project tree
 
@@ -97,9 +100,9 @@ For the gate's working-tree comparison:
 
 ## Pitfalls and shortcuts to reject
 
-- **A JDK newer than Jazzer supports:** the log shows `Failed to instrument
-  java/...` and the detectors on JDK classes silently stop working. Run on
-  a supported JDK (21 or 25).
+- **A JDK newer than Jazzer supports:** the log shows
+  `Failed to instrument java/...`, and the detectors on JDK classes
+  silently stop working. Run on a supported JDK (21 or 25).
 - **Gradle skips the test task as up to date:** a repeated `gradle test`
   fuzzes nothing and exits 0. Add `--rerun`.
 - **Runs end after 5 minutes:** `@FuzzTest`'s default `maxDuration` also
@@ -108,14 +111,16 @@ For the gate's working-tree comparison:
 - **`-fork` or `-jobs` for parallel runs:** run N copies through the
   launcher instead (`run.md`, "Long runs").
 - **Only one fuzz test fuzzes per JVM;** select exactly one.
-- **Detectors run real code** except for their trigger values (e.g. the
-  command `jazze`): other commands run and files are written for real
+- **Detectors run real code** except for their trigger values, e.g. the
+  command `jazze`. Other commands run and files are written for real
   (`fuzz-harness`'s input-and-side-effects.md).
 - Committing a crash file into the inputs directory: the project's CI
   replays it (`regression.md`).
 
 ## Writes
 
+What the steps in this file write or change. Paths are relative to
+`.seclab/fuzz/` unless they start with `.seclab/`:
 - `targets/<id>.md`: tool versions, classpath file, commands (through the
   calling skill).
 

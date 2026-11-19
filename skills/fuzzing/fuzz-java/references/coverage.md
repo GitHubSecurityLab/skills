@@ -1,18 +1,18 @@
 # Java coverage
 
 Replay the corpus with the standalone driver under the JaCoCo agent, then
-convert JaCoCo's XML report to lcov. Neither the project's build files nor
-a coverage build variant change.
+convert JaCoCo's XML report to lcov. This needs no change to the project's
+build files and no coverage build variant.
 
-- If the build is Gradle: it puts classes in `build/classes/java/main` and
-  test classes in `build/classes/java/test` (the blocks in this file use
-  Maven's `target/`).
+- If the build is Gradle: Gradle puts classes in `build/classes/java/main`
+  and test classes in `build/classes/java/test`. The blocks in this file
+  use Maven's `target/`.
 
 ## Replay and export
 
 1. **Set up JaCoCo** once: download the JaCoCo agent and command-line jars
-   (same version) into `.seclab/fuzz/build/jacoco/`, from a JaCoCo release
-   that supports the JDK's class files:
+   into `.seclab/fuzz/build/jacoco/`. Both come from the same JaCoCo
+   release, one that supports the JDK's class files:
    <!-- ci: jacoco-setup -->
    ```sh
    V=0.8.14 B=https://repo1.maven.org/maven2/org/jacoco J="$F/build/jacoco"
@@ -20,8 +20,8 @@ a coverage build variant change.
    curl -fsSL -o "$J/jacocoagent.jar" "$B/org.jacoco.agent/$V/org.jacoco.agent-$V-runtime.jar"
    curl -fsSL -o "$J/jacococli.jar" "$B/org.jacoco.cli/$V/org.jacoco.cli-$V-nodeps.jar"
    ```
-2. **Replay** the corpus under the agent, through the launcher (run id
-   `cov-<h>-<n>`), with `L`, `F`, `H` and the environment as in `run.md`
+2. **Replay** the corpus under the agent, through the launcher, with run
+   id `cov-<h>-<n>`. `L`, `F`, `H` and the environment are as in `run.md`
    next to this file:
    <!-- ci: java-cov-replay -->
    ```sh
@@ -32,25 +32,25 @@ a coverage build variant change.
      --keep_going=0 -runs=0 -timeout=<input_timeout_s> -rss_limit_mb=0 \
      -artifact_prefix="{run}/artifacts/copy-{copy}/" "$F/corpus/$H"
    ```
-   - `-runs=0` runs every corpus input once without fuzzing; `maxDuration`
-     doesn't cut it short.
+   - `-runs=0` runs every corpus input once, without fuzzing.
+     `maxDuration` doesn't cut the replay short.
    - `--keep_going=0` continues past inputs that throw: the finding is
-     recorded (`{run}/artifacts/copy-0/`), and the replay goes on. The
+     recorded in `{run}/artifacts/copy-0/`, and the replay goes on. The
      agent writes the `.exec` file when the JVM exits.
-   - `append=false` gives every replay a fresh `.exec` file; by default
+   - `append=false` gives every replay a fresh `.exec` file. By default,
      JaCoCo appends to an existing one.
-   - If other corpora count too (e.g. a long run's `corpus`, to measure what
-     it found): add their directories at the end.
+   - If other corpora count too, add their directories at the end. For
+     example, add a long run's `corpus` to measure what that run found.
 3. **Check** the result line (`finished`) and that the log ends with `Done
    <n> runs`.
    - If the state is `exited 70`: a timeout ended the JVM, and the `.exec`
-     file stays empty. The `timeout-` file names the input, a blocking bug
-     (`fuzz-triage`): replay a copy of the corpus without it, and mark the
-     snapshot partial.
+     file stays empty. The `timeout-` file names the input; the timeout is
+     a blocking bug (`fuzz-triage`). Replay a copy of the corpus without
+     that input, and mark the snapshot partial.
 4. **Export** the `.exec` file to lcov (reads files only). `--classfiles`
-   decides what the report covers: list the modules and library JARs in
-   scope, one `--classfiles` and `--source-root` each. Classes not listed
-   don't appear in the lcov file.
+   decides what the report covers. List the modules and library JARs in
+   scope, with one `--classfiles` and one `--source-root` for each.
+   Classes not listed don't appear in the lcov file.
    <!-- ci: java-cov-export -->
    ```sh
    C="$F/coverage/$H"; mkdir -p "$C"
@@ -62,34 +62,35 @@ a coverage build variant change.
        -o "$C/r<round>.lcov" &&
      rm "$C/r<round>.xml" "$C/r<round>.report.log"
    ```
-   - **"does not match" is an error.** If the class files differ from the
-     ones that ran (a rebuild in between), `jacococli` warns "Execution
-     data for class … does not match", still exits 0, and reports those
-     classes as uncovered. The block stops there and keeps the report log.
-     Rebuild or replay again with the same classes.
-   - **Keep the `.exec` files.** They're the only data that can be combined
-     correctly.
-   - The lcov file has line and branch records per source file, with paths
-     relative to the source roots given; `coverage.py --root .` then
-     matches them against the scope files.
-   - JaCoCo counts branches at `if` and `switch` only, not exception edges:
-     a `catch` block shows only as lines, so a branch plateau can hide
-     uncovered error handling. Check the lines too.
+   - **"does not match" is an error.** If the class files differ from
+     the ones that ran (a rebuild in between), `jacococli` warns
+     "Execution data for class … does not match", still exits 0, and
+     reports those classes as uncovered. The block stops there and keeps
+     the report log. Rebuild or replay again with the same classes.
+   - **Keep the `.exec` files.** They're the only data that can be
+     combined correctly.
+   - The lcov file has line and branch records per source file. Its paths
+     are relative to the given source roots, and `coverage.py --root .`
+     then matches them against the scope files.
+   - JaCoCo counts branches at `if` and `switch` only, not exception
+     edges. A `catch` block shows only as lines, so a branch plateau can
+     hide uncovered error handling. Check the lines too.
 
 **Exact subset** (`reach.py`, the gate's state-leak check): to run exactly
-the inputs in `{files}`, use the same replay command with `{files}` instead
-of the corpus directories. A directory replay would also run the test's
+the inputs in `{files}`, use step 2's command with `{files}` instead of
+the corpus directories. A directory replay would also run the test's
 inputs directory and `.cifuzz-corpus`.
 - If the fuzz test has JUnit argument sources (`@MethodSource`,
-  `@ValueSource`): they run first in every JVM, hide state that leaks from
-  the first input and add their own coverage. Give such a harness its
-  seeds as files or `@ValuePool` values instead.
+  `@ValueSource`): they run first in every JVM. They hide state that leaks
+  from the first input, and add their own coverage. Give such a harness
+  its seeds as files or `@ValuePool` values instead.
 
-**The gate's state-leak check** (`fuzz-harness`'s gate.md): a sample
-replayed in one JVM, then each input in a fresh JVM (appending to one
-`.exec` file), and the two compared. JaCoCo records whether code ran, not
-how often, so the check compares covered sets, and a leak that only
-changes counts stays hidden:
+**The gate's state-leak check** is the block below, for `fuzz-harness`'s
+gate.md, "No state leaking between inputs". It replays a sample in one
+JVM, then each input of the sample in a fresh JVM, and compares the two
+sides. The fresh JVMs append to one `.exec` file. JaCoCo records whether
+code ran, not how often. So the check compares covered sets, and a leak
+that only changes counts stays hidden:
 
 <!-- ci: java-leak-check -->
 ```sh
@@ -117,8 +118,8 @@ python3 "$F/bin/coverage.py" overlap "$C/gate-one.lcov" "$C/gate-fresh.lcov" --u
 
 - The test classes are included: state often leaks in the harness.
 
-**Inputs that reach a line** (`reach.py`, for targeted inputs:
-`fuzz-coverage`'s corpus.md):
+**Inputs that reach a line**: `reach.py` finds them, for targeted inputs
+(`fuzz-coverage`'s corpus.md):
 
 <!-- ci: java-reach -->
 ```sh
@@ -128,21 +129,21 @@ python3 "$F/bin/reach.py" --harness $H --corpus "$F/corpus/$H" --file <file> --l
   --export "sh -c '$JAVA_HOME/bin/java -jar \$0 report \$1/jacoco.exec --classfiles \$2 --xml \$1/r.xml > /dev/null && python3 \$3 from-jacoco \$1/r.xml --source-root \$4 -o \$5' $F/build/jacoco/jacococli.jar {out} <module>/target/classes $F/bin/coverage.py <module>/src/main/java {lcov}"
 ```
 
-Jazzer writes no finding file for inputs given as files: with
+Jazzer writes no finding file for inputs given as files. With
 `--keep_going=1` it still runs them all, then exits 77 if one threw, which
 `reach.py` reports.
 
 ## Combining Java coverage
 
 Combine Java snapshots through their `.exec` files, not their lcov files.
-JaCoCo's XML has branch counts per line, not branch identities, so
-`from-jacoco` numbers a line's branches itself and tags its output as
-JaCoCo-derived. Two such lcov files can't be combined: on a line with two
-branches, one harness taking the true arm and another the false arm both
-read "1 of 2". `coverage.py` refuses to merge them.
+JaCoCo's XML has branch counts per line, not branch identities. So
+`from-jacoco` numbers a line's branches itself, and tags its output as
+JaCoCo-derived. Two such lcov files can't be combined. On a line with two
+branches, a harness that takes the true arm and another that takes the
+false arm both read "1 of 2". `coverage.py` refuses to merge them.
 
-- **Merge** the `.exec` files instead, only from replays of the same build,
-  then report and convert the merged file as above:
+- **Merge** the `.exec` files instead, only from replays of the same
+  build. Then report and convert the merged file as in step 4:
 
   <!-- ci-skip: the java-leak-check block runs the same merge -->
   ```sh

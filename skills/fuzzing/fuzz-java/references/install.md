@@ -3,11 +3,12 @@
 ## Check without running project code
 
 The check runs before the first-build notice, so it must not run the
-project's code or apply its settings. The wrappers are project code
-(`gradlew` runs the committed `gradle-wrapper.jar`; `mvnw` runs the Maven
-its `distributionUrl` names), and inside the repository even `mvn -v` loads
-`.mvn/jvm.config`. So run the system tools from outside the repository, and
-only test that the wrappers exist (in the build's root directory):
+project's code or apply its settings. The wrappers are project code:
+`gradlew` runs the committed `gradle-wrapper.jar`, and `mvnw` runs the
+Maven that its `distributionUrl` names. Inside the repository, even
+`mvn -v` loads `.mvn/jvm.config`. So run the system tools from outside
+the repository, and only test that the wrappers exist (in the build's
+root directory):
 
 <!-- ci: java-toolchain-check -->
 ```sh
@@ -15,17 +16,18 @@ for wrapper in mvnw gradlew; do test -x "$wrapper" && echo "$wrapper: run it onl
 (cd / && java -version; mvn -v; gradle -v)
 ```
 
-After the notice, the project's wrappers replace `mvn` and `gradle` in every
-command; `./mvnw -v` and `./gradlew -v` then show the JDK they use.
+After the notice, the project's wrappers replace `mvn` and `gradle` in
+every command. `./mvnw -v` and `./gradlew -v` then show the JDK the
+wrappers use.
 
-Which JDK Maven and Gradle use, and choosing the JDK for Jazzer:
-`build.md`, "JDK".
+`build.md`, "JDK", covers which JDK Maven and Gradle use, and how to
+choose the JDK for Jazzer.
 
 ## Install plan
 
 List only what's missing. Use `sudo` only in a disposable environment
-(`fuzz-harness`'s build.md); otherwise print the command for the user, or
-use SDKMAN (`sdk list java` shows the versions). On Ubuntu, run
+(`fuzz-harness`'s build.md). Otherwise, print the command for the user,
+or use SDKMAN (`sdk list java` shows the versions). On Ubuntu, run
 `sudo apt-get update` before the first install.
 
 | What | When | Ubuntu 24.04 | macOS (Homebrew) | Time |

@@ -2,29 +2,32 @@
 
 ## Seed replay: the harness as a test
 
-In regression mode (the default `mvn test` / `gradle test`), every
-`@FuzzTest` runs on the empty input, on its JUnit seed sources
-(`@MethodSource`, `@ValueSource`, ...), and on every file in its inputs
-directories (`src/test/resources/<package path>/<Class>Inputs/<method>/`,
-or `<Class>Inputs/` for all methods of the class). A fixed bug gets its
-own test instead.
+In regression mode, the default of `mvn test` and `gradle test`, every
+`@FuzzTest` runs on:
+- the empty input;
+- its JUnit seed sources (`@MethodSource`, `@ValueSource`, ...);
+- every file in its inputs directories:
+  `src/test/resources/<package path>/<Class>Inputs/<method>/`, or
+  `<Class>Inputs/` for all methods of the class.
+
+A fixed bug gets its own test instead of a file in these directories.
 
 ## The bug's reproducer (`fuzz-triage`)
 
 Every real bug gets one, written in triage on the build that found it: a
-JUnit 5 test class in `crashes/<bucket>/<Name>.java` (no package) that
+JUnit 5 test class in `crashes/<bucket>/<Name>.java`, with no package. It
 calls the project's API with the concrete values the harness derived from
-the input, not through the harness and not as a crash file, plus a `main`
-that runs the test method, so it runs without the build tool. Take the
-values from the harness (typed parameters: decode the crash file,
-`triage.md`).
+the input, not through the harness and not as a crash file. It also has a
+`main` that runs the test method, so the reproducer runs without the
+build tool. Take the values from the harness; for typed parameters,
+decode the crash file (`triage.md`).
 
 - **It includes the check that caught the bug,** so it fails before the
   fix: the exception itself, the harness's property check written out, or
   an explicit assertion of a bug detector's effect (e.g. that no file
   outside the base directory was opened). A plain call often passes.
-- **It runs against a tree's classpath file** (`build.md`), compiled into
-  scratch, without rebuilding that tree:
+- **It runs against a tree's classpath file** (`build.md`), without
+  rebuilding that tree. The reproducer is compiled into scratch:
 
 <!-- ci: java-reproducer -->
 ```sh
@@ -34,19 +37,22 @@ $L start --id poc-$H-<n> --harness $H --timeout <timeout_s> \
   "{scratch}" "$F/crashes/<bucket>/<repro_class>.java" "<repro_class>"
 ```
 
-The state `exited 1` with the bug's exception means it reproduced;
-`finished` means it passes. The fix (`fuzz-triage`) moves it into the project's test
-sources (package, the project's assertion style, no `main`), in the fix
-commit, named after the bug.
+The state `exited 1` with the bug's exception means the bug reproduced;
+`finished` means the reproducer passes.
+
+The fix (`fuzz-triage`) moves the reproducer into the project's test
+sources, with a package, the project's assertion style and no `main`.
+The test, named after the bug, goes in the fix commit.
 
 ## Upstreaming (`fuzz-campaign`)
 
 - Fuzz tests run in the project's normal test job in regression mode;
   nothing else is needed for CI to replay their seeds.
 - Check that the test dependency and any `junit-platform.properties`
-  entries are part of the upstreaming branch, and that hooks used only for
-  the campaign (stubs for local fixes, fuzzing-only replacements) are
-  either needed by the fuzz test or left out.
-- The `.cifuzz-corpus/` directory isn't committed; seed files worth keeping
-  go into the inputs directories (only the project's own data or generated
-  inputs, and never inputs reaching a held-back bug).
+  entries are part of the upstreaming branch.
+- Check that hooks used only for the campaign (stubs for local fixes,
+  fuzzing-only replacements) are either needed by the fuzz test or left
+  out.
+- The `.cifuzz-corpus/` directory isn't committed. Seed files worth
+  keeping go into the inputs directories: only the project's own data or
+  generated inputs, and never inputs that reach a held-back bug.
