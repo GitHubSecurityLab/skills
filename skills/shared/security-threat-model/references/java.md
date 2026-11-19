@@ -1,29 +1,34 @@
 # Java sink catalog
 
-"Detector" names the Jazzer bug detector (sanitizer) that reports the sink
-on its own.
+The "Detector" line names the Jazzer bug detector (sanitizer) that
+reports the sink on its own.
 
-Patterns are for ripgrep (`rg -n -e '<pattern>' --type java <dirs>`) and also
-work with `grep -rnE`. Search main sources, not tests. Drop calls as
-`SKILL.md`, "Find sinks", says: `text.matches("[a-z]+")` stays when `text`
-can come from input.
+Patterns are for ripgrep: `rg -n -e '<pattern>' --type java <dirs>`.
+They also work with `grep -rnE`. Search main sources, not tests. Drop
+calls as `SKILL.md`, "Find sinks", says. For example,
+`text.matches("[a-z]+")` stays when `text` can come from input.
 
 ## Deserialization
-Detector: `Deserialization`, for `ObjectInputStream` only; other deserializers only when they load a class named in the input (`ReflectiveCall`).
+Detector: `Deserialization`, for `ObjectInputStream` only. Other
+deserializers are reported only when they load a class named in the input
+(`ReflectiveCall`).
 ```
 ObjectInputStream|readObject\s*\(|readUnshared\s*\(|XMLDecoder|XStream|SerializationUtils\.deserialize|Kryo|new\s+Yaml\s*\(|activateDefaultTyping|enableDefaultTyping|@JsonTypeInfo
 ```
 Check: input reaching a deserializer that can instantiate arbitrary types.
 
 ## XML parsing (external entities, SSRF)
-Detector: `XmlParserSsrfGuidance` steers parsers toward external fetches, which `ServerSideRequestForgery` reports.
+Detector: `XmlParserSsrfGuidance` steers parsers toward external fetches,
+which `ServerSideRequestForgery` reports.
 ```
 DocumentBuilderFactory|SAXParserFactory|XMLInputFactory|TransformerFactory|SchemaFactory|SAXReader|SAXBuilder|XMLReader
 ```
-Check: whether external entities and DTDs are disabled for parsers that read input.
+Check: whether external entities and DTDs are disabled for parsers that
+read input.
 
 ## OS commands
-Detector: `OsCommandInjection`, partly: only the executable (`argv[0]`), not the arguments of `sh -c`.
+Detector: `OsCommandInjection`, partly: only the executable (`argv[0]`),
+not the arguments of `sh -c`.
 ```
 Runtime\.getRuntime\(\)\.exec|ProcessBuilder|\.exec\s*\(
 ```
@@ -34,8 +39,8 @@ Detector: `FilePathTraversal`, partly: one target path.
 ```
 new\s+File\s*\(|Paths\.get\s*\(|Path\.of\s*\(|File(Input|Output)Stream\s*\(|Files\.(newInputStream|newOutputStream|write|writeString|delete|copy|move|createDirectories|readAllBytes)\s*\(|getNext\w*Entry|\w*(Zip|Jar|Archive)Entry\b|[eE]ntry\w*\.getName\s*\(\)
 ```
-Check: paths built from input without canonicalization and a base-directory
-check; archive entry names written to disk ("zip slip").
+Check: paths built from input without canonicalization and a
+base-directory check; archive entry names written to disk ("zip slip").
 
 ## JNDI and LDAP
 Detector: `NamingContextLookup` (remote JNDI lookups), `LdapInjection`.
@@ -45,21 +50,25 @@ Detector: `NamingContextLookup` (remote JNDI lookups), `LdapInjection`.
 Check: input in lookup names, distinguished names or search filters.
 
 ## SQL
-Detector: `SqlInjection`, when a real driver parses the query (not a mock).
+Detector: `SqlInjection`, when a real driver parses the query (not a
+mock).
 ```
 createStatement|executeQuery|executeUpdate|\.execute\s*\([^)]*\+|prepareStatement\s*\([^)]*\+|createQuery\s*\([^)]*\+|createNativeQuery
 ```
 Check: queries built by string concatenation with input.
 
 ## Expression languages and scripting
-Detector: `ExpressionLanguageInjection` (EL, Spring EL, OGNL, JEXL 2, MVEL), `ScriptEngineInjection`, `TemplateInjection` (FreeMarker); partly: not Velocity, Groovy or other template engines.
+Detector: `ExpressionLanguageInjection` for EL, Spring EL, OGNL, JEXL 2
+and MVEL; `ScriptEngineInjection`; `TemplateInjection` for FreeMarker;
+partly: not Velocity, Groovy or other template engines.
 ```
 ExpressionFactory|ELProcessor|SpelExpressionParser|parseExpression|Ognl\.|OgnlUtil|MVEL\.|ScriptEngine|\.eval\s*\(|GroovyShell|freemarker\.template|Velocity|TemplateEngine
 ```
 Check: input used as an expression, script or template source.
 
 ## Reflection and class loading
-Detector: `ReflectiveCall`, partly: class and native library loading, not `getMethod`, `invoke` or `newInstance` on existing classes.
+Detector: `ReflectiveCall`, partly: class and native library loading,
+not `getMethod`, `invoke` or `newInstance` on existing classes.
 ```
 Class\.forName\s*\(|loadClass\s*\(|getMethod\s*\(|getDeclaredMethod\s*\(|\.invoke\s*\(|newInstance\s*\(
 ```
@@ -67,8 +76,8 @@ Check: class or method names taken from input.
 
 ## Regular expressions
 Detector: `RegexInjection`, for a pattern from input (invalid or
-explosive). A fixed pattern on input text (ReDoS) only shows up as a
-timeout, and rarely when it's quadratic.
+explosive). A fixed pattern applied to input text (ReDoS) shows up only
+as a timeout, and rarely when matching takes quadratic time.
 ```
 Pattern\.compile\s*\(|\.matcher\s*\(|\.matches\s*\(|\.replaceAll\s*\(|\.replaceFirst\s*\(|\.split\s*\(
 ```
@@ -89,16 +98,18 @@ new\s+URL\s*\(|URI\.create|openConnection|HttpClient|HttpRequest|RestTemplate|We
 Check: input-controlled host, port or URL.
 
 ## Resource sizes
-Detector: `BigDecimal` steers toward huge exponents; the rest shows up as timeouts or out-of-memory.
+Detector: `BigDecimal` steers toward huge exponents. The rest shows up
+as timeouts or out-of-memory.
 ```
 new\s+BigDecimal\s*\(|new\s+(byte|char|int|long)\s*\[\s*\w+|ByteBuffer\.allocate|new\s+ArrayList\s*<[^>]*>\s*\(\s*\w+
 ```
-Check: sizes or exponents taken from input (denial of service from small inputs).
+Check: sizes or exponents taken from input (denial of service from small
+inputs).
 
 ## Notes
 
-- `sun.misc.Unsafe` array access is checked by the `UnsafeSanitizer` detector.
-- Native code reached through JNI is outside these detectors; fuzz it as a
+- The `UnsafeSanitizer` detector checks `sun.misc.Unsafe` array access.
+- These detectors don't see native code reached through JNI. Fuzz it as a
   separate C/C++ target, or with Jazzer's `--asan`/`--ubsan` options.
 - A sink that only receives values the threat model marks as trusted isn't
-  reachable by the attacker; record it as such.
+  reachable by the attacker. Record it as unreachable.

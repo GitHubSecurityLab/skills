@@ -6,21 +6,21 @@ Two kinds of sinks:
   `memcpy` is a sink.
 - **Files, processes, network and output** (the sections after Hotspots):
   no sanitizer sees these. A check in the harness finds what it can
-  compare, such as a path or an escaped string the API returns; a call it
-  doesn't see, such as `system()` or a fetch, goes undetected and really
-  runs.
+  compare, such as a path or an escaped string the API returns. A call
+  the check doesn't see, such as `system()` or a fetch, goes undetected
+  and really runs.
 
-Patterns are for ripgrep (`rg -n -e '<pattern>' <files>`) and also work with
-`grep -nE`. Run them over the files in question, then read each hit. Drop hits
-whose operands are constants or `sizeof(...)`.
+Patterns are for ripgrep: `rg -n -e '<pattern>' <files>`. They also work
+with `grep -nE`. Run them over the files in question, then read each hit.
+Drop hits whose operands are constants or `sizeof(...)`.
 
 ## Input field reads (where attacker numbers come from)
 ```
 ntoh[sl]|be(16|32|64)toh|le(16|32|64)toh|read_u?(8|16|32|64)|get_u?(16|32|64)|<<\s*(8|16|24|32)
 \b(strto(u?ll?|[iu]max)|ato(i|ll?)|sscanf)\s*\(
 ```
-Note which variables receive lengths, counts, offsets and type tags; text
-formats parse them from digits (the second pattern).
+Note which variables receive lengths, counts, offsets and type tags. The
+second pattern finds where text formats parse these values from digits.
 
 ## Copies with computed length
 ```
@@ -69,22 +69,24 @@ Does every iteration stay inside the buffer?
 \b(fprintf|vfprintf|sprintf|vsprintf|dprintf|asprintf|syslog)\s*\([^,]*,\s*[^" ]
 \b(snprintf|vsnprintf)\s*\([^,]*,[^,]*,\s*[^" ]
 ```
-A format argument that isn't a string literal. A format on the next line
-isn't found.
+The patterns find a format argument that isn't a string literal. They
+miss a format argument written on the next line.
 
 ## Frees on error paths
 ```
 goto\s+(err|error|fail|out|cleanup|bad)
 ```
-Look at `free(...)` calls under those labels: double free, use after free.
+Look at the `free(...)` calls under those labels for double free and use
+after free.
 
 ## Hotspots
 
-For the threat model, report hotspots, not single statements: the files and
-functions with the most size, index or offset arithmetic fed by input field
-reads, plus files with past security fixes (`git log --oneline -- <file>`),
-and functions that recurse once per nesting level of the input without a
-depth limit (a stack overflow from deep nesting).
+For the threat model, report hotspots, not single statements:
+- the files and functions with the most size, index or offset arithmetic
+  fed by input field reads;
+- files with past security fixes (`git log --oneline -- <file>`);
+- functions that recurse once per nesting level of the input without a
+  depth limit (a stack overflow from deep nesting).
 
 ## Files and archive entries
 ```
