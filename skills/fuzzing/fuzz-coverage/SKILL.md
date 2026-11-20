@@ -190,8 +190,8 @@ only reads the gaps' code.
    Update each group's state: not reached, reached, or one of these:
    - **triggered:** a bucket in `crashes/` has its crash location or root
      cause at one of the group's sites;
-   - **tested:** its trigger or boundary inputs ran on the sanitizer or
-     detector build without a finding;
+   - **tested:** its trigger or boundary inputs reached it and ran on the
+     sanitizer or detector build without a finding;
    - **sanitized:** the code blocks the attack before the sink, recorded
      with the `file:line` that does.
 
