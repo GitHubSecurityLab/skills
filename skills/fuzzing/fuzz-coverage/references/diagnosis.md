@@ -70,10 +70,13 @@ not triggered, by language and sink kind:
   sanitization.
 - **Java/JS regular expressions applied to input:** fuzzing finds only
   exponential backtracking. Check them as redos.md next to this file says.
-- **C/C++ hotspots, after the first plateau:** group the hotspot's sites
-  (below), and read only the top few groups site by site. Add boundary
-  values for the field that feeds each of them, and enable value profiling
-  or CmpLog (`fuzz-c-cpp`). Optionally build the `ubsan-int` variant.
+- **C/C++ hotspots, after the first plateau:**
+  - group the hotspot's sites ("C/C++ sink sites", below);
+  - read only the top few groups site by site, and add boundary values for
+    the field that feeds each of them (corpus.md next to this file);
+  - leave the other kept groups to later rounds, like any other sink group;
+  - enable value profiling or CmpLog (`fuzz-c-cpp`), and optionally build
+    the `ubsan-int` variant.
 
 ## C/C++ sink sites
 
