@@ -148,11 +148,15 @@ only reads the gaps' code.
    - A scope file still at 0% after a plateau is one of two things. If
      it's a gap for an action, it stays. If it was a wrong estimate, remove
      it, with a reason.
-   - If step 3's `summary` marks a scope entry as having no coverage data,
-     check that the entry is a path from the repository root, and fix it
-     if not. If the path is right, find out why the file isn't compiled,
-     linked or loaded; for a C/C++ library, check the export's `-object`
-     arguments (the language skill).
+   - If step 3's `summary` marks a scope entry as having no coverage data:
+     - check that the entry is a path from the repository root and, for
+       TypeScript, the file the lcov names: the compiled `.js` file for
+       CLI targets (`fuzz-js`'s coverage.md, "TypeScript"), the `.ts` file
+       for Jest fuzz tests (`fuzz-js`'s jest.md, "Coverage"). Fix the
+       entry if not;
+     - if the path is right, find out why the file isn't compiled, linked
+       or loaded; for a C/C++ library, check the export's `-object`
+       arguments (the language skill).
    - If a file is macro-heavy C (macro branches count at every expansion)
      or also holds API the harness doesn't target: judge its gaps by lines
      and blocked branches, not the branch share.
