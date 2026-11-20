@@ -207,11 +207,11 @@ only reads the gaps' code.
      [references/corpus.md](references/corpus.md)). For Java/JS regular
      expressions, that action follows
      [references/redos.md](references/redos.md).
-8. **Choose the next action.** A gap that got 3 actions without gain is
-   **hard**: mark it so in the target's Notes, and aim no further action
-   at it until there's new evidence. Choose the action by the rule in
-   [references/diagnosis.md](references/diagnosis.md), "Choosing the next
-   action".
+8. **Choose the next action.** A gap that got 3 actions without covering
+   their aim is **hard**: mark it so in the target's Notes, and aim no
+   further action at it until there's new evidence. Choose the action by
+   the rule in [references/diagnosis.md](references/diagnosis.md),
+   "Choosing the next action".
    - Record the action and its **aim** in the target file: the blocked
      branch, function or condition it should cover. For a sink reached but
      not triggered, the aim is the untaken branch or condition at the
