@@ -231,9 +231,7 @@ only reads the gaps' code.
      `fuzz-harness`'s build.md, then the gate, whose corpus replay is the
      new baseline (step 9);
    - a new target worth more than every action left → leave the loop.
-9. **Measure the action,** always on the same coverage build, against the
-   snapshot before it: coverage that rises after an action may have risen
-   without it.
+9. **Measure the action** against the snapshot before it.
    - **When an action is applied,** the round schedule restarts at its
      first value; reverting a change doesn't restart it. Snapshot numbers
      keep counting.
