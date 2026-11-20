@@ -99,10 +99,14 @@ doesn't trigger:
 
 ## Choosing the next action
 
-List the candidate actions: one per gap group on the current harness, plus
-the top new targets from `fuzz-campaign`'s target ranking. One rule picks
-among them: **the most security-relevant code unlocked wins; cost only
-breaks ties.**
+List the candidate actions:
+- one for each set of diagnosed gaps that a single action would unlock,
+  such as all blocked branches that compare against the same keyword;
+- one for each sink group reached but not triggered;
+- the top new targets from `fuzz-campaign`'s target ranking.
+
+One rule picks among them: **the most security-relevant code unlocked
+wins; cost only breaks ties.**
 
 1. **Class:** the class of the code the action would unlock decides
    first. That code is the untaken branches, plus the code only they lead
