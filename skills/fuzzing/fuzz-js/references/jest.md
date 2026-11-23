@@ -162,7 +162,7 @@ For the gate's working-tree comparison:
 - `.cifuzz-corpus/<corpus_dir>/` in the package root, the nearest
   directory above the test file with a `package.json`. This is the
   **generated corpus**: the harness's persistent corpus, where fuzzing
-  mode writes new inputs. `init.py` excludes it.
+  mode writes new inputs. `init.py` adds it to git's exclude file.
 - `<corpus_dir>/` next to the test file: the **regression directory**.
   In the commands, `<regression_dir>` is its path from `$P`. Fuzzing mode
   also writes crash files there, unless the command passes
