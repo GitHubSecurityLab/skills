@@ -43,7 +43,7 @@ Rules:
                                   artifacts/copy-<i>/ (findings), copy-<i>/log,
                                   copy-<i>/work/ (scratch; deleted after develop runs);
                                   long runs also corpus/ (AFL++: out/<instance>/)
-    generators/                   seed generator scripts
+    generators/                   generator scripts for seeds (fuzz-harness) and targeted inputs (fuzz-coverage)
     archive/<date>/               ledger files of earlier campaigns
 ```
 
