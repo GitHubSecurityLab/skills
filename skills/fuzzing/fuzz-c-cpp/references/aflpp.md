@@ -79,11 +79,14 @@ library. The hooks to find:
 Check objects, because every binary linked with AFL++'s runtime contains
 `__cmplog_ins_hook`, whether or not the library was compiled for CmpLog.
 
-With `afl-clang-lto`, the objects are bitcode, instrumented at the link.
-The binary checks:
-- `cmplog`'s binary calls the hook:
-  `objdump -d <binary> | grep -cE '(call|bl)[[:space:]].*<__cmplog_ins_hook'`
-  is above 0 (checked with 5.03c on arm64).
+With `afl-clang-lto`, the objects are LLVM bitcode. ASan and CmpLog
+instrument them at compile time; the edges are added at the link
+(checked with 5.03c and LLVM 20 on arm64):
+- Run `build.md`'s check with `<llvm_bin>/llvm-nm` in place of `nm`:
+  the LLVM that AFL++ was built with ("Install", above). An older LLVM's
+  `nm`, or GNU `nm` without that LLVM's gold plugin, can't read the
+  bitcode, so the check counts no hooks. The `aflpp` and `cmplog` hooks
+  above apply; `sanitizer_cov` doesn't.
 - `aflpp-plain` has no hook, so compare edge counts: the binary's count
   must exceed the harness's alone. To count the harness's edges alone,
   run the command that compiled and linked the harness again

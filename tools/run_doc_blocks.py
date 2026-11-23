@@ -975,7 +975,7 @@ def c_shared(ctx: Context) -> None:
     ctx.expect("Assertion" in ctx.log("poc-record-2"), "with the rpath, the reproducer fails with the assertion")
 
 
-@scenario("c-aflpp", "c", ["c-env", "c-ub", "c-toolchain-check", "aflpp-wrappers", "aflpp-spec", "c-check-run",
+@scenario("c-aflpp", "c", ["c-env", "c-ub", "c-toolchain-check", "aflpp-wrappers", "c-hooks-check", "aflpp-spec", "c-check-run",
                           "c-repro", "aflpp-merge", "aflpp-lto-check"],
           systems=("Linux",))
 def c_aflpp(ctx: Context) -> None:
@@ -990,8 +990,14 @@ def c_aflpp(ctx: Context) -> None:
     ctx.expect(not glob.glob(os.path.join(ctx.F, "build", "toolchain-check*")), "the toolchain check leaves no binary behind")
     build_c_toy(ctx, ("libfuzzer",))
     build_aflpp_toy(ctx)
-    # afl-clang-lto: aflpp-plain's edge count exceeds the harness's alone; equal for a library built
-    # without AFL++, which the objdump count (0 either way) can't tell.
+    # The library's own hooks; under afl-clang-lto its objects are bitcode, read with the LLVM's llvm-nm (aflpp.md).
+    for variant, hook in (("aflpp", "__asan_"), ("cmplog", "__cmplog_ins_hook")):
+        out = ctx.block("c-hooks-check", replace=(("nm -A", '"%s" -A' % os.path.join(llvm_bin(), "llvm-nm")),),
+                        library='"$F/build/%s/record.o"' % variant).stdout
+        counts = {k: int(v) for k, v in re.findall(r"(\w+) (\d+)", out)}
+        ctx.expect(counts[hook] > 0, "the %s variant's library object has %s (%s)" % (variant, hook, out.strip()))
+    # afl-clang-lto: aflpp-plain has no hook; its edge count exceeds the harness's alone, and equals it for a
+    # library built without AFL++.
     path = ctx.env["PATH"]
     ctx.env["PATH"] = aflpp_bin() + os.pathsep + path
     plain = '"$F/build/aflpp-plain/record%s.o"'
