@@ -95,10 +95,12 @@ unless they start with `.seclab/`:
    - If a crash fired while a run loaded its corpus, it fired on the
      seeds. In libFuzzer, Jazzer and Jazzer.js, such a crash comes before
      `INITED`; in AFL++, its file name has `op:dry_run` and
-     `orig:<seed>`. Check first whether the harness's input layout
-     changed since the input was saved: a layout change reinterprets old
-     inputs. If it didn't change, the crash is a target bug like any
-     other.
+     `orig:<seed>`. It's a finding like any other. If the harness's input
+     layout changed since the input was saved, the harness reads it
+     differently now: find the root cause in the input as it's read now.
+     Then check that the corpus went into the new layout where the change
+     required it (`fuzz-harness`, "Design the harness"); if it didn't,
+     convert it, so the other seeds mean what they say again.
 3. **Group** this pass's replays, `<first>` to `<last>`, into buckets of
    likely duplicates (earlier passes' buckets are already in `crashes/`):
    ```sh
