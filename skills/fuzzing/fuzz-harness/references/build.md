@@ -35,8 +35,10 @@ unless they start with `.seclab/`:
      the expected time. Record what was installed in `decisions.md`.
    - Installs go to user level where possible: Homebrew, `~/.local`, fnm,
      SDKMAN, or project-local Maven and npm dependencies.
-   - **Build changes checkpoint** in interactive mode: show the install plan
-     and which build files will change, and ask once.
+   - **Build changes checkpoint** in interactive mode: show the install
+     plan and ask before installing; a campaign asks first in its setup
+     card (`fuzz-campaign`, "Setup card"). Changes to build files are
+     asked about after step 4 chooses them.
    - `sudo` and system settings changes (package installs,
      `afl-system-config`) only when the environment is disposable. On the
      user's own machine, print the command for the user to run, or use the
@@ -51,6 +53,10 @@ unless they start with `.seclab/`:
       adds the fuzz targets, or a test-scoped dependency;
    3. a standalone script `.seclab/fuzz/build/<variant>.sh` when changing the
       build isn't practical.
+
+   In interactive mode, before changing a project build file, show which
+   files change and how, and ask: the build changes checkpoint comes
+   again for every such change.
 5. **Build each variant in its own directory** under
    `.seclab/fuzz/build/<variant>/`: CMake `-B`, a Meson build directory, an
    autotools build directory (`../configure` from there), or the build tool's
