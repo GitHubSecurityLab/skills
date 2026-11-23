@@ -25,9 +25,9 @@ tool.
 
 Fill in this block and add it to `.seclab/fuzz/env.sh`, below `F` and
 `L`. The shell keeps its own `PATH`, which finds Maven or Gradle (often in
-Homebrew or user directories). The exported `JAVA_HOME` picks the JDK
-that Maven or Gradle uses. The commands below pass `RUN_PATH` as the
-run's `PATH`:
+Homebrew or user directories). The exported `JAVA_HOME` picks the JDK that
+runs Maven or Gradle (`build.md`, "JDK", says when another one compiles
+and tests). The commands below pass `RUN_PATH` as the run's `PATH`:
 <!-- ci: java-env -->
 ```sh
 export JAVA_HOME=<java_home>

@@ -8,8 +8,15 @@ classes (e.g. `java/lang/ProcessBuilder`). That failure silently disables
 the detectors that hook those classes.
 
 - Maven and Gradle may use another JDK than `java` on `PATH`: check
-  `mvn -v` and `gradle -v`, and set `JAVA_HOME` (Gradle projects with a
-  toolchain pick their own JDK).
+  `mvn -v` and `gradle -v`, and set `JAVA_HOME`.
+- A toolchain (Gradle's `java { toolchain { ... } }` block, or Maven's
+  `maven-toolchains-plugin`) picks the JDK that compiles the classes and
+  runs the tests, whatever `JAVA_HOME` says. Gradle takes an installed JDK
+  of the toolchain's version, or downloads one if the build names a
+  toolchain repository. JUnit runs then test on the toolchain's JDK.
+  Standalone runs load the classes on `JAVA_HOME`'s JDK, so choose one at
+  least as new as the toolchain's: an older one fails with
+  `UnsupportedClassVersionError`.
 
 ## Dependencies (test scope only)
 
