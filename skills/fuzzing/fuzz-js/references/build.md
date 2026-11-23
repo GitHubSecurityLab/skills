@@ -34,9 +34,9 @@ there (`F` and `P` as in `run.md`).
   ESM output with `bundler` resolution keeps extensionless imports, which
   Node can't load.
 - A config of ours extends the project's. Its `files` lists the modules
-  the target imports, one per module, and tsc adds what they import. It
-  compiles nothing else, since test runners also search `.seclab/` and
-  would run compiled copies of the project's tests.
+  the target imports, and tsc adds what they import. It compiles nothing
+  else, since test runners also search `.seclab/` and would run compiled
+  copies of the project's tests.
 
 <!-- ci: js-ts-build -->
 ```sh
@@ -45,6 +45,10 @@ printf '{"extends": "%s", "include": [], "files": ["%s"]}\n' "$P/tsconfig.json" 
   --outDir "$F/build/ts" --sourceMap --module commonjs || echo "tsc exited $?: check the .js files"
 echo '{"type": "commonjs"}' > "$F/build/ts/package.json"
 ```
+
+`<entry>` is the path from `$P` of the module the target imports. For
+several modules, give `files` one `"%s"` per module, as in
+`["%s", "%s"]`, and pass one `"$P/<module>"` argument per module.
 
 `tsc` exits 2 on a type error, or on a project option that only fits ESM
 (TypeScript 5 with `bundler`), and still writes the files. So check that
