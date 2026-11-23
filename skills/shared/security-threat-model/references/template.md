@@ -23,10 +23,10 @@ Base commit: <sha> (<branch or tag>) · Updated: <date>
   files> [doc: SECURITY.md]
 
 ## Sources
-| Id | Entry point (trust boundary) | Untrusted input | Trusted around it | Attacker controls | Bug means | Provenance |
-|---|---|---|---|---|---|---|
-| S1 | `png_read_info(png_ptr, info)` after `png_set_read_fn` | PNG file bytes | read callback, `png_set_*` settings | whole stream | memory error, hang, OOM on small input | [doc: README] |
-| S2 | `Unzip.extract(zip)` | ZIP archive | target directory | entry names and contents | file written outside the target dir | [code: src/Unzip.java:40] |
+| Id | Entry point (trust boundary) | Untrusted input | Trusted around it | Attacker controls | Bug means | Property tests | Provenance |
+|---|---|---|---|---|---|---|---|
+| S1 | `png_read_info(png_ptr, info)` after `png_set_read_fn` | PNG file bytes | read callback, `png_set_*` settings | whole stream | memory error, hang, OOM on small input | none | [doc: README] |
+| S2 | `Unzip.extract(zip)` | ZIP archive | target directory | entry names and contents | file written outside the target dir | `src/test/java/UnzipTest.java:31` (jqwik) | [code: src/Unzip.java:40] |
 
 ## Sinks
 Call sites go in Location.
@@ -46,7 +46,8 @@ Call sites go in Location.
 1. Untrusted input, and what is trusted around it: <...> [code: <path:line>]
 2. Trust boundary: <...> [code: <path:line>]
 3. Attacker controls: <...> [code: <path:line>]
-4. A bug means: <...> [doc: <path>]
+4. A bug means: <...>; property tests: <`path:line` (tool), or none>
+   [doc: <path>]
 
 ## Open questions
 - <question the code can't answer> (asked: yes/no)
