@@ -157,10 +157,16 @@ patch when:
 - the fix needs a large refactor;
 - the fix needs the maintainers' knowledge of the intended behaviour.
 
+In interactive mode, ask the user before going without a fix, with the
+reason. They may know the intended behaviour or accept the large
+refactor; then go back to step 3. For a blocking bug, also say that the
+target is then set aside. Autonomous mode doesn't ask (`fuzz-campaign`'s
+autonomous.md).
+
 The report then says why: "Suggested fix: none" and the reason
 (report.md). Set the bucket's Progress to `needs-decision`. If the bug
 blocks fuzzing and the engine can't skip it, the target is set aside
-(`SKILL.md`, "Blocking bugs"). Interactive mode asks the user first.
+(`SKILL.md`, "Blocking bugs").
 
 Never "fix" by suppressing the symptom: catching the exception, removing
 the check that fires, raising a limit, or disabling a sanitizer.
