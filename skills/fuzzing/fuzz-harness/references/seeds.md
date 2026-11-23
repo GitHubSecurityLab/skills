@@ -19,7 +19,20 @@ unless they start with `.seclab/`:
       inputs, `*_seed_corpus.zip` or what an OSS-Fuzz `build.sh` zips).
    3. ClusterFuzzLite or CI corpus artifacts, when the project has them.
    4. The project's own test data, examples and fixtures (`tests/`,
-      `testdata/`, `examples/`, `fixtures/`, `corpus/`).
+      `testdata/`, `examples/`, `fixtures/`, `corpus/`), and the values its
+      tests pass where the harness takes input (step 2), such as the
+      document, the options the input selects, or, for a call-sequence
+      harness, each test's calls in order. Setup that the harness holds
+      fixed isn't a seed.
+      - Values written inline, such as strings and byte arrays: copy them.
+      - Values the tests build in code: add a line to the entry point (for
+        a call sequence, to each call the harness picks) that writes its
+        arguments to a new numbered file under `.seclab/fuzz/`, and run the
+        tests. Then remove the line, and check with `git status` that no
+        project file is left changed.
+
+      Such values also seed harnesses that take no files, such as typed
+      ones (step 2).
    5. For a project on OSS-Fuzz, its harness's public corpus, for local
       use only (minimize it after the import): `https://storage.googleapis.com/<project>-backup.clusterfuzz-external.appspot.com/corpus/libFuzzer/<fuzzer>/public.zip`,
       where `<fuzzer>` is the harness's name with a `<project>_` prefix
