@@ -82,9 +82,10 @@ unseen in its Note (`fuzz-coverage`, "Check the sinks").
   one in the target file, so the user sees what isn't checked.
 - **Comparators:** use an equality whose semantics you know for every
   value. A library's own `compare` or `equals` may differ on duplicate
-  keys, NaN or numeric tolerance. With a deterministic serializer,
-  `encode(decode(encode(v))) == encode(v)` compares two independently
-  computed encodings and needs no equality function. Lossy or
+  keys, NaN or numeric tolerance. Where you can't write such an equality
+  and the serializer is deterministic, compare encodings instead:
+  `encode(decode(encode(v))) == encode(v)`. That can't see data `encode`
+  drops every time, such as a field it never writes. Lossy or
   non-canonical formats: start comparisons from the decoded value.
 - **Expect refinements:** a new property usually needs one to three, each
   from a minimized violation: decide whether the property or the code is
