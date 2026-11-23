@@ -136,9 +136,10 @@ unless they start with `.seclab/`:
    of them if its harnesses reach the bug.
 7. **Record** in the bucket's Fix section: the commit, each validation
    result, the review's answers, and any sibling places noted. Set the
-   bucket's Progress to `fixed-locally`. The fix counts as mechanically
-   validated until the user reviews the patch (report.md, "Report
-   checkpoint").
+   bucket's Progress to `fixed-locally`. For a queued bug, do that only
+   after the batch's checks (step 4); until then, Progress stays `queued`
+   and the bug's report waits. The fix counts as mechanically validated
+   until the user reviews the patch (report.md, "Report checkpoint").
 8. **Clean up after the fix:**
    - If the bucket's original input is missing from the harness's
      persistent corpus (a merge dropped it while it crashed), copy it
