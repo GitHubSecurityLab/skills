@@ -12,13 +12,14 @@ tool.
 |---|---|
 | `memory_mb` | `-Xmx<m>m` for the JVM (in `JOPTS`), plus `-rss_limit_mb=0` |
 | `input_timeout_s` | `-timeout=<s>` |
-| run time (the launcher's `--time`) | `-max_total_time=<s>`; with no duration, `-max_total_time=0` |
+| run time (the launcher's `--time`) | `-max_total_time=<s>` |
 
 - `memory_mb`: a heap overflow becomes an `OutOfMemoryError` finding.
   `-rss_limit_mb=0` keeps the JVM's own footprint from tripping
   libFuzzer's RSS limit.
-- Run time: always pass `-max_total_time`. Otherwise `@FuzzTest`'s
-  `maxDuration` (default 5 minutes) ends the run.
+- Run time: pass `-max_total_time` on every fuzzing run. Otherwise
+  `@FuzzTest`'s `maxDuration` (default 5 minutes) ends the run. It doesn't
+  cut replays and merges short, so they need no `-max_total_time`.
 
 ## Environment (`--env`)
 

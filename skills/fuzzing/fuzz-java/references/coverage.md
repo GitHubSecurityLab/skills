@@ -32,8 +32,8 @@ build files and no coverage build variant.
      --keep_going=0 -runs=0 -timeout=<input_timeout_s> -rss_limit_mb=0 \
      -artifact_prefix="{run}/artifacts/copy-{copy}/" "$F/corpus/$H"
    ```
-   - `-runs=0` runs every corpus input once, without fuzzing.
-     `maxDuration` doesn't cut the replay short.
+   - `-runs=0` runs every corpus input once, without fuzzing. It needs
+     no `-max_total_time` (`run.md`, "Settings to flags").
    - `--keep_going=0` continues past inputs that throw: the finding is
      recorded in `{run}/artifacts/copy-0/`, and the replay goes on. The
      agent writes the `.exec` file when the JVM exits.

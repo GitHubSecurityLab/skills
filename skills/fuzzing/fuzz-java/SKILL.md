@@ -111,8 +111,8 @@ For the gate's working-tree comparison:
 - **Gradle skips the test task as up to date:** a repeated `gradle test`
   fuzzes nothing and exits 0. Add `--rerun`.
 - **Runs end after 5 minutes:** `@FuzzTest`'s default `maxDuration` also
-  applies to standalone runs. Always pass `-max_total_time` (`0` for no
-  limit).
+  applies to standalone fuzzing runs. Pass `-max_total_time` on every
+  fuzzing run (`run.md`, "Settings to flags").
 - **`-fork` or `-jobs` for parallel runs:** run N copies through the
   launcher instead (`run.md`, "Long runs").
 - **Only one fuzz test fuzzes per JVM;** select exactly one.
