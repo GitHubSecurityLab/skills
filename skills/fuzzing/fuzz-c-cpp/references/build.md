@@ -1,10 +1,13 @@
 # C/C++ builds
 
-## Toolchain
+## Compiler
 
-Check the toolchain and install what's missing: `install.md` next to this
-file. If the host is macOS: use Homebrew's clang by its absolute path
-(`CC=/opt/homebrew/opt/llvm/bin/clang`).
+Compile with `<llvm_bin>`'s `clang` and `clang++`, so the compiler is the
+same LLVM as `llvm-cov` and the runtimes (`install.md` next to this file).
+Name them by absolute path, as the commands below do: a shell without
+`env.sh`'s `PATH` (`run.md`) can find another `clang`, e.g. Apple's on
+macOS, which has no libFuzzer runtime. The AFL++ variants use AFL++'s
+compiler instead (the table below).
 
 ## Variants
 
