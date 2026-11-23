@@ -16,8 +16,7 @@ Every run goes through `launcher.py` (`fuzz-harness`'s runs.md explains `F`,
 | `input_timeout_s` | `--timeout=<s × 1000>` (milliseconds) |
 | run time (the launcher's `--time`) | `-max_total_time=<s>` after `--` |
 
-- The libFuzzer `-timeout` flag is ignored; use Jazzer.js's `timeout`.
-- If the run has no duration: leave out `-max_total_time`.
+The libFuzzer `-timeout` flag is ignored; use Jazzer.js's `timeout`.
 
 ## Environment (`--env`)
 
