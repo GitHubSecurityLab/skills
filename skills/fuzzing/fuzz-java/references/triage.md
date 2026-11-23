@@ -18,8 +18,8 @@ $L start --id repro-$H-<n> --harness $H --timeout <timeout_s> --env PATH="$RUN_P
   -timeout=<input_timeout_s> -rss_limit_mb=0 -artifact_prefix="{run}/artifacts/copy-{copy}/" "<finding>"
 ```
 
-- The file runs once. The state `exited 77` means the finding
-  reproduced. The report is in `runs/repro-<h>-<n>/copy-0/log`.
+- The file runs once. The state `exited 77` (70 for a timeout) means the
+  finding reproduced. The report is in `runs/repro-<h>-<n>/copy-0/log`.
 - If the fuzz test has typed parameters: its crash files replay only
   against the same parameter types, a record's or bean's fields
   included. Replay on the commit and classpath that the run used.

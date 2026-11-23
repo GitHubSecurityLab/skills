@@ -72,8 +72,8 @@ $L start --id r<round>-$H --harness $H --time <run_s> --corpus "$F/corpus/$H" \
   test's inputs directory under `src/test/resources`.
 - The fuzz test's inputs directory and `.cifuzz-corpus/` are read as extra
   seeds if they exist.
-- The run stops at the first finding (`crash-*`, `timeout-*`; exit 77).
-  The next round resumes from the corpus.
+- The run stops at the first finding: a `crash-*` file with exit 77, or a
+  `timeout-*` file with exit 70. The next round resumes from the corpus.
 - Status lines are libFuzzer's: `#<n> NEW cov: <n> ft: <n> corp: ...
   exec/s: <n>`. The final statistics give executions per second.
 - Instrumentation check (`build.md`): each target class needs a plain
