@@ -11,12 +11,14 @@ Base commit: <sha> (<branch or tag>) · Updated: <date>
 ## Context
 - **What it is:** <one sentence> [doc: README.md]
 - **Deployment:** <library in servers / CLI on untrusted files / ...>
-- **Attacker:** <who supplies input, how>
+  [doc: <path>]
+- **Attacker:** <who supplies input, how> [doc: <path>]
 - **Assets:** <what must be protected: memory safety of the host process,
-  files outside a base dir, ...>
-- **Trusted:** <operator config, caller's own code, ...>
-- **In scope:** <bug classes and impacts>
-- **Out of scope:** <e.g. crashes from invalid API use, local config files>
+  files outside a base dir, ...> [doc: <path>]
+- **Trusted:** <operator config, caller's own code, ...> [doc: <path>]
+- **In scope:** <bug classes and impacts> [doc: SECURITY.md]
+- **Out of scope:** <e.g. crashes from invalid API use, local config
+  files> [doc: SECURITY.md]
 
 ## Sources
 | Id | Entry point | Untrusted input | Attacker controls | Bug means | Provenance |
@@ -39,10 +41,10 @@ Call sites go in Location.
 
 ## Entry point: <name>
 (Focused mode: the four questions for one entry point.)
-1. Untrusted input:
-2. Trust boundary:
-3. Attacker controls:
-4. A bug means:
+1. Untrusted input: <...> [code: <path:line>]
+2. Trust boundary: <...> [code: <path:line>]
+3. Attacker controls: <...> [code: <path:line>]
+4. A bug means: <...> [doc: <path>]
 
 ## Open questions
 - <question the code can't answer> (asked: yes/no)
