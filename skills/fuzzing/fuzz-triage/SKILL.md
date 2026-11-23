@@ -145,8 +145,12 @@ unless they start with `.seclab/`:
      original because the minimizer's output didn't reproduce.
    - Otherwise, one bucket: keep `minimized`.
    - Two buckets: the minimizer slipped to another crash. Any minimizer
-     can; `dedup_token_length=3` only makes libFuzzer's slips rarer. Keep
-     the original input as `minimized`, and note the slip.
+     can; `dedup_token_length=3` only makes libFuzzer's slips rarer. The
+     minimizer's output is an input of that other crash: match the other
+     bucket against the known ones in `crashes/`, and keep the output
+     among its inputs, as step 3 does. If it matches none, it's a new
+     bucket, which this step minimizes too. Then keep the original input
+     as `minimized`, and note the slip.
 5. **Find the root cause.** Read the report and the code along the stack.
    Answer:
    - which invariant broke, and where (`path:line`);
