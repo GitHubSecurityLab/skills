@@ -74,6 +74,10 @@ rules. Then:
   - Before the first commit, ask whether the work stays on this branch or
     moves to a new `seclab/fuzz-<date>` branch. Read-only requests never
     ask.
+  - In interactive mode, if the request writes to
+    `<repo>.seclab-worktrees/`, such as a long-run command or
+    upstreaming, start by showing the command that gives the agent access
+    there ([references/permissions.md](references/permissions.md)).
   - Do only the steps of the reference that covers the request, and stop.
 - Exit 2, no ledger yet: run **Setup**. Its setup card decides the branch
   and base commit, and `init.py` then writes the ledger.

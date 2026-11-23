@@ -1,11 +1,13 @@
 # Agent permissions
 
-The following builds go to `<checkout>/../<repo>.seclab-worktrees/`,
-outside the checkout, so the project's own tools don't see a second copy
-(long-runs.md, "Which tree"):
+The following worktrees and builds go to
+`<checkout>/../<repo>.seclab-worktrees/`, outside the checkout, so the
+project's own tools don't see a second copy (long-runs.md, "Which tree"):
 - builds for long runs;
 - the `base` build;
-- develop's builds of C/C++ projects that build only in-tree.
+- develop's builds of C/C++ projects that build only in-tree;
+- upstreaming's worktrees and their builds;
+- `fuzz-triage`'s freshness and bisect worktrees.
 
 Copilot CLI and Claude Code ask before every write outside the directory
 they started in; Codex's sandbox refuses such writes. Autonomous mode
@@ -13,9 +15,11 @@ needs no extra command: its start command grants everything
 (autonomous.md).
 
 A skill can't grant access, so in interactive mode, show the user the
-command for their agent once, on the setup card. The command creates the
-directory and restarts the agent in the checkout with access to it. Fill
-in the checkout's directory name for `<repo>`.
+command for their agent once. Show it on the setup card, or at the start
+of a single-step request that writes there, since such a request skips
+Setup. The command creates the directory and restarts the agent in the
+checkout with access to it, so showing it first loses no work. Fill in
+the checkout's directory name for `<repo>`.
 
 | Agent | Command, run in the checkout |
 |---|---|
