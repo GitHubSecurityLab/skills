@@ -212,6 +212,6 @@ them with the standalone driver (`--target_class=<class>`).
 
 Classic targets kept in `google/oss-fuzz` only measure existing fuzzing
 (`fuzz-campaign`'s baseline). Compile copies of them from
-`.seclab/fuzz/oss-fuzz/` with
-`javac -cp "$CP" -d "$F/build/jazzer/oss-fuzz"`, and put that directory
-in front of `$CP`.
+`.seclab/fuzz/oss-fuzz/` with the run's JDK:
+`"$JAVA_HOME/bin/javac" -cp "$CP" -d "$F/build/jazzer/oss-fuzz"`. Then put
+that directory in front of `$CP`.
