@@ -48,9 +48,10 @@ deciding whether a single finding is real (that's `fuzz-triage`).
   - keep the other entries and every `[user]` entry, and update `Base
     commit`.
 - **Focused:** when another skill needs a quick answer on one entry point.
-  Answer the four questions in step 4 for that entry point only, ask the
-  user what the code can't tell, and add an `## Entry point: <name>`
-  section.
+  Answer the four questions in step 4 for that entry point only, and add
+  an `## Entry point: <name>` section. In interactive use, ask the user
+  what the code can't tell, as in step 8; otherwise list it under
+  Open questions.
 
 ## Steps
 
