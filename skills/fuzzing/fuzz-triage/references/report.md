@@ -136,10 +136,10 @@ unless they start with `.seclab/`:
 ## Done when
 
 - Freshness, known-bug search and ownership are checked and recorded.
-- The draft exists in the chosen format, with severity, reproducer
-  package and fix. The fix is one of these: ours, upstream's commit,
-  "Suggested fix: not attempted", or "Suggested fix: none" and the
-  reason.
+- The draft exists, with reproducer package and fix. The fix is one of
+  these: ours, upstream's commit, "Suggested fix: not attempted", or
+  "Suggested fix: none" and the reason.
+- A vulnerability's draft is in the chosen format, with severity.
 - The user has the next steps.
 
 ## Pitfalls and shortcuts to reject
