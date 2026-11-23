@@ -50,8 +50,10 @@ unless they start with `.seclab/`:
    - `report_format: ghsl`: GitHub Security Lab's report format, see
      ghsl.md next to this file.
 
-   Every other real bug goes into one "bugs found by fuzzing" draft per
-   project: an ordinary bug report without CVSS.
+   Every other real bug goes into a "bugs found by fuzzing" draft for its
+   project: an ordinary bug report without CVSS. A project gets at most
+   two such drafts, one for the bugs sent privately and one for those sent
+   in public:
    - If the hold-back rule (`fuzz-campaign`, safety rules) covers the
      bug, the report is still sent privately, through step 9's channels,
      since the attacker-path judgment can be wrong.
