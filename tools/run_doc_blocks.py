@@ -1709,6 +1709,8 @@ def c_fuzztest(ctx: Context) -> None:
     ctx.expect_state("cov-assert-check-2", "finished")
     ctx.expect("crashed: " in ctx.log("cov-assert-check-2") and ctx.files(".seclab/fuzz/runs/cov-assert-check-2/profraw"),
                "the per-file replay keeps the other inputs' coverage and names the crash")
+    ctx.expect(len(ctx.findings("cov-assert-check-2")) == 1 and "Assertion" in ctx.log("cov-assert-check-2"),
+               "the per-file replay records the crash as a finding, with its report")
     ctx.set(H="record")
     # Merging a long run's corpus: the union, minimized (here a stand-in for the run's corpus).
     ctx.sh('mkdir -p "$F/runs/record-long1/corpus" && cp "$F/corpus/$H"/* "$F/runs/record-long1/corpus/"')

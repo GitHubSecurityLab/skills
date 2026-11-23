@@ -213,14 +213,16 @@ $L start --id cov-$H-<n> --harness $H --timeout <timeout_s> --env PATH="$RUN_PAT
   <!-- ci: fuzztest-cov-replay-files -->
   ```sh
   $L start --id cov-$H-<n> --harness $H --timeout <timeout_s> --env PATH="$RUN_PATH" \
-    --env LLVM_PROFILE_FILE="{run}/profraw/%p.profraw" -- sh -c '
-      b=$1; dir=$2; shift 2
-      for f in "$dir"/*; do FUZZTEST_REPLAY=$f "$b" "$@" > /dev/null 2>&1 || echo "crashed: $f"; done' \
-    sh "$F/build/coverage/<test_binary>" "$F/corpus/$H" --gtest_filter=<fuzz_test> \
+    --env LLVM_PROFILE_FILE="{run}/profraw/%p.profraw" --env FUZZTEST_REPRODUCERS_OUT_DIR="{run}/artifacts/copy-{copy}" -- sh -c '
+      b=$1; dir=$2; log=$3; shift 3
+      for f in "$dir"/*; do FUZZTEST_REPLAY=$f "$b" "$@" > "$log" 2>&1 || { echo "crashed: $f"; cat "$log"; }; done' \
+    sh "$F/build/coverage/<test_binary>" "$F/corpus/$H" "{scratch}/replay.log" --gtest_filter=<fuzz_test> \
     --time_limit_per_input=<input_timeout_s>s --rss_limit_mb=<memory_mb>
   ```
-  The log names the inputs that crashed. Until the bug is fixed, the
-  snapshot is partial.
+  As in libFuzzer's replay (`coverage.md`, "Replay"), each input that
+  crashes is a finding for `fuzz-triage` and stays in the corpus. The log
+  has the crash's report after a `crashed: <file>` line. Until the bug is
+  fixed, the snapshot is partial.
 - If the corpus directory is missing or empty, the replay aborts too. Run
   without `FUZZTEST_REPLAY` and with `--env FUZZTEST_FUZZ_FOR=0s` instead:
   that runs the `.WithSeeds` seeds, and no random inputs after them.
