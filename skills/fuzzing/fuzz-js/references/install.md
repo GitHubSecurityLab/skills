@@ -32,8 +32,8 @@ build the addons from source.
   print "glibc " v ((p[1] > 2 || p[2] >= 38) ? "" : ": too old for Jazzer.js, which needs 2.38") }'
 ```
 
-If the glibc is older: fuzz in the codespace or in a `node:24-trixie`
-container.
+If the glibc is older: fuzz in a codespace, VM or container with one of
+the systems above, such as a `node:24-trixie` container.
 
 ## Install plan
 
