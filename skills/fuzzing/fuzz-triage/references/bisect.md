@@ -7,9 +7,13 @@
    which is fine: the bisect never tests its good end.
 2. **Test script.** Write `bisect.sh` in `crashes/<bucket>/`:
    - It builds the library at the commit the bisect checks out, with the
-     reproducer's sanitizer flags. It uses the project's own build, since
-     old commits don't have our build changes. If the build fails, it
-     runs `exit 125`, which skips the commit.
+     reproducer's sanitizer flags, and then the reproducer. It uses the
+     project's own build, since old commits don't have our build changes.
+     If either build fails:
+     - if the code the bug is in doesn't exist there yet (e.g. `git grep
+       -q <function>` fails), it exits 0: that commit has no bug;
+     - otherwise it runs `exit 125`, which skips the commit: the bug may
+       be there, untested.
    - It then runs the reproducer, and exits 1 if the bug shows and 0 if
      not. It must never forward the reproducer's exit status: a status of
      128 or more (ASan's 134 on macOS) aborts the bisect.
@@ -22,3 +26,6 @@
    git -C "$W" bisect run sh "$PWD/.seclab/fuzz/crashes/<bucket>/bisect.sh"
    git -C "$W" bisect reset; git worktree remove --force "$W"
    ```
+   If skipped commits leave several candidates ("The first bad commit
+   could be any of"), the introducing commit is one of them: record them
+   all.
