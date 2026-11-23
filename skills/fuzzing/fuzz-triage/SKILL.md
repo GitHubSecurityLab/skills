@@ -82,10 +82,9 @@ unless they start with `.seclab/`:
    to `$L start`, and pick the build as the language skill's triage.md
    says.
 
-   A bucket whose inputs don't crash in 3 attempts gets State
-   `non-reproducible`. One of the attempts is 100 runs in one process,
-   since some bugs need state an earlier run left. Note what might make
-   the bug flaky, such as threads, time or state from earlier inputs.
+   An input that doesn't crash in 3 attempts is non-reproducible (step
+   3). One of the attempts is 100 runs in one process, since some bugs
+   need state an earlier run left.
    - If a timeout finishes near the limit: it isn't `non-reproducible`;
      replay it with a lower timeout (language skill).
    - If an OSS-Fuzz testcase doesn't crash locally: it's
@@ -120,9 +119,17 @@ unless they start with `.seclab/`:
    - If a leak is reported only from the fuzzing engine, with all its
      allocations coming from the engine, it isn't a target bug (libFuzzer
      on macOS: `fuzz-c-cpp`'s triage.md, "Reproduce").
-4. **Minimize** one representative per new bucket with the engine's own
-   minimizer (language skill) into `crashes/<bucket>/minimized`, so the
-   bytes that matter stand out. Replay each minimized input (step 2), and
+   - The `no crash detected` row lists the replays without a crash. The
+     inputs that didn't crash in any of step 2's attempts form a bucket
+     with State `non-reproducible`; note what might make the bug flaky,
+     such as threads, time or state from earlier inputs. An OSS-Fuzz
+     testcase that step 2 gives `needs investigation` gets a bucket of its
+     own, and an input that crashed in another attempt belongs to that
+     crash's bucket.
+4. **Minimize** one representative per new bucket, except a
+   `non-reproducible` one, with the engine's own minimizer (language
+   skill) into `crashes/<bucket>/minimized`, so the bytes that matter
+   stand out. Replay each minimized input (step 2), and
    group its replay with the original's:
    <!-- ci: triage-rebucket -->
    ```sh
@@ -257,7 +264,9 @@ fix run without the file.
 
 - Every crash file is in a bucket.
 - Every new bucket has a minimized input, a reproduction command, a root
-  cause and a verdict with evidence.
+  cause and a verdict with evidence. A `non-reproducible` or `needs
+  investigation` bucket has the evidence its State needs instead
+  (verdicts.md, "State and Fixed upstream").
 - Every real bug has a reproducer that fails.
 - The Open crashes table lists every bucket with its State and Progress.
 
