@@ -4,9 +4,12 @@
 
 clang, `lld`, the sanitizer and libFuzzer runtimes, `llvm-profdata`,
 `llvm-cov` and `llvm-symbolizer` must all be the same LLVM version, from
-`<llvm_bin>`. That directory is `/usr/lib/llvm-20/bin` on Ubuntu and
-`/opt/homebrew/opt/llvm/bin` on macOS. Check their versions, and check
-that a libFuzzer binary links:
+`<llvm_bin>`. That directory is:
+- Ubuntu: `/usr/lib/llvm-20/bin`;
+- macOS: `$(brew --prefix llvm)/bin`, i.e. `/opt/homebrew/opt/llvm/bin`
+  on Apple silicon and `/usr/local/opt/llvm/bin` on Intel Macs.
+
+Check their versions, and check that a libFuzzer binary links:
 
 <!-- ci: c-toolchain-check -->
 ```sh

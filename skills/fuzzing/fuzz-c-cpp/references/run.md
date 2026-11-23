@@ -34,9 +34,9 @@ RUN_PATH=<llvm_bin>:/usr/bin:/bin
 - `<detect_leaks>`: `1` on Linux, `0` on macOS. It's also `0` in a
   sandbox that blocks `ptrace` (Codex's default sandbox): LeakSanitizer
   stops there with "LeakSanitizer has encountered a fatal error".
-- `<llvm_bin>`: the LLVM `bin` directory (macOS:
-  `/opt/homebrew/opt/llvm/bin`). Runs need it for `llvm-symbolizer`, and
-  the shell for `llvm-profdata` and `llvm-cov`.
+- `<llvm_bin>`: the LLVM `bin` directory (`install.md`, "Check without
+  running project code"). Runs need it for `llvm-symbolizer`, and the
+  shell for `llvm-profdata` and `llvm-cov`.
 - The shell keeps its own `PATH` behind the LLVM directory, for build
   tools (CMake, Ninja, Meson). Runs get only `RUN_PATH`.
 - If a harness has LeakSanitizer suppressions (`fuzz-triage`): its
