@@ -79,9 +79,14 @@ unless they start with `.seclab/`:
 | Gradle | 9.8.2 | CI (JDK 21) |
 | JaCoCo | 0.8.14 (the first with Java 25 support) | CI |
 
-Pin these versions exactly, unless the project already pins Jazzer or
-JUnit: then keep its versions and say so. Pin a newer release only when
-the user asks.
+Pin the versions in this table for what the skill adds: Jazzer, JUnit
+(through `junit-bom`) and JaCoCo, as the commands in `build.md` and
+`coverage.md` do. If the project already pins Jazzer or JUnit, keep its
+versions and say so. Pin a newer release only when the user asks. The JDK
+must be one that Jazzer supports (`build.md`, "JDK"). Maven, Surefire and
+Gradle come from the project (its wrapper and build files) or the package
+manager (`install.md`). Record the versions, and say so when they differ
+from this table.
 
 ## Engine output locations in the project tree
 
