@@ -69,9 +69,11 @@ build files and no coverage build variant.
      the report log. Replay again on the current build (step 2).
    - **Keep the `.exec` files.** They're the only data that can be
      combined correctly.
-   - The lcov file has line and branch records per source file. Its paths
-     are relative to the given source roots, and `coverage.py --root .`
-     then matches them against the scope files.
+   - The lcov file has line and branch records per source file. Each path
+     is a source root joined with the file's package path, e.g.
+     `record/src/main/java/toy/Record.java`. So give the source roots
+     relative to the repository root, as the block does; then
+     `coverage.py --root .` matches the paths against the scope files.
    - JaCoCo counts branches at `if` and `switch` only, not exception
      edges. A `catch` block shows only as lines, so a branch plateau can
      hide uncovered error handling. Check the lines too.
