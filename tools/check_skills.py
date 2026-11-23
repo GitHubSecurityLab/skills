@@ -96,7 +96,7 @@ LONG_FILES = {
     "skills/fuzzing/fuzz-c-cpp/references/build.md": (250, "variants, build-system recipes, in-tree builds, instrumentation checks"),
     "skills/fuzzing/fuzz-c-cpp/references/aflpp.md": (248, "AFL++'s builds, checks and long runs, read only for AFL++ long runs"),
     "skills/fuzzing/fuzz-c-cpp/references/run.md": (165, "libFuzzer and AFL++ commands for each kind of run"),
-    "skills/fuzzing/fuzz-c-cpp/references/fuzztest.md": (345, "FuzzTest's whole path, coverage and triage included, read only for FuzzTest projects"),
+    "skills/fuzzing/fuzz-c-cpp/references/fuzztest.md": (357, "FuzzTest's whole path, coverage and triage included, read only for FuzzTest projects"),
     "skills/fuzzing/fuzz-java/references/build.md": (190, "Maven, and Gradle with one module or several"),
     "skills/fuzzing/fuzz-java/references/harness.md": (217, "parameter styles, seeds, the bug-detector table and the hook API"),
     "skills/fuzzing/fuzz-java/references/run.md": (239, "standalone runs and JUnit runs"),

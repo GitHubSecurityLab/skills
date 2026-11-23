@@ -319,23 +319,35 @@ reports.
 
 ## Long runs and OSS-Fuzz
 
-- **Long runs:** N independent copies of the develop run's command
-  (`--copies`), with:
-  - `--tree "<tree>"`, and the binary from `<tree_build>/fuzztest/`
-    (`run.md`, "Long runs");
-  - `FUZZTEST_TESTSUITE_OUT_DIR={run}/corpus`, and the persistent corpus
-    as `IN_DIR`.
+**Long runs** are N copies of the fuzz test, prepared for the user
+(`fuzz-campaign`'s long-runs.md). `<tree>` and `<tree_build>` are as in
+`run.md`, "Long runs". Each copy reads the persistent corpus at the start
+(`IN_DIR`), and writes new inputs into the run's corpus (`OUT_DIR`), the
+launcher's default `--corpus`:
+<!-- ci: fuzztest-long -->
+```sh
+$L start --prepare --id $H-long<n> --harness $H --copies <copies> --time <run_s> --tree "<tree>" \
+  --env FUZZTEST_TESTSUITE_IN_DIR="$F/corpus/$H" --env FUZZTEST_TESTSUITE_OUT_DIR="{run}/corpus" \
+  --env FUZZTEST_REPRODUCERS_OUT_DIR="{run}/artifacts/copy-{copy}" \
+  --env ASAN_OPTIONS="$ASAN_OPTIONS" --env UBSAN_OPTIONS="$UBSAN_OPTIONS" --env PATH="$RUN_PATH" -- \
+  "<tree_build>/fuzztest/<test_binary>" --fuzz=<fuzz_test> --fuzz_for=<run_s>s \
+  --time_limit_per_input=<input_timeout_s>s --rss_limit_mb=<memory_mb>
+```
 
-  If the run has no duration: `run.md`, "Settings to flags". Copies
-  don't share inputs while they run, since FuzzTest has no reload. Files
-  are named by content, so one output directory for all copies is safe.
-  `--jobs=<n>` needs Bazel's Centipede. At analysis, merge by minimizing
-  the union of the persistent corpus and the run's corpus (Run, above).
-- **OSS-Fuzz** builds FuzzTest harnesses with Bazel. A CMake project can
-  follow libavif, which builds them in libFuzzer compatibility mode, with
-  a pinned FuzzTest and a few patches (`tests/oss-fuzz/build.sh`). The
-  upstreaming pull request says so and leaves the choice to the
-  maintainers. The campaign itself uses FuzzTest's standard mode only.
+- Copies don't share inputs while they run, since FuzzTest has no
+  reload. Files are named by content, so one output directory for all
+  copies is safe.
+- Each copy stops at its first finding; the others continue.
+- No `--jobs=<n>`: it needs Bazel's Centipede.
+- If the run has no duration: `run.md`, "Settings to flags".
+- At analysis, merge by minimizing the union of the persistent corpus and
+  the run's corpus (Run, above).
+
+**OSS-Fuzz** builds FuzzTest harnesses with Bazel. A CMake project can
+follow libavif, which builds them in libFuzzer compatibility mode, with a
+pinned FuzzTest and a few patches (`tests/oss-fuzz/build.sh`). The
+upstreaming pull request says so and leaves the choice to the
+maintainers. The campaign itself uses FuzzTest's standard mode only.
 
 ## Pitfalls
 

@@ -1655,7 +1655,7 @@ def build_fuzztest_toy(ctx: Context, variants=("fuzztest", "coverage")) -> None:
     "c-fuzztest",
     "fuzztest",
     ["c-env", "c-ub", "fuzztest-build", "fuzztest-coverage-build", "fuzztest-develop", "fuzztest-repro", "fuzztest-minimize", "triage-rebucket",
-     "fuzztest-cov-replay", "fuzztest-cov-replay-files", "fuzztest-merge",
+     "fuzztest-cov-replay", "fuzztest-cov-replay-files", "fuzztest-long", "fuzztest-merge",
      "c-cov-export", "fuzztest-leak-check", "fuzztest-reach"],
 )
 def c_fuzztest(ctx: Context) -> None:
@@ -1712,6 +1712,17 @@ def c_fuzztest(ctx: Context) -> None:
     ctx.expect(len(ctx.findings("cov-assert-check-2")) == 1 and "Assertion" in ctx.log("cov-assert-check-2"),
                "the per-file replay records the crash as a finding, with its report")
     ctx.set(H="record")
+    # A long run: two copies, prepared, then started from the spec. They write new inputs into the run's
+    # corpus, the launcher's default --corpus, and only read the persistent corpus.
+    persistent = ctx.files(".seclab/fuzz/corpus/record")
+    ctx.block("fuzztest-long", n=2, copies=2, run_s=20, tree=ctx.repo, tree_build=os.path.join(ctx.F, "build"), **common)
+    with open(os.path.join(ctx.F, "runs", "record-long2", "spec.json")) as handle:
+        copies = json.load(handle)["copies"]
+    ctx.expect(len(copies) == 2 and all(c["corpus"] == c["env"]["FUZZTEST_TESTSUITE_OUT_DIR"] == "{run}/corpus" for c in copies),
+               "each copy writes into the run's corpus, the launcher's default")
+    ctx.sh('$L start --skip-cpu-check --spec "$F/runs/$H-long2/spec.json"')
+    ctx.expect_state("record-long2", "found-crash", "finished")
+    ctx.expect(ctx.files(".seclab/fuzz/corpus/record") == persistent, "the long run leaves the persistent corpus alone")
     # Merging a long run's corpus: the union, minimized (here a stand-in for the run's corpus).
     ctx.sh('mkdir -p "$F/runs/record-long1/corpus" && cp "$F/corpus/$H"/* "$F/runs/record-long1/corpus/"')
     ctx.block("fuzztest-merge", n=1, timeout_s=300, long_run="record-long1", **common)
