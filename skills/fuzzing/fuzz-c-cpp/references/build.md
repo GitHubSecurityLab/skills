@@ -165,10 +165,17 @@ rm -rf "$F/build/<variant>" && ln -s "$W" "$F/build/<variant>"
 ```
 Another tree (for a long run, `base` or the freshness check) gets a
 worktree per variant it needs. For each such variant, run the block that
-creates the tree, with `/<variant>` added to its path. Then run the block
-above with that `W`, without its last line. These worktrees are never
-synced. The tree's directory is its `<tree_build>`. A run passes each
-worktree it uses with `--tree` (spec: `trees`).
+creates the tree, with `/<variant>` added to its path:
+- a long run's tree: `fuzz-campaign`'s long-runs.md, "Which tree";
+- `base`: `fuzz-campaign`'s long-runs.md, "The `base` worktree";
+- the freshness check's trees: `fuzz-triage`'s fix.md, "Check the
+  precondition, then freshness".
+
+Then run the build block above with that `W`, without its last line.
+These worktrees aren't synced to the checkout. Only the freshness check's
+block moves its worktrees, to the commits it checks. The tree's directory
+is its `<tree_build>`. A run passes each worktree it uses with `--tree`
+(spec: `trees`).
 
 An upstreaming branch's worktree (`fuzz-campaign`'s upstreaming.md)
 builds like the checkout. Run both blocks from that worktree, with
