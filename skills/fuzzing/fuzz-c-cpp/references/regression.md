@@ -104,18 +104,17 @@ Use the project's existing option first:
 - a configure flag such as `--enable-asan`;
 - a CI job that already builds with sanitizers.
 
-If there's none:
-- For the regression test in the project, give the commands in the
-  test's comment or the PR text, rather than adding an option the
-  maintainers didn't ask for. For example, `CFLAGS="-fsanitize=address,$UB
-  -fno-sanitize-recover=$UB -fno-sanitize=function -g"` with the
-  project's normal build; C++ adds `$HARDEN`. Write `$UB` and `$HARDEN`
-  out (`build.md`).
-- For the report's reproducer package (`fuzz-triage`), ship a short build
-  script with it. The script builds the library and the test with
-  `-fsanitize=address,$UB -fno-sanitize-recover=$UB -g -O1`, and runs the
-  test. C adds `-fno-sanitize=function`, and C++ adds `$HARDEN`. Write
-  `$UB` and `$HARDEN` out.
+If there's none, build with `-fsanitize=address,$UB
+-fno-sanitize-recover=$UB -g -O1`, with `$UB` and `$HARDEN` written out
+(`build.md`). C takes these flags in `CFLAGS` and adds
+`-fno-sanitize=function`; C++ takes them in `CXXFLAGS` and adds
+`$HARDEN`. Use them in two places:
+- The regression test in the project: give the commands (the project's
+  normal build, with these flags) in the test's comment or the PR text.
+  Don't add an option the maintainers didn't ask for.
+- The report's reproducer package (`fuzz-triage`): ship a short build
+  script with it. The script builds the library and the test with these
+  flags, and runs the test.
 
 Run the test before the fix (it must fail with the sanitizer report)
 and after the fix (it must pass). `-fno-sanitize-recover=$UB` makes a
