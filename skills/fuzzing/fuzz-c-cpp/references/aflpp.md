@@ -179,7 +179,7 @@ run's `<tree_build>` (`run.md`, "Long runs"):
   input silently corrupts memory on a plain instance and adds no coverage
   there, it is in no queue, so no sanitizer sees it. That's the price of
   the plain instances' speed.
-- If the run has no duration: leave out `"time"` and `-V`.
+- If the run has no duration: `run.md`, "Settings to flags".
 - If the user chose **stop at the first finding** at the long-run
   commands checkpoint, e.g. because a known shallow bug would flood the
   run: add `"AFL_BENCH_UNTIL_CRASH": "1"`. Each instance then ends at its

@@ -314,11 +314,11 @@ reports.
   - `FUZZTEST_TESTSUITE_OUT_DIR={run}/corpus`, and the persistent corpus
     as `IN_DIR`.
 
-  With no duration, leave out `--fuzz_for`. Copies don't share inputs
-  while they run, since FuzzTest has no reload. Files are named by
-  content, so one output directory for all copies is safe. `--jobs=<n>`
-  needs Bazel's Centipede. At analysis, merge by minimizing the union of
-  the persistent corpus and the run's corpus (Run, above).
+  If the run has no duration: `run.md`, "Settings to flags". Copies
+  don't share inputs while they run, since FuzzTest has no reload. Files
+  are named by content, so one output directory for all copies is safe.
+  `--jobs=<n>` needs Bazel's Centipede. At analysis, merge by minimizing
+  the union of the persistent corpus and the run's corpus (Run, above).
 - **OSS-Fuzz** builds FuzzTest harnesses with Bazel. A CMake project can
   follow libavif, which builds them in libFuzzer compatibility mode, with
   a pinned FuzzTest and a few patches (`tests/oss-fuzz/build.sh`). The

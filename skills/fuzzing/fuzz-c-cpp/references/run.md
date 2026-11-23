@@ -14,8 +14,8 @@ server and cache live in the real `HOME`.
 | `input_timeout_s` | `-timeout=<s>` | `-t <s × 1000>` (milliseconds) | `--time_limit_per_input=<s>s` |
 | run time (the launcher's `--time`) | `-max_total_time=<s>` | `-V <s>` | `--fuzz_for=<s>s` |
 
-- If the run has no duration: leave out the engine's time limit. The
-  engines then run until stopped.
+- If the run has no duration: leave out `--time` (a spec's `"time"`) and
+  the engine's time limit. The engines then run until stopped.
 - If AFL++ runs ASan targets: AFL++ doesn't cap their total memory, so
   count the instances' memory against the machine's.
 
@@ -118,7 +118,7 @@ json.dump(s, open(sys.argv[1], "w"), indent=1)' "$F/runs/$H-long<n>/spec.json"
 - No `-fork` or `-jobs`/`-workers`: they share one scratch directory,
   write `fuzz-<n>.log` files, and `-fork`'s exit status differs between
   macOS and Linux.
-- If the run has no duration: drop `-max_total_time`.
+- If the run has no duration: "Settings to flags", above.
 
 ## Merging a run's corpus back (analysis, `fuzz-campaign`)
 
