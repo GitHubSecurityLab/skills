@@ -40,8 +40,12 @@ fuzzing, so it's only used for replays. `L`, `F`, `H` and `P` are as in
      `--lines <first>-<last>`, instead of `--function`. Istanbul gives
      that name to class methods, object methods and arrow functions.
 
-**Exact subset:** to run exactly the inputs in `{files}`, pass `{files}`
-instead of the corpus directories, as the `reach.py` command below does:
+**Exact subset** (`reach.py`, the gate's state-leak check): to run
+exactly the inputs in `{files}`, use step 1's command with `{files}`
+instead of the corpus directories.
+
+**Inputs that reach a line**: `reach.py` finds them, for targeted inputs
+(`fuzz-coverage`'s corpus.md):
 
 <!-- ci: js-cli-reach -->
 ```sh
@@ -51,7 +55,9 @@ python3 "$F/bin/reach.py" --harness $H --corpus "$F/corpus/$H" --file <file> --l
   --export "python3 $F/bin/coverage.py merge {out}/lcov.info --sf-base {scratch} --root $F/../.. -o {lcov}"
 ```
 
-**The gate's state-leak check:**
+**The gate's state-leak check** is the block below, for `fuzz-harness`'s
+gate.md, "No state leaking between inputs". It replays a sample in one
+process, then each input of the sample in a fresh process:
 
 <!-- ci: js-cli-leak-check -->
 ```sh
