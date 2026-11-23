@@ -57,8 +57,7 @@ unless they start with `.seclab/`:
    - If the hold-back rule (`fuzz-campaign`, safety rules) covers the
      bug, the report is still sent privately, through step 9's channels,
      since the attacker-path judgment can be wrong.
-   - Otherwise it's sent as an issue or pull request, following the
-     project's rules.
+   - Otherwise it's sent in public, through step 9's channels.
 
    All drafts draw on the same facts. Keep each one short and factual:
    what, where, how to reproduce, impact, fix. No long generated prose.
@@ -111,7 +110,8 @@ unless they start with `.seclab/`:
      summary instead; the label stays.
    - If the draft's fix is "not attempted": offer the fix ("fix this
      crash", fix.md), then update the draft.
-9. **Next steps for the user** (in the summary, not in the draft):
+9. **Next steps for the user** (in the summary, not in the draft). For a
+   vulnerability, or another bug sent privately (step 5):
    - For maintainers of the project: create a draft repository security
      advisory
      (https://docs.github.com/en/code-security/how-tos/report-and-fix-vulnerabilities/fix-reported-vulnerabilities/create-repository-advisory).
@@ -129,6 +129,10 @@ unless they start with `.seclab/`:
      coordinated disclosure policy
      (https://securitylab.github.com/advisories/#policy) as a reference.
 
+   For a bug sent in public: the user files its draft as an issue or pull
+   request, following the project's rules. Each fix of ours goes upstream
+   on its own branch, which `fuzz-campaign`'s upstreaming.md prepares.
+
 ## Done when
 
 - Freshness, known-bug search and ownership are checked and recorded.
@@ -143,7 +147,7 @@ unless they start with `.seclab/`:
 - Skipping the freshness check.
 - Inflating severity. Justify each CVSS metric from the threat model.
 - Long, generic text.
-- Sending, posting or filing anything. The user does that, privately.
+- Sending, posting or filing anything. The user does that.
 - Putting a held-back bug's regression test or fix (`fuzz-campaign`,
   safety rules) into a public pull request before the bug is public and
   fixed upstream.
