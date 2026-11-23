@@ -226,7 +226,9 @@ unless they start with `.seclab/`:
         analysis). Their full validation runs once for the batch (fix.md,
         "Validate").
     - State `non-reproducible` or `duplicate of <bucket>`, or Fixed
-      upstream (and not held back) → recorded only.
+      upstream (and not held back) → recorded only. A blocking bug that's
+      Fixed upstream still gets upstream's fix, so its harness can fuzz
+      (fix.md, "Check the precondition, then freshness").
     - State `needs investigation` → recorded and listed for the user.
 
 ## Blocking bugs

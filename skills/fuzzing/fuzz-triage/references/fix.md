@@ -51,8 +51,11 @@ unless they start with `.seclab/`:
    - If the reproducer passes on HEAD, upstream fixed the bug. Find the
      fixing commit with `git log` on the files involved, and record it as
      Fixed upstream (verdicts.md, "State and Fixed upstream"). Then:
-     - If the bug is blocking, cherry-pick that commit as the bug's
-       `fuzz(fix)` commit and validate it as below.
+     - If the bug is blocking, use upstream's commit as our fix. Do step
+       2, then apply the commit with `git cherry-pick -n <sha>` in place
+       of step 3, and go on with steps 4, 6, 7 and 8; step 5's review is
+       upstream's. Step 6's commit names the upstream commit, and its
+       branch rule applies as for any fix.
      - Otherwise the bug needs no fix of ours. It goes on to report.md
        only if the hold-back rule covers it (`SKILL.md`, "Route").
 2. **The regression test is the bug's reproducer** from
