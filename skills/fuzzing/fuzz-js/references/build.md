@@ -41,8 +41,10 @@ there (`F` and `P` as in `run.md`).
 <!-- ci: js-ts-build -->
 ```sh
 printf '{"extends": "%s", "include": [], "files": ["%s"]}\n' "$P/tsconfig.json" "$P/<entry>" > "$F/build/tsconfig.json"
-"$P/node_modules/.bin/tsc" -p "$F/build/tsconfig.json" --noEmit false --emitDeclarationOnly false --rootDir "$P" \
-  --outDir "$F/build/ts" --sourceMap --module commonjs || echo "tsc exited $?: check the .js files"
+rm -rf "$F/build/ts" && mkdir "$F/build/ts"
+"$P/node_modules/.bin/tsc" -p "$F/build/tsconfig.json" --noEmit false --emitDeclarationOnly false --noEmitOnError false \
+  --incremental --tsBuildInfoFile "$F/build/ts/tsbuildinfo" --rootDir "$P" --outDir "$F/build/ts" --sourceMap \
+  --module commonjs || echo "tsc exited $?: check the .js files"
 echo '{"type": "commonjs"}' > "$F/build/ts/package.json"
 ```
 
@@ -51,11 +53,16 @@ several modules, give `files` one `"%s"` per module, as in
 `["%s", "%s"]`, and pass one `"$P/<module>"` argument per module.
 
 `tsc` exits 2 on a type error, or on a project option that only fits ESM
-(TypeScript 5 with `bundler`), and still writes the files. So check that
-the target's `.js` files are there: a library that builds its JS with
-another tool may set only declarations to emit. The `package.json` keeps
-an ESM package's `"type": "module"` from applying to the compiled files.
-The source maps give stack traces the `.ts` lines.
+(TypeScript 5 with `bundler`). It still writes the files: the command
+overrides the project's `noEmitOnError`. The build starts from an empty
+`$F/build/ts` and keeps its build info there: a project's own build info
+could make `tsc` skip files, and would be overwritten. So every file there
+comes from this build. Check that the target's `.js` files are there: a
+library that builds its JS with another tool may emit only declarations.
+
+The `package.json` keeps an ESM package's `"type": "module"` from
+applying to the compiled files. The source maps give stack traces the
+`.ts` lines.
 
 - If the sources import `.ts` paths: add
   `--rewriteRelativeImportExtensions`.

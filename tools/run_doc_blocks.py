@@ -1275,6 +1275,18 @@ def js_ts(ctx: Context) -> None:
     ctx.expect(os.path.exists(os.path.join(ctx.F, "build", "ts", "src", "record.js")), "tsc writes the target's .js files")
     built = glob.glob(os.path.join(ctx.F, "build", "ts", "**", "*.js"), recursive=True)
     ctx.expect(not [p for p in built if p.endswith(".test.js")], "the build leaves the project's tests out")
+    # A project with noEmitOnError and its own build-info file: a type error still rebuilds the .js files.
+    with open(os.path.join(ctx.repo, "tsconfig.json")) as handle:
+        config = json.load(handle)
+    config["compilerOptions"].update(noEmitOnError=True, incremental=True, tsBuildInfoFile="cache/tsbuildinfo")
+    with open(os.path.join(ctx.repo, "tsconfig.json"), "w") as handle:
+        json.dump(config, handle)
+    ctx.sh("""printf 'export const rebuilt: number = "yes";\\n' >> src/util.ts""")
+    ctx.block("js-ts-build", entry="src/record.ts")
+    with open(os.path.join(ctx.F, "build", "ts", "src", "util.js")) as handle:
+        ctx.expect("rebuilt" in handle.read(), "a type error under noEmitOnError still rebuilds the .js files")
+    ctx.expect(not os.path.exists(os.path.join(ctx.repo, "cache")), "the build leaves the project's build info alone")
+    ctx.sh("git checkout -q tsconfig.json src/util.ts")
     ctx.set(H="record-ts")
     ctx.sh('mkdir -p "$F/corpus/$H" && cp seeds/ok "$F/corpus/$H/" && touch "$F/dict/$H.dict"')
     ctx.block("js-cli-develop", round=1, run_s=60, target_file="fuzz/record.fuzz.js", input_timeout_ms=5000, memory_mb=2048)
