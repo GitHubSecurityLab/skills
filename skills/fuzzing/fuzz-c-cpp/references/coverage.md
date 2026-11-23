@@ -56,11 +56,10 @@ sanitizers, with the fuzzing build's fuzzing-mode macro and patches.
 
    Then continue with `coverage.py` as the calling skill says.
 
-**Exact subset** (`reach.py`, the gate's state-leak check): to run
-exactly the inputs in `{dir}`, use step 1's command with `{dir}` instead
-of the corpus directories, i.e. `-merge=1 "{scratch}/out" "{dir}"`. A
-`-runs=0` directory replay adds an empty input, and `-merge=1` refuses
-file arguments.
+**Exact subset** (`reach.py`): to run exactly the inputs in `{dir}`, use
+step 1's command with `{dir}` instead of the corpus directories, i.e.
+`-merge=1 "{scratch}/out" "{dir}"`. A `-runs=0` directory replay adds an
+empty input, and `-merge=1` refuses file arguments.
 
 **Inputs that reach a line**: `reach.py` finds them, for targeted inputs
 (`fuzz-coverage`'s corpus.md). `<objects>` is as in step 3:
@@ -75,9 +74,9 @@ python3 "$F/bin/reach.py" --harness $H --corpus "$F/corpus/$H" --file <file> --l
 
 **The gate's state-leak check** is the block below, for `fuzz-harness`'s
 gate.md, "No state leaking between inputs". It replays a sample in one
-process (A). Then it replays each input of the sample in a fresh process
-(B). Both sides pass the inputs as files, which run exactly those inputs.
-`<objects>` is as in step 3:
+process (side `one`). Then it replays each input of the sample in a fresh
+process (side `fresh`). Both sides pass the inputs as files, which run
+exactly those inputs. `<objects>` is as in step 3:
 
 <!-- ci: c-leak-check -->
 ```sh
