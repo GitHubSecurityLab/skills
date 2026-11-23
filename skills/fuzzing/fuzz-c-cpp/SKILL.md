@@ -98,8 +98,8 @@ goes through the launcher with the paths in
 ## Pitfalls and shortcuts to reject
 
 - On macOS with `detect_leaks=1`, libFuzzer reports a false leak in its
-  RSS thread at exit. Fuzz with leaks off there. To replay a leak there:
-  [references/triage.md](references/triage.md), "Reproduce".
+  RSS thread at exit. Run libFuzzer with leaks off there. To replay a leak
+  there: [references/triage.md](references/triage.md), "Reproduce".
 - libFuzzer `-fork` or `-jobs` for parallel runs: run N copies through
   the launcher instead ([references/run.md](references/run.md), "Long
   runs").

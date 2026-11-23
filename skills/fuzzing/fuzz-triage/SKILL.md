@@ -287,7 +287,7 @@ the same inputs. The inputs it turns away also add no coverage, so the
 next minimizing merge drops them from the corpus.
 
 **Leaks** stay detected, except in three cases:
-- on macOS, where libFuzzer reports a false leak at exit;
+- in libFuzzer runs on macOS, which report a false leak at exit;
 - in AFL++ instances (`detect_leaks=0`, `fuzz-c-cpp`'s aflpp.md), whose
   findings the libFuzzer replays check for leaks;
 - in a sandbox that blocks `ptrace`, where LeakSanitizer can't run

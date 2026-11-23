@@ -1661,7 +1661,7 @@ def build_fuzztest_toy(ctx: Context, variants=("fuzztest", "coverage")) -> None:
 def c_fuzztest(ctx: Context) -> None:
     ctx.set(H="record")
     linux = system() == "Linux"
-    ctx.env_block("c-env", detect_leaks=1 if linux else 0, llvm_bin=llvm_bin())
+    ctx.env_block("c-env", detect_leaks=1, llvm_bin=llvm_bin())  # FuzzTest has no false leak on macOS (run.md)
     ctx.env_block("c-ub")
     build_fuzztest_toy(ctx)
     ctx.sh('mkdir -p "$F/corpus/$H"')
