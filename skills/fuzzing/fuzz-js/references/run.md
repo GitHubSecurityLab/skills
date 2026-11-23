@@ -74,8 +74,9 @@ $L start --id r<round>-$H --harness $H --time <run_s> --corpus "$F/corpus/$H" --
 **Long runs:** N copies. List the run's own corpus first and the
 persistent corpus second. Every copy writes new inputs into the run's
 corpus and re-reads them from there.
-- An async target's copy uses about two cores: give its long runs half as
-  many copies.
+- An async target's copy uses about two cores: count two cores per copy
+  when sizing its long runs (`fuzz-campaign`'s long-runs.md, "Cores and
+  memory").
 - Each copy stops at its first finding; the others continue. A known bug
   without a fix would stop the copies again and again: fix it first
   (`fuzz-triage`, "Blocking bugs").
