@@ -107,6 +107,10 @@ unless they start with `.seclab/`:
      file;
    - TypeScript: `ts/`;
    - plain JS builds nothing there.
+
+   A build of uncommitted changes, such as a new harness, records the
+   commit before them. Record it again once they're committed (`SKILL.md`,
+   "Record and commit"); otherwise the build looks stale after that commit.
 9. **Before reusing builds** (Resume, or after anything switched or reset
    the checkout), rebuild every variant this check calls stale; builds are
    incremental, so it's cheap:

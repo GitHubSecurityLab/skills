@@ -195,7 +195,9 @@ unless they start with `.seclab/`:
 7. **Record and commit.** Write the workflow into the target file's
    Harness section (`targets/<id>.md`) and into `CAMPAIGN.md`'s Harnesses
    table. Write the gate result into the target file's Gate table. Then
-   commit the harness as `fuzz(harness): <target>`.
+   commit the harness as `fuzz(harness): <target>`, and record that
+   commit in the `built-from` of each variant step 4 built (build.md,
+   "Commit and record").
 
 ## Done when
 
