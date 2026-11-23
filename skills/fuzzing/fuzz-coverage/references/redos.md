@@ -35,9 +35,9 @@ same text in more than one way:
    <!-- ci: redos-check -->
    ```sh
    npm install --prefix "$F/tools/recheck" --ignore-scripts --no-audit --no-fund --loglevel=error recheck@4.5.0
-   NODE_PATH="$F/tools/recheck/node_modules" node - "$F/sinks/<id>.regex" "$F/sinks/<id>.redos" <input_timeout_s> <<'EOF'
+   NODE_PATH="$F/tools/recheck/node_modules" node -e '
    const fs = require("fs"), path = require("path"), { checkSync } = require("recheck");
-   const [list, out, limit] = process.argv.slice(2);
+   const [list, out, limit] = process.argv.slice(1);
    for (const line of fs.readFileSync(list, "utf8").split("\n").filter(Boolean)) {
      const [site, flags, source] = line.split("\t");
      const r = checkSync(source, flags);
@@ -57,7 +57,7 @@ same text in more than one way:
        ns.map((m, i) => `${attack(m).length} chars ${Math.round(ms[i])} ms`).join(", ") +
        `\trepro: ${file} (${attack(n).length} chars, about ${Math.round(t / 1000)} s)`);
    }
-   EOF
+   ' "$F/sinks/<id>.regex" "$F/sinks/<id>.redos" <input_timeout_s>
    ```
    Each regex prints one of:
    - `safe`;
