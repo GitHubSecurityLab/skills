@@ -211,10 +211,11 @@ index (Long sessions, above).
    the next target's ranking uses it. First replay every harness's
    corpus on the current coverage build (the language skill's
    coverage.md): snapshots from different builds can't be merged. Then
-   merge the snapshots with `coverage.py merge`; for Java, merge the
-   `.exec` files instead (`fuzz-java`'s coverage.md, "Combining Java
-   coverage"). Last, update the combined scope coverage in the index:
-   `coverage.py summary` with every target's `--scope`.
+   merge the snapshots with `coverage.py merge`. For Java, merge the
+   `.exec` files instead, then convert the result to lcov
+   (`fuzz-java`'s coverage.md, "Combining Java coverage"). Last, update
+   the combined scope coverage in the index: `coverage.py summary` with
+   every target's `--scope`.
 
 **The stopping rule** (Settings, `stop_rule`) ends develop's first pass,
 in both modes:
