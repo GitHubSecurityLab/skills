@@ -199,16 +199,27 @@ unless they start with `.seclab/`:
    fix, the current build is `base`: skip this step. Otherwise, run the
    reproducer on the `base` build, which has none of our `fuzz(fix)`
    commits (`fuzz-campaign`'s long-runs.md):
-   - If it passes there, one of our fixes introduced the bug.
+   - If it passes there, one of our fixes introduced the bug. Find which
+     one: cherry-pick our `fuzz(fix)` commits onto the `base` worktree
+     one at a time, oldest first, and rebuild and rerun the reproducer
+     after each. The first commit after which it fails is the one. Then
+     remove that worktree, since it's no longer `base`
+     (`fuzz-campaign`'s long-runs.md, "Cleanup").
+     - If that commit is upstream's fix (fix.md, "Check the precondition,
+       then freshness"), the bug is upstream's too: the State stays
+       `open`.
+     - Otherwise set the State to `introduced by our fix for <bucket>`,
+       naming that commit's bucket.
    - If it fails first on another bug we fixed, the check is
      inconclusive.
 9. **Note** the bug class and a CWE candidate for the report.
    **Introducing commit** (optional, for the affected versions): bisect
    as [references/bisect.md](references/bisect.md) says.
-10. **Route** each bucket by its verdict and State. In standalone use
-    ("triage these crashes"), stop here, with buckets, verdicts,
-    minimized inputs and reproducers. Fix and report only when the user
-    asks, e.g. "fix this crash". In a campaign:
+10. **Route** each bucket by its verdict and State; a State other than
+    `open` decides. In standalone use ("triage these crashes"), stop
+    here, with buckets, verdicts, minimized inputs and reproducers. Fix
+    and report only when the user asks, e.g. "fix this crash". In a
+    campaign:
     - `harness_bug` → `fuzz-harness` (fix, then the gate again).
     - `vulnerability`, `library_hardening`, and real `oom`, `timeout`,
       `assertion_failure`, `unexpected_exception` or `property_violation`
@@ -229,6 +240,17 @@ unless they start with `.seclab/`:
       upstream (and not held back) → recorded only. A blocking bug that's
       Fixed upstream still gets upstream's fix, so its harness can fuzz
       (fix.md, "Check the precondition, then freshness").
+    - State `introduced by our fix for <bucket>` → correct the fix of
+      the bucket it names, right away if this bug is blocking, otherwise
+      queued, as above. Follow fix.md from step 2, with this bucket's
+      reproducer as the regression test. The commit,
+      `fuzz(fix): <bucket> <summary>`, names that bucket, so the
+      correction goes upstream with the fix it corrects. Record it in
+      both buckets' Fix sections. That bucket's report draft, if any,
+      gets the corrected fix. If the user already sent that report, tell
+      them to send the correction and say the old fix has a bug. This
+      bucket gets no freshness check or report of its own: the bug is in
+      our fix, not in upstream's code.
     - State `needs investigation` → recorded and listed for the user.
 
 ## Blocking bugs

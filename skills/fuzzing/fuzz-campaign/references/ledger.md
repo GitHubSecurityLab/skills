@@ -175,7 +175,7 @@ Configuration matrix: <harness: the configurations it covers>
 - **Inputs:** <n> (kept: crashes/<bucket>/inputs/; minimized: crashes/<bucket>/minimized)
 - **Reproduce:** `<command>`
 - **Verdict:** <verdict> · **Confidence:** high | medium | low
-- **State:** open | duplicate of <bucket> | non-reproducible | needs investigation
+- **State:** open | duplicate of <bucket> | introduced by our fix for <bucket> | non-reproducible | needs investigation
 - **Disclosure:** unreported | reported <date, channel> | public
 - **Fixed upstream:** no | <commit> (released in <version> | not yet released)
 

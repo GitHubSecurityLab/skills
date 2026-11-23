@@ -22,6 +22,7 @@ says whether upstream fixed it.
 |---|---|---|
 | `open` | the default | |
 | `duplicate of <bucket>` | same root cause as another bucket; it takes that bucket's verdict | the shared root cause |
+| `introduced by our fix for <bucket>` | the bug is in our fix for that bucket: the reproducer passes without our fixes (`SKILL.md`, "Rule out our own fixes") | the `base` run, and the fix commit after which the reproducer fails |
 | `non-reproducible` | the inputs don't crash in `SKILL.md`'s "Reproduce" attempts | the suspected cause (threads, time, state) |
 | `needs investigation` | unresolved: needs a human | what was tried and what is unclear |
 
