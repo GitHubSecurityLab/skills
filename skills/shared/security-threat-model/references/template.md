@@ -29,11 +29,13 @@ Base commit: <sha> (<branch or tag>) · Updated: <date>
 | S2 | `Unzip.extract(zip)` | ZIP archive | target directory | entry names and contents | file written outside the target dir | `src/test/java/UnzipTest.java:31` (jqwik) | [code: src/Unzip.java:40] |
 
 ## Sinks
-Call sites go in Location.
+Call sites go in Location. An unreachable sink keeps its row, with
+`unreachable: <why>` in Reached from.
 
 | Id | Location | Kind | Engine detector | Reached from | Sanitization on path | Provenance |
 |---|---|---|---|---|---|---|
 | K1 | `Unzip.writeEntry`: `src/Unzip.java:88` `new FileOutputStream(dest)`, `:95` `Files.copy` | file write (path traversal) | partly | S2 | none found | [code: src/Unzip.java:88] |
+| K2 | `Config.load`: `src/Config.java:12` `new FileInputStream(path)` | file read (path traversal) | partly | unreachable: `path` comes from operator config | n/a | [code: src/Config.java:12] |
 | H1 | `pngrutil.c` `png_handle_*` chunk handlers | size arithmetic on chunk lengths | sanitizers | S1 | length checks in png_read_chunk_header | [code: pngrutil.c:160] |
 
 ## Paths
