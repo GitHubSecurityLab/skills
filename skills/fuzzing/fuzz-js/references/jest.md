@@ -60,7 +60,8 @@ on Jest 29.7 and 30.3, and fails on 30.4 and later.
    ```
 
    - `<jest_config>` in the commands below is the config above, or the
-     config that already runs the project's fuzz tests.
+     config that already runs the project's fuzz tests (`package.json`
+     if that config is its `jest` key).
    - Copy only the keys the code under test needs from the project's
      config (`transform`, `moduleNameMapper`, `setupFiles`, ...).
    - `<tests_dir>` keeps `testMatch` out of `.seclab/`: Jest searches dot
@@ -175,7 +176,7 @@ runs the generated corpus's files too.
 ## Runs
 
 Call `$P/node_modules/.bin/jest`. It runs from scratch, with
-`--config <pkg>/<jest config or package.json> --rootDir <pkg>`.
+`--config "$P/<jest_config>" --rootDir "$P"`.
 
 | Setting | Option |
 |---|---|
