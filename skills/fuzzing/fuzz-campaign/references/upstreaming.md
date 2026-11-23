@@ -162,7 +162,8 @@ unless they start with `.seclab/`:
 - Every harness is either on an upstreaming branch that builds and passes
   the gate and the project's checks, or recorded as held back with a
   release condition.
-- PR texts and, if accepted, the CI job and OSS-Fuzz changes are prepared.
+- The PR texts are prepared. So are the OSS-Fuzz changes if OSS-Fuzz is
+  the destination, and the CI job if the user accepted the offer.
 
 ## Pitfalls and shortcuts to reject
 
