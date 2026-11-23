@@ -160,7 +160,7 @@ a timeout.
 
 Add a hook only after reading the code, for a known reason: e.g. a random
 or time-dependent value made constant, or a checksum check (`build.md`,
-fuzzing-only changes). A hook for one project method:
+"Fuzzing-only changes"). A hook for one project method:
 
 ```java
 // imports: com.code_intelligence.jazzer.api.{HookType, MethodHook}, java.lang.invoke.MethodHandle

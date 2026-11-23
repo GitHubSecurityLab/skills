@@ -146,7 +146,7 @@ for c in <target_classes>; do grep -qF "INFO: Instrumented $c (took" "$log" || {
   has hooks but no coverage feedback. The fuzzer is blind there, while
   JaCoCo still shows the class covered.
 - `Error retransforming` with a `VerifyError` means a hook broke a class,
-  which then runs uninstrumented and unhooked (`harness.md`, hooks).
+  which then runs uninstrumented and unhooked (`harness.md`, "Hooks").
 
 ## `junit-platform.properties` keys
 
