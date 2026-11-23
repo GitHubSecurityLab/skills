@@ -2,7 +2,9 @@
 
 Every run goes through `launcher.py` (`fuzz-harness`'s runs.md explains `F`,
 `L` and placeholders like `{run}`), and every command starts with
-`. .seclab/fuzz/env.sh; H=<harness>;`. Runs use the standalone driver.
+`. .seclab/fuzz/env.sh; H=<harness>;`. Fuzzing runs, replays and
+reproductions use the standalone driver; JUnit runs (below) use the build
+tool.
 
 ## Settings to flags
 
