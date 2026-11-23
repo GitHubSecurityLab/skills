@@ -72,9 +72,11 @@ these reports:
 - **Timeouts** (CLI exit status 70) have no JS stack: the log ends at
   libFuzzer's timeout line, so `crash_buckets.py` groups them by kind
   alone. An input that finishes near the limit (`Executed … in <n> ms`)
-  is still slow: replay it with `--timeout` at half its run time. Name
-  each timeout's loop from a profile of its replay. The top of the
-  bottom-up profile is the hot function or `RegExp: <pattern>`.
+  is still slow: Jazzer.js passes `--timeout` to libFuzzer rounded up to
+  whole seconds, and libFuzzer checks for timeouts only every
+  `-timeout`/2 + 1 s. Replay such an input with `--timeout` at half its
+  run time. Name each timeout's loop from a profile of its replay. The
+  top of the bottom-up profile is the hot function or `RegExp: <pattern>`.
   <!-- ci: js-hang-profile -->
   ```sh
   $L start --id prof-$H-<n> --harness $H --timeout <timeout_s> --env PATH="$RUN_PATH" -- \
