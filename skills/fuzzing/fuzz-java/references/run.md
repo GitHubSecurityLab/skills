@@ -175,7 +175,7 @@ Through the launcher, the working directory and `HOME` are in scratch. So:
   tool.
 
 `JAVA_TOOL_OPTIONS` carries `JOPTS` to every JVM of the run, the test JVM
-too:
+too. Maven:
 
 <!-- ci: java-junit -->
 ```sh
@@ -189,15 +189,27 @@ installed, use
 `mvn -f "<root>/pom.xml" -pl <module> -am ... -Dsurefire.failIfNoSpecifiedTests=false`.
 From the module's own POM, uninstalled siblings don't resolve.
 
+Gradle finds its caches through `GRADLE_USER_HOME`. In the block,
+`<module_dir>` is the fuzz test's project directory, which is the root in
+a single-project build:
+
+<!-- ci: java-gradle-junit -->
+```sh
+$L start --id <run_id> --harness $H --timeout <timeout_s> --env PATH="$JAVA_HOME/bin:$PATH" --env JAVA_HOME="$JAVA_HOME" \
+  --env JAVA_TOOL_OPTIONS="$JOPTS" --env GRADLE_USER_HOME="<home>/.gradle" -- \
+  gradle -p "<module_dir>" --no-daemon --offline test --rerun --tests '<fuzz_class>.<fuzz_method>'
+```
+
+- `--rerun`: without it, an unchanged test task is skipped as up to date.
+- `--no-daemon`: no daemon outlives the run.
+- Gradle gives the test JVM the test task's `maxHeapSize` (512 MB by
+  default) as `-Xmx`, which overrides the one in `JOPTS`.
+
 <!-- ci-skip: for the project's own runs; the campaign and the CI template run the standalone driver -->
 ```sh
-# Gradle (--env GRADLE_USER_HOME=<home>/.gradle): --rerun, or an unchanged test task is skipped as up to date
-gradle -p "<abs project>" --no-daemon --offline test --rerun --tests '<package>.<Class>.<method>'
 # Fuzzing mode, for the project's own runs (one fuzz test per JVM)
 JAZZER_FUZZ=1 JAZZER_MAX_DURATION=2m mvn test -Dtest='<Class>#<method>'
 ```
-
-The Gradle command starts no daemon, so none outlives the run.
 
 Fuzzing mode writes its corpus to `.cifuzz-corpus/` and crash files into
 the inputs directory, in the source tree. It takes no libFuzzer flags.

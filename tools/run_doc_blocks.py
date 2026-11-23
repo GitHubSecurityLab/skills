@@ -1324,15 +1324,37 @@ def java_gradle(ctx: Context, task: str, module: str, fuzz_class: str, method: s
     ctx.expect_state("r1-" + module, "found-crash")
     ctx.block("java-instrumented", run_id="r1-" + module, target_classes=classes)
 
+    # JUnit regression mode through the launcher (run.md), offline after the classpath step resolved the
+    # test runtime classpath: first with the develop run's finding in the inputs directory.
+    module_dir = ctx.repo if task == ":seclabTestClasspath" else os.path.join(ctx.repo, module)
+    package, _, test_class = fuzz_class.rpartition(".")
+    inputs = os.path.join(module_dir, "src", "test", "resources", *package.split("."), test_class + "Inputs")
+    os.makedirs(os.path.join(inputs, method))
+    shutil.copy(ctx.findings("r1-" + module)[0], os.path.join(inputs, method))
+    junit = dict(timeout_s=600, module_dir=module_dir, home=os.path.expanduser("~"), fuzz_class=fuzz_class, fuzz_method=method)
+    ctx.block("java-gradle-junit", run_id="repro-%s-1" % module, ok=(1,), **junit)
+    log = ctx.log("repro-%s-1" % module)
+    ctx.expect("IllegalStateException" in log, "Gradle's JUnit run replays the crash file")
+    ctx.expect(re.search(r"> Task \S*:test FAILED\n.*^Picked up JAVA_TOOL_OPTIONS: .*-XX:-OmitStackTraceInFastThrow", log, re.M | re.S),
+               "the test JVM gets JOPTS")
+    shutil.rmtree(inputs)
+    ctx.block("java-gradle-junit", run_id="repro-%s-2" % module, **junit)
+    ctx.expect_state("repro-%s-2" % module, "finished")
+    # --rerun: nothing changed since the last run, and the test task still runs.
+    ctx.block("java-gradle-junit", run_id="repro-%s-3" % module, **junit)
+    ctx.expect(re.search(r"> Task \S*:test\n", ctx.log("repro-%s-3" % module)), "--rerun runs an unchanged test task again")
 
-@scenario("java-gradle", "java-gradle", ["java-gradle-classpath", "java-env", "java-develop", "java-instrumented"])
+
+@scenario("java-gradle", "java-gradle", ["java-gradle-classpath", "java-env", "java-develop", "java-instrumented",
+                                         "java-gradle-junit"])
 def java_gradle_multi(ctx: Context) -> None:
     """Two modules: the fuzz test in app, the bug in core, which reaches the classpath as a JAR."""
     java_gradle(ctx, ":app:seclabTestClasspath", "app", "app.ReaderFuzzTest", "read", "app.Reader core.Magic",
                 "-Djazzer.instrument=app.**,core.**")
 
 
-@scenario("java-gradle-single", "java-gradle-single", ["java-gradle-classpath", "java-env", "java-develop", "java-instrumented"])
+@scenario("java-gradle-single", "java-gradle-single", ["java-gradle-classpath", "java-env", "java-develop", "java-instrumented",
+                                                       "java-gradle-junit"])
 def java_gradle_single(ctx: Context) -> None:
     java_gradle(ctx, ":seclabTestClasspath", "toy", "toy.MagicFuzzTest", "check", "toy.Magic", "")
 
