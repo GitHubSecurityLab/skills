@@ -98,8 +98,9 @@ Update the ledger after every step.
 
 1. Read only the index, `CAMPAIGN.md`.
 2. Check the state:
-   - Branch and base commit: `init.py` refuses a checkout whose branch or
-     base commit doesn't match the ledger's. If it refuses, ask the user.
+   - Branch and base commit: `init.py` refuses a checkout that isn't on
+     the ledger's branch, or whose history doesn't contain the ledger's
+     base commit. If it refuses, ask the user.
    - Run `launcher.py status` for running and ended runs, and update the
      Long runs table.
    - Rebuild stale or missing builds (`fuzz-harness`'s build.md, "Before
