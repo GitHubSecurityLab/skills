@@ -88,5 +88,6 @@ same text in more than one way:
        limit or filter in the project's code, record the group as
        sanitized, with the limit's or filter's `file:line`.
 
-A group still in state reached once its regexes are checked has used its
-tries: record "4 of 4 tries" in its Note.
+A group still in state reached when this check ends has used its tries:
+record "4 of 4 tries" in its Note, and why no attack was confirmed, e.g.
+its regexes are `safe`, or their subject isn't from input.
