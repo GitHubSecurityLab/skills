@@ -26,10 +26,12 @@ Three variants, all from the libFuzzer harness: `aflpp-plain` without a
 sanitizer, `aflpp` with ASan+UBSan, and `cmplog`. Their flags are in
 `build.md` next to this file.
 
-`AFL_USE_ASAN` and `AFL_LLVM_CMPLOG` are read at compile time, so a
-rebuild without them in the environment silently drops the sanitizers or
-CmpLog. Put them in a wrapper per variant, with the UBSan flags: `$UB`
-and `$HARDEN` from env.sh, written out.
+`AFL_USE_ASAN` and `AFL_LLVM_CMPLOG` are read at compile time: a rebuild
+without them in the environment silently drops the sanitizers or CmpLog.
+So `aflpp` and `cmplog` compile through the wrappers below, which set
+them. `aflpp`'s wrappers also add the UBSan flags, with `$UB` and
+`$HARDEN` from env.sh written out. `aflpp-plain` needs no wrapper: it
+calls `<afl_cc>` and `<afl_cc>++` directly.
 
 `<afl_cc>`, the AFL++ compiler the wrappers call, is:
 - `afl-clang-lto` where it builds. It instruments at link time, which
@@ -45,13 +47,23 @@ cat > aflpp-cc <<EOF
 #!/bin/sh
 AFL_USE_ASAN=1 exec <afl_cc> -fsanitize=$UB -fno-sanitize-recover=$UB $HARDEN -fno-sanitize=function "\$@"
 EOF
+cat > aflpp-cxx <<EOF
+#!/bin/sh
+AFL_USE_ASAN=1 exec <afl_cc>++ -fsanitize=$UB -fno-sanitize-recover=$UB $HARDEN "\$@"
+EOF
 cat > cmplog-cc <<'EOF'
 #!/bin/sh
 AFL_LLVM_CMPLOG=1 exec <afl_cc> "$@"
 EOF
-chmod +x aflpp-cc cmplog-cc
+cat > cmplog-cxx <<'EOF'
+#!/bin/sh
+AFL_LLVM_CMPLOG=1 exec <afl_cc>++ "$@"
+EOF
+chmod +x aflpp-cc aflpp-cxx cmplog-cc cmplog-cxx
 ```
-The C++ wrappers call `<afl_cc>++`, without `-fno-sanitize=function`.
+Pass a variant's `-cc` wrapper as `CC` and its `-cxx` wrapper as `CXX`.
+The `-cxx` wrappers leave out `-fno-sanitize=function`, which only C
+needs (`build.md`).
 
 - `aflpp`: two things produced binaries that crash when run standalone:
   - compiling library objects with `-fsanitize=fuzzer-no-link`;

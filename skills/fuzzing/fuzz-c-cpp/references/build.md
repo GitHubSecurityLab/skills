@@ -15,8 +15,8 @@ compiler instead (the table below).
 |---|---|---|
 | `libfuzzer` | `-g -O1 -fno-omit-frame-pointer -fsanitize=fuzzer-no-link,address,$UB -fno-sanitize-recover=$UB $HARDEN -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION` | `-fsanitize=fuzzer,address,$UB` |
 | `aflpp-plain` | `CC`/`CXX` the AFL++ compiler (`<afl_cc>`, `aflpp.md`), `-g -O1`, no sanitizers; no `-fsanitize=fuzzer*` on the library | `-fsanitize=fuzzer`, compiling and linking the harness in one command |
-| `aflpp` | as `aflpp-plain`, with `AFL_USE_ASAN=1` and `-fsanitize=$UB -fno-sanitize-recover=$UB $HARDEN` in its wrapper (`aflpp.md`) | as `aflpp-plain` |
-| `cmplog` | as `aflpp-plain`, with `AFL_LLVM_CMPLOG=1` in the wrapper | as `aflpp-plain` |
+| `aflpp` | as `aflpp-plain`, with `AFL_USE_ASAN=1` and `-fsanitize=$UB -fno-sanitize-recover=$UB $HARDEN` in its wrappers (`aflpp.md`) | as `aflpp-plain` |
+| `cmplog` | as `aflpp-plain`, with `AFL_LLVM_CMPLOG=1` in its wrappers | as `aflpp-plain` |
 | `coverage` | `-g -O1 -fprofile-instr-generate -fcoverage-mapping -mllvm -runtime-counter-relocation -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION`, no sanitizers | `-fprofile-instr-generate -fsanitize=fuzzer` (libFuzzer's `main` replays the corpus) |
 | `msan` (Linux, optional; untested in CI) | `-fsanitize=fuzzer-no-link,memory -fsanitize-memory-track-origins` | `-fsanitize=fuzzer,memory` |
 | `ubsan-int` (optional; untested in CI) | `libfuzzer` plus `-fsanitize=unsigned-integer-overflow,implicit-conversion,alignment` | as `libfuzzer` |
