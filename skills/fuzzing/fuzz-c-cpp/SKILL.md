@@ -49,7 +49,7 @@ unless they start with `.seclab/`:
 
 2. **Check the toolchain** with
    [references/install.md](references/install.md) and propose installs for
-   what's missing. Record the versions in the target file.
+   what's missing. Record the versions.
 3. **Look up the command** for the step in its reference:
 
    | Step | Reference |
@@ -71,9 +71,9 @@ unless they start with `.seclab/`:
 | FuzzTest | tag `2026-06-29` (Bazel module `20260629.0`) | CMake build, corpus, UBSan and replay ran on macOS arm64 (Homebrew LLVM 23, `--rss_limit_mb=0`) and Linux arm64 (clang 20); not yet run in a campaign |
 
 Install the engine versions in this table (AFL++, FuzzTest), unless the
-project already pins one. Install a newer release only when the user
-asks, after checking its license. Compilers come from the package manager
-(`install.md`). Record the installed versions, and say so when they
+project already pins one: then keep its version. Install a newer release
+only when the user asks, after checking its license. Compilers come from
+the package manager (`install.md`). Say so when the installed versions
 differ from this table. AFL++ is AGPL-3.0-or-later since 5.00c: invoke
 installed copies only; never copy its code or commit files it generates.
 
