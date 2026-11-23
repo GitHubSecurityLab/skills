@@ -170,7 +170,14 @@ provider.
 
 Through the launcher, the working directory and `HOME` are in scratch. So:
 - Name the build with an absolute path (`-f`, `-p`).
-- Pass the real tool caches. `<home>` is the user's home.
+- Run a wrapper from the build's root: in place of `mvn`, use
+  `sh -c 'cd "$0" && exec ./mvnw "$@"' "<root>"`, and likewise for
+  `./gradlew`. An older `mvnw` (Takari's 0.5) looks for `.mvn` from the
+  working directory up, not next to itself.
+- Pass the real tool caches. `<home>` is the user's home. `mvnw` keeps
+  its Maven in `MAVEN_USER_HOME`: add `--env MAVEN_USER_HOME=<home>/.m2`.
+  `gradlew` keeps its Gradle in `GRADLE_USER_HOME`, which the Gradle
+  block passes.
 - Pass the shell's `PATH` with the JDK first. That `PATH` finds the build
   tool.
 

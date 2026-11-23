@@ -16,9 +16,10 @@ for wrapper in mvnw gradlew; do test -x "$wrapper" && echo "$wrapper: run it onl
 (cd / && java -version; mvn -v; gradle -v)
 ```
 
-After the notice, the project's wrappers replace `mvn` and `gradle` in
-every command. `./mvnw -v` and `./gradlew -v` then show the JDK the
-wrappers use.
+After the notice, the project's wrappers replace `mvn` and `gradle` in every
+command, and `./mvnw -v` and `./gradlew -v` show the JDK the wrappers use.
+Through the launcher, the wrappers run from the build's root, with the real
+tool caches (`run.md`, "JUnit runs (regression, CI, upstreaming)").
 
 `build.md`, "JDK", covers which JDK Maven and Gradle use, and how to
 choose the JDK for Jazzer.
