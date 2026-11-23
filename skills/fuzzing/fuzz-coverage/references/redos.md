@@ -71,11 +71,14 @@ same text in more than one way:
    doubling below. Then put `repro` into the harness's input format (as
    is, if the harness passes its bytes on as text). Replay it as a
    reproduction (`fuzz-triage`, "Reproduce"), with the command in the
-   language skill's triage.md, "Reproduce". A timeout there shows that
-   input reaches the regex with the attack intact.
-   - If this replay, or a doubled one below, times out, the attack is
-     confirmed. Triage it like an external crash (`fuzz-triage`,
-     "Collect"), with the verdict `timeout`.
+   language skill's triage.md, "Reproduce".
+   - If this replay, or a doubled one below, times out: triage it like an
+     external crash (`fuzz-triage`, "Collect"), with the verdict
+     `timeout`. The attack is confirmed if triage puts the hang in the
+     regex: its bucket's location or root cause is the regex's site. A
+     hang elsewhere is a finding of its own that hides the regex: stop
+     checking this regex, and name the hang's bucket in the group's Note,
+     to check the regex again once that bug is fixed.
    - If the replay finishes, double the repeated part until a replay times
      out or the time stops growing: Java's engine, for one, may be faster
      than the one `recheck` timed.
