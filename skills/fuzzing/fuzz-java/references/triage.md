@@ -46,9 +46,10 @@ $L start --id repro-$H-<n> --harness $H --timeout <timeout_s> --env PATH="$RUN_P
   saw. E.g. 0.30.0's SQL detector throws `ArrayIndexOutOfBoundsException`
   when a `PreparedStatement`'s `execute*()` fails with a syntax error.
   That's a likely injection.
-- **Timeouts** print libFuzzer's timeout report with the thread stacks.
-  An input that finishes near the limit (`Executed … in <n> ms`) is still
-  slow: replay it with `-timeout` at half its run time. Then run the
+- **Timeouts** print libFuzzer's timeout report with the thread stacks. An
+  input that finishes near the limit (`Executed … in <n> ms`) is still slow:
+  libFuzzer checks for timeouts only every `-timeout`/2 + 1 s. Replay such an
+  input with `-timeout` at half its run time to get the report. Then run the
   growth test (`fuzz-triage`, "Find the root cause").
 - **`OutOfMemoryError`** under `-Xmx<memory_mb>m`: check whether an
   allocation size comes from the input.
