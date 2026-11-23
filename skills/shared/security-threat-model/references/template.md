@@ -15,16 +15,18 @@ Base commit: <sha> (<branch or tag>) · Updated: <date>
 - **Attacker:** <who supplies input, how> [doc: <path>]
 - **Assets:** <what must be protected: memory safety of the host process,
   files outside a base dir, ...> [doc: <path>]
+- **Trust boundaries:** <where untrusted data enters: network input,
+  uploaded files, the public API, ...> [doc: <path>]
 - **Trusted:** <operator config, caller's own code, ...> [doc: <path>]
 - **In scope:** <bug classes and impacts> [doc: SECURITY.md]
 - **Out of scope:** <e.g. crashes from invalid API use, local config
   files> [doc: SECURITY.md]
 
 ## Sources
-| Id | Entry point | Untrusted input | Attacker controls | Bug means | Provenance |
-|---|---|---|---|---|---|
-| S1 | `png_read_info(png_ptr, info)` after `png_set_read_fn` | PNG file bytes | whole stream | memory error, hang, OOM on small input | [doc: README] |
-| S2 | `Unzip.extract(zip)` | ZIP archive | entry names and contents | file written outside the target dir | [code: src/Unzip.java:40] |
+| Id | Entry point (trust boundary) | Untrusted input | Trusted around it | Attacker controls | Bug means | Provenance |
+|---|---|---|---|---|---|---|
+| S1 | `png_read_info(png_ptr, info)` after `png_set_read_fn` | PNG file bytes | read callback, `png_set_*` settings | whole stream | memory error, hang, OOM on small input | [doc: README] |
+| S2 | `Unzip.extract(zip)` | ZIP archive | target directory | entry names and contents | file written outside the target dir | [code: src/Unzip.java:40] |
 
 ## Sinks
 Call sites go in Location.
@@ -41,7 +43,7 @@ Call sites go in Location.
 
 ## Entry point: <name>
 (Focused mode: the four questions for one entry point.)
-1. Untrusted input: <...> [code: <path:line>]
+1. Untrusted input, and what is trusted around it: <...> [code: <path:line>]
 2. Trust boundary: <...> [code: <path:line>]
 3. Attacker controls: <...> [code: <path:line>]
 4. A bug means: <...> [doc: <path>]
