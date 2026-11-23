@@ -218,14 +218,15 @@ $L start --id cov-$H-<n> --harness $H --timeout <timeout_s> --env PATH="$RUN_PAT
 
 **Exact subset:** to replay exactly the inputs in `{dir}`, set
 `FUZZTEST_REPLAY={dir}`; `{dir}` needs at least one input. For example,
-for `reach.py`:
+for `reach.py`, with its paths quoted as in `coverage.md`, "Inputs that
+reach a line":
 <!-- ci: fuzztest-reach -->
 ```sh
 python3 "$F/bin/reach.py" --harness $H --corpus "$F/corpus/$H" --file <file> --line <line> \
   --env PATH="$RUN_PATH" --env "LLVM_PROFILE_FILE={out}/%p.profraw" --env "FUZZTEST_REPLAY={dir}" \
-  --timeout <timeout_s> --replay "$F/build/coverage/<test_binary> --gtest_filter=<fuzz_test> \
+  --timeout <timeout_s> --replay "'$F/build/coverage/<test_binary>' --gtest_filter=<fuzz_test> \
     --time_limit_per_input=<input_timeout_s>s --rss_limit_mb=<memory_mb>" \
-  --export "sh -c 'llvm-profdata merge -sparse \$0/*.profraw -o \$0/p.profdata && llvm-cov export -format=lcov -instr-profile=\$0/p.profdata \$1 > \$2' {out} $F/build/coverage/<test_binary> {lcov}"
+  --export "sh -c 'l=\$1; shift; llvm-profdata merge -sparse \"\$0\"/*.profraw -o \"\$0/p.profdata\" && llvm-cov export -format=lcov -instr-profile=\"\$0/p.profdata\" \"\$@\" > \"\$l\"' {out} {lcov} '$F/build/coverage/<test_binary>'"
 ```
 
 **The gate's state-leak check** (`fuzz-harness`'s gate.md): replay the

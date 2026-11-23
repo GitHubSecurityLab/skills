@@ -62,14 +62,17 @@ step 1's command with `{dir}` instead of the corpus directories, i.e.
 empty input, and `-merge=1` refuses file arguments.
 
 **Inputs that reach a line**: `reach.py` finds them, for targeted inputs
-(`fuzz-coverage`'s corpus.md). `<objects>` is as in step 3:
+(`fuzz-coverage`'s corpus.md). It splits the `--replay` and `--export`
+strings into arguments as a shell would. So single-quote each path in
+them, as the block does, and in `<objects>`: `-object='<lib>'` for each
+library of step 3:
 
 <!-- ci: c-reach -->
 ```sh
 python3 "$F/bin/reach.py" --harness $H --corpus "$F/corpus/$H" --file <file> --line <line> \
   --env PATH="$RUN_PATH" --env "LLVM_PROFILE_FILE={out}/%c%p-%m.profraw" --timeout <timeout_s> \
-  --replay "$F/build/coverage/<binary> -merge=1 -rss_limit_mb=<memory_mb> -timeout=<input_timeout_s> -artifact_prefix={run}/artifacts/copy-{copy}/ {scratch}/out {dir}" \
-  --export "sh -c 'llvm-profdata merge -sparse \$0/*.profraw -o \$0/p.profdata && llvm-cov export -format=lcov -instr-profile=\$0/p.profdata \$1 <objects> > \$2' {out} $F/build/coverage/<binary> {lcov}"
+  --replay "'$F/build/coverage/<binary>' -merge=1 -rss_limit_mb=<memory_mb> -timeout=<input_timeout_s> -artifact_prefix={run}/artifacts/copy-{copy}/ {scratch}/out {dir}" \
+  --export "sh -c 'l=\$1; shift; llvm-profdata merge -sparse \"\$0\"/*.profraw -o \"\$0/p.profdata\" && llvm-cov export -format=lcov -instr-profile=\"\$0/p.profdata\" \"\$@\" > \"\$l\"' {out} {lcov} '$F/build/coverage/<binary>' <objects>"
 ```
 
 **The gate's state-leak check** is the block below, for `fuzz-harness`'s

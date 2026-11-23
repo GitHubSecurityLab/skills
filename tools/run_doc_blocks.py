@@ -955,7 +955,7 @@ def c_shared(ctx: Context) -> None:
     out = ctx.block("c-reach", objects="", ok=(3,), **reach)
     ctx.expect("no step's report has a record for src/record.c" in out.stderr,
                "without -object, reach.py finds no record of the library's file")
-    ctx.expect("reached: " in ctx.block("c-reach", objects=objects, **reach).stdout,
+    ctx.expect("reached: " in ctx.block("c-reach", objects="-object='$F/build/coverage/%s'" % lib, **reach).stdout,
                "with the library as an object, reach.py finds an input that reaches src/record.c:16")
 
     leak = dict(sample_size=8, timeout_s=60, input_timeout_s=10, binary=common["binary"], memory_mb=2048,
