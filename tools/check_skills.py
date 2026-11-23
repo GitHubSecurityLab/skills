@@ -103,7 +103,7 @@ LONG_FILES = {
     "skills/fuzzing/fuzz-java/references/triage.md": (164, "reproduction, minimization, the typed-input decoder"),
     "skills/fuzzing/fuzz-java/references/coverage.md": (190, "JaCoCo setup, replay, export and combining"),
     "skills/fuzzing/fuzz-js/references/harness.md": (211, "ES modules, HTTP-handler and object targets, the bug-detector table and the hook API"),
-    "skills/fuzzing/fuzz-js/references/jest.md": (360, "the whole Jest path, read only when the Jest probe passes"),
+    "skills/fuzzing/fuzz-js/references/jest.md": (367, "the whole Jest path, read only when the Jest probe passes"),
 }
 LINK_RE = re.compile(r"\[[^\]]*\]\(([^)\s]+)(?:\s+\"[^\"]*\")?\)")
 FENCE_RE = re.compile(r"^\s*(```|~~~)")

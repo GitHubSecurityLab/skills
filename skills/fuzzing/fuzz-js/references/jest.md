@@ -206,9 +206,8 @@ with regex characters escaped (e.g. in `parse()`).
   directory. There, every later run would stop at them, and they could get
   committed by accident. `-artifact_prefix` can't keep them out, since the
   runner overrides it. A timeout lands at `finding-timeout`.
-- **The name pattern** is anchored, with regex characters in the titles
-  escaped, so `^<describe> <test name>$` selects exactly one fuzz test,
-  in fuzzing and regression mode alike.
+- **The name pattern** `^<test_title>$` is anchored, so it selects
+  exactly one fuzz test, in fuzzing and regression mode alike.
 - **One fuzz test per process;** the others are skipped with
   `FuzzerStartError`. The run stops at the first finding.
 - Status lines are libFuzzer's: `#<n> NEW cov: <n> ft: <n> ... exec/s:
@@ -265,22 +264,31 @@ $L start --id cov-$H-<n> --harness $H --timeout <timeout_s> --env PATH="$RUN_PAT
   `coverage.py --scope` filters it to the scope files.
 - Export as for CLI targets (`coverage.md`, "Export").
 - **A prototype pollution stays:** every later input fails with the same
-  report, and runs on the polluted prototype. Replay without the first
-  failing input before trusting the report.
+  report, and runs on the polluted prototype. Replay every input but the
+  first failing one (Exact subset, below) before trusting the report.
 - **A synchronous hang** blocks the event loop, so `JAZZER_TIMEOUT` can't
   fire. The launcher kills the replay (`timed out`), and the report is
   lost. Find the hanging input by halving the subset (Exact subset,
-  below); the hang is a blocking timeout bug. Exclude the input with the
-  name pattern, replay, and mark the snapshot partial.
+  below); the hang is a blocking timeout bug. Then replay every input but
+  that one, and mark the snapshot partial.
 - TypeScript through `ts-jest`: coverage names the `.ts` files. Their
   line numbers match the source only with `"sourceMap": true` in
   `tsconfig.json` (not yet run in a campaign).
 
 **Exact subset** (`reach.py`, the gate's state-leak check): use the replay
-command above with the pattern `^<describe> <test name> ({names})(?!.)`.
-`{names}` are the escaped input file names, joined with `|`. A pattern
-ending in `$` runs no input, and an unanchored one also runs names that
-contain the chosen ones.
+command above with the pattern `^<test_title> ({names})(?!.)`. To run
+every input but some, use `^<test_title> (?!({names})(?!.))[^ ]+(?!.)`
+instead. Input names have no spaces, so its `[^ ]+(?!.)` keeps out the
+inputs of another fuzz test whose title starts with this one's.
+`{names}` are the input file names, joined with `|`, with their regex
+characters escaped like `<test_title>`'s. Escape only the names and
+titles: the rest of the pattern is regex syntax. `reach.py` escapes
+`{names}` itself.
+
+A pattern that names inputs and ends in `$` runs no input: in regression
+mode, the runner matches a pattern ending in `$` against the fuzz test's
+own name. An unanchored one also runs the inputs whose names contain the
+chosen ones.
 
 With `reach.py`, pass both of Jest's directories as `--corpus`. Also pass
 `--ok-exit 0,1`, since Jest exits 1 with a complete report when an input
@@ -322,8 +330,7 @@ reproduce through a copy:
 
 - Each file runs as its own test, named after the file. The state
   `exited 1`, with that test failed, means the finding reproduced.
-- Escape regex characters in the whole pattern; otherwise titles like
-  `parse()` match nothing. A pattern ending in `$` runs nothing.
+- Escape regex characters in `<input_name>` (Exact subset, above).
 - Jest adds its own failure block with a code frame; the `==<pid>==` block
   comes first.
 - **Frame names can be off:** source maps name a frame after the
