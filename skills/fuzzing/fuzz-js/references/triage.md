@@ -119,11 +119,10 @@ shorten and replay) is often as quick.
 - **Prototype pollution:** to check whether the input chooses the key,
   change the key in the input and replay. If the input chooses the key,
   pollution of a built-in prototype is a vulnerability by itself
-  (CWE-1321). Node.js
-  has known gadgets that read such keys as options (`child_process`'s
-  `shell` and `env`). A fixed key needs the code that reads that key.
-  Pollution of the project's own prototype needs the code that reads
-  from that prototype.
+  (CWE-1321). Node.js has known gadgets that read such keys as options
+  (`child_process`'s `shell` and `env`). A fixed key, or pollution of the
+  project's own prototype, needs code that reads the polluted key through
+  the prototype, from an object that doesn't set the key itself.
 
 ## Debugging
 
