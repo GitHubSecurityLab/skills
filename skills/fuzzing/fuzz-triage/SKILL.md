@@ -118,9 +118,12 @@ unless they start with `.seclab/`:
    provisional: a bucket listing several crash locations may hold
    distinct bugs, or one bug from builds whose lines shifted. Compare its
    locations in step 5.
-   - If a leak is reported only from the fuzzing engine, with all its
-     allocations coming from the engine, it isn't a target bug (libFuzzer
-     on macOS: `fuzz-c-cpp`'s triage.md, "Reproduce").
+   - A leak whose allocation stacks show frames of the fuzzing engine,
+     but none of the project or the harness, is an engine leak, not a
+     target bug. `crash_buckets.py` lists it as
+     `leak in fuzzer runtime (not a target bug)`. The known case is
+     libFuzzer's RSS thread on macOS (`fuzz-c-cpp`'s triage.md,
+     "Reproduce").
    - The `no crash detected` row lists the replays without a crash. The
      inputs that didn't crash in any of step 2's attempts form a bucket
      with State `non-reproducible`; note what might make the bug flaky,
@@ -263,7 +266,8 @@ first one that applies wins:
    would skip it while fuzzing.
 2. **A bug found while fuzzing is blocking** when it ends two fuzzing
    rounds, or two long-run copies, of the same harness early.
-   Reproduction attempts don't count.
+   Reproduction attempts don't count, and neither does an engine leak
+   (step 3), which isn't a target bug.
 3. **A bug the engine skips while fuzzing isn't blocking:** AFL++ and
    Jazzer (Java) in `continuous` mode, and suppressed leaks.
 
