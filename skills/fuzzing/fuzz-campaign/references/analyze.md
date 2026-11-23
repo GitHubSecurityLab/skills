@@ -46,16 +46,14 @@ checkout's `.cifuzz-corpus`.
      **The swap** replaces `corpus/<h>/` with the merge run's `corpus/`.
      Long runs read the persistent corpus only at start-up, and nothing
      writes to it while its merge runs.
-   - If the merge reports findings (e.g. AFL++ inputs that crash only
-     under ASan): triage and fix them like any other, on the current
-     build.
+   - If the merge reports findings (e.g. AFL++ inputs that crash only under
+     ASan): triage them on the current build and fix them like any other.
+     After a fix, rerun the same merge on the fixed build, with a fresh run
+     id and an empty output, from the same untouched input directories, and
+     swap then. A fix can add branches that make a dropped input useful
+     again. Keep the earlier attempts' logs and findings.
    - If the merge didn't finish: rerun it with a fresh run id and a larger
      kill limit; nothing is swapped.
-   - If the merge found a bug: fix it. Then rerun the same merge on the
-     fixed build, with a fresh run id and an empty output, from the same
-     untouched input directories, and swap then. A fix can add branches
-     that make a dropped input useful again. Keep the earlier attempts'
-     logs and findings.
    - If the engine is Jest: it needs no merge.
 5. **Measure** coverage once, after the swap, with the current coverage
    build. Replay every harness's corpus, not just the long-run corpora,
