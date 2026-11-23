@@ -15,12 +15,12 @@ A fixed bug gets its own test instead of a file in these directories.
 ## The bug's reproducer (`fuzz-triage`)
 
 Every real bug gets one, written in triage on the build that found it: a
-JUnit 5 test class in `crashes/<bucket>/<Name>.java`, with no package. It
-calls the project's API with the concrete values the harness derived from
-the input, not through the harness and not as a crash file. It also has a
-`main` that runs the test method, so the reproducer runs without the
-build tool. Take the values from the harness; for typed parameters,
-decode the crash file (`triage.md`).
+JUnit 5 test class `<repro_class>`, with no package, in
+`crashes/<bucket>/<repro_class>.java`. It calls the project's API with the
+concrete values the harness derived from the input, not through the harness
+and not as a crash file. It also has a `main` that runs the test method, so
+the reproducer runs without the build tool. Take the values from the harness;
+for typed parameters, decode the crash file (`triage.md`).
 
 - **It includes the check that caught the bug,** so it fails before the
   fix: the exception itself, the harness's property check written out, or
