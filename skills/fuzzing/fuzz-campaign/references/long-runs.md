@@ -129,13 +129,15 @@ The findings of those runs must reproduce on the builds that found them.
 
 ## Cleanup
 
-A worktree is needed only until phase 1 of every run that used it: run
-corpora live in the checkout's `runs/`. First copy a Jest run's new corpus
-files out (`fuzz-js`). Nothing else in the worktree needs keeping, so
-remove it with `--force`. A plain `git worktree remove` refuses when the
-worktree has initialized submodules, or build outputs the project doesn't
-ignore. A project that builds only in-tree has a worktree per variant:
-remove each `<tree>/<variant>`, then `rmdir "<tree>"`.
+After phase 1 of every run that used it, remove a launch worktree: run
+corpora live in the checkout's `runs/`. Before that, copy a Jest run's new
+corpus files out (`fuzz-js`); nothing else in it needs keeping. Other
+worktrees (`base`, bisect, upstreaming) go when their step says so.
+
+Remove a worktree with `--force`: a plain `git worktree remove` refuses
+when the worktree has initialized submodules, or build outputs the project
+doesn't ignore. A project that builds only in-tree has a worktree per
+variant: remove each `<tree>/<variant>`, then `rmdir "<tree>"`.
 <!-- ci: worktree-cleanup -->
 ```sh
 git worktree remove --force "<worktree>"
