@@ -28,7 +28,8 @@ checkout's `.cifuzz-corpus`.
    a merge run `merge-<h>-<n>` (the language skill's run.md, "Merging a
    run's corpus back"). The persistent corpus and the run corpora go into
    the merge run's own corpus, which then replaces the persistent corpus.
-   Give the merge run a generous kill limit, in hours (`--timeout`): the
+   Give the merge run a generous kill limit of a few hours, given in
+   seconds (`--timeout <timeout_s>`, e.g. 14400 for 4 hours): the
    per-input `-timeout` already bounds every input, and a killed merge
    leaves its corpus empty.
 
