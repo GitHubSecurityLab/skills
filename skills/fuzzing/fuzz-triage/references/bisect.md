@@ -18,14 +18,21 @@
      not. It must never forward the reproducer's exit status: a status of
      128 or more (ASan's 134 on macOS) aborts the bisect.
 3. **Run the bisect.** Bisect from the good tag to the base in a worktree
-   of its own. Never bisect in the checkout, which develop keeps changing:
+   of its own, named after the bucket. Never bisect in the checkout,
+   which develop keeps changing. The bisect and the cleanup run only if
+   the worktree was created:
    ```sh
-   W="<checkout>/../<repo>.seclab-worktrees/bisect"
-   git worktree add --detach "$W" <base>
-   git -C "$W" bisect start <base> <good tag>
-   git -C "$W" bisect run sh "$PWD/.seclab/fuzz/crashes/<bucket>/bisect.sh"
-   git -C "$W" bisect reset; git worktree remove --force "$W"
+   W="<checkout>/../<repo>.seclab-worktrees/bisect-<bucket>"
+   git worktree add --detach "$W" <base> && {
+     git -C "$W" bisect start <base> <good tag> &&
+       git -C "$W" bisect run sh "$PWD/.seclab/fuzz/crashes/<bucket>/bisect.sh"
+     git -C "$W" bisect reset; git worktree remove --force "$W"
+   }
    ```
+   If the worktree already exists, an earlier bisect of this bucket was
+   cut off: remove it (`fuzz-campaign`'s long-runs.md, "Cleanup") and
+   run the block again.
+
    If skipped commits leave several candidates ("The first bad commit
    could be any of"), the introducing commit is one of them: record them
    all.
