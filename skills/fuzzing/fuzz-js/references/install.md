@@ -50,5 +50,6 @@ Jest fuzz tests also need `@jazzer.js/jest-runner`, installed the same
 way (`jest.md`, "Setup"). List it with Jazzer.js.
 
 Ubuntu's own `nodejs` package (18) is too old. To find Node's `bin`
-directory for `PATH` in the agent's commands, run
-`fnm exec --using=24 -- which node`.
+directory for `PATH` in the agent's commands (`<node_bin>` in `run.md`),
+run `dirname "$(fnm exec --using=24 -- which node)"`. On Linux, `fnm` is
+`~/.local/share/fnm/fnm`.
