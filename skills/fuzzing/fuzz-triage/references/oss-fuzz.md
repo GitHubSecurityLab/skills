@@ -8,8 +8,9 @@ interactive mode, ask first, as for the install plan.
 1. **Build at the crash revision.** In a clone of `google/oss-fuzz`
    (Docker), build with the report's sanitizer and architecture, from a
    checkout at the report's crash revision:
-   `python3 infra/helper.py build_fuzzers --sanitizer <sanitizer> <project> <checkout>`.
-   For i386 jobs, add `--architecture i386`.
+   `python3 infra/helper.py build_fuzzers --sanitizer <sanitizer> [--architecture <arch>] <project> <checkout>`.
+   `<arch>` is the report's architecture, `i386` or `aarch64`; leave the
+   option out for `x86_64`, the default.
 2. **Reproduce** the testcase through the launcher, as run
    `oss-fuzz-<h>-<n>`:
    - The launcher's empty environment hides the Docker client's settings.
