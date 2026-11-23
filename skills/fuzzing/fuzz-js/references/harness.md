@@ -48,10 +48,11 @@ included. So the fuzzer never finds `magic` in
 `export const isMagic = (s) => s === "magic"` unless the dictionary has
 it. CommonJS instruments such a module.
 
-**TypeScript:** target the compiled JavaScript (`build.md`). Node 22.18
-and later import `.ts` files natively, uninstrumented, and a `require` of
-one fails with a `SyntaxError`. The gate's `SF:` check shows the missing
-instrumentation.
+**TypeScript:** target the compiled JavaScript (`build.md`). Under
+Jazzer.js, a `require` of a `.ts` file fails with a `SyntaxError` on every
+Node version. Node 22.18 and later `import` `.ts` files natively, but
+uninstrumented, and older versions refuse them. The gate's `SF:` check
+shows the missing instrumentation.
 
 ## HTTP handlers
 
