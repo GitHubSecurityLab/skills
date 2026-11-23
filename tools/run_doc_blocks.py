@@ -1005,7 +1005,7 @@ def c_aflpp(ctx: Context) -> None:
                    "the LTO check tells an instrumented library (%s) from the harness alone: %s" % (binary, out.strip()))
     ctx.env["PATH"] = path
     ctx.sh('mkdir -p "$F/corpus/$H" && cp seeds/ok "$F/corpus/$H/" && cp record.dict "$F/dict/$H.dict"')
-    common = dict(binary="fuzz_record", memory_mb=2048)
+    common = dict(binary="fuzz_record", memory_mb=2048, build="$F/build")
     ctx.write_block(
         "aflpp-spec", ".seclab/fuzz/runs/record-long1/spec.json", harness="record", n=1, tree=ctx.repo, run_s=120,
         aflpp_bin=aflpp_bin(), llvm_bin=llvm_bin(), workspace=ctx.F, input_timeout_ms=10000,
