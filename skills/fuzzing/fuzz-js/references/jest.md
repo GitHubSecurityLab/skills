@@ -104,9 +104,11 @@ Each key also works as an environment variable with a JSON value
 per-run settings this way, because from scratch the upward search doesn't
 find a sub-package's file. Full list: `docs/fuzz-settings.md`.
 
-**Check:** `jest <test file>`, run through the launcher (below), passes
-in regression mode. Its output lists the fuzz test with an `<empty>` case.
-If the check fails, see "Common failures" at the end of this file.
+**Check:** `jest <test file>` passes in regression mode. Run it through
+the launcher like the replay in "Coverage" below, without the name
+pattern and the coverage options. Its output lists the fuzz test with an
+`<empty>` case. If the check fails, see "Common failures" at the end of
+this file.
 
 ## Writing a fuzz test
 
