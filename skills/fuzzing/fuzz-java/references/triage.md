@@ -55,9 +55,11 @@ $L start --id repro-$H-<n> --harness $H --timeout <timeout_s> --env PATH="$RUN_P
   allocation size comes from the input.
 - **`Stack overflow (use '-Xss<n>k' to reproduce)`** is a
   `FuzzerSecurityIssueLow`: recursion driven by the input's nesting. It's
-  a DoS when the input is small. The reproducer runs with that `-Xss`
-  (`--env JOPTS="$JOPTS -Xss<n>k"`), since another JVM's stack may be
-  deeper.
+  a DoS when the input is small. The reproducer and every command that
+  runs the finding (replays, `-runs=100`, minimizing) need that `-Xss`:
+  after `env.sh`, set `JOPTS="$JOPTS -Xss<n>k"`. Without it, an input
+  nested just deep enough to overflow often doesn't overflow again in a
+  fresh JVM.
 - **Other exceptions** are `unexpected_exception` unless the API documents
   them for invalid input (then the harness should catch them:
   `harness_bug`).
