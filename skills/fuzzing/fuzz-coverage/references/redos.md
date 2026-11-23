@@ -15,9 +15,15 @@ same text in more than one way:
    text matched) comes from input. Write them one per line in
    `.seclab/fuzz/sinks/<id>.regex`, with three tab-separated fields:
    - the site, as `file:line`;
-   - the flags;
+   - the flags, in JavaScript's letters, which `recheck` takes. For Java,
+     `CASE_INSENSITIVE`, `MULTILINE` and `DOTALL` are `i`, `m` and `s`,
+     whether set in `Pattern.compile` or inline at the pattern's start,
+     such as `(?i)`. Take inline flags out of the pattern, since `recheck`
+     can't parse them, and leave out Java's other flags;
    - the pattern as the engine sees it, with a string literal's escapes
-     resolved.
+     resolved. Write a tab, line break or other control character in it
+     as a regex escape, such as `\t`, `\n` or `\x0b`: a raw one breaks
+     the file's tab-separated lines.
 2. **Screen and time** them with `recheck`. It tells which ones backtrack
    and, for each of those, writes an attack that should time out. It's
    optional and needs Node.js. Without `recheck`, read each regex for the
