@@ -12,7 +12,7 @@ unless they start with `.seclab/`:
 
 1. **Collect seeds,** in this order. Put them in `corpus/<harness>/`
    (Jest: the test's directory in `.cifuzz-corpus/`; see the language
-   skill).
+   skill), each in the harness's input layout (step 2).
    1. The previous campaign's corpus for this harness (`archive/`, or a
       merged corpus carried into a new campaign).
    2. Inputs committed by existing harnesses (seed directories, regression
