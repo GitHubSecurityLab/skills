@@ -86,8 +86,10 @@ on Jest 29.7 and 30.3, and fails on 30.4 and later.
    grep -c '\.fuzz\.[jt]s$' "$F/runs/jest-list-<n>/copy-0/log" || :
    ```
 
-   `0` means none. Otherwise, name or place the fuzz tests so that the
-   project's `testMatch` doesn't reach them.
+   `0`, with the state `finished`, means none. On any other state, read
+   the log: a failed listing prints `0` too. If the count isn't `0`, name
+   or place the fuzz tests so that the project's `testMatch` doesn't
+   reach them.
 5. Commit the runner, the config and the scripts as `fuzz(build): ...`.
 
 **`.jazzerjsrc.json`:** project-wide settings, read only by the Jest
