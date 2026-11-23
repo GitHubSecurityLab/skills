@@ -31,10 +31,7 @@ on Jest 29.7 and 30.3, and fails on 30.4 and later.
    D="$F/jest-probe"; mkdir -p "$D"
    echo '{"private": true}' > "$D/package.json"
    echo 'describe("probe", () => { it.fuzz("runs", (data) => {}); });' > "$D/probe.fuzz.js"
-   cat > "$D/jest.config.js" <<EOF
-   module.exports = { rootDir: __dirname, testMatch: ["<rootDir>/probe.fuzz.js"],
-     testRunner: require.resolve("@jazzer.js/jest-runner", { paths: ["$P"] }) };
-   EOF
+   printf 'module.exports = { rootDir: __dirname, testMatch: ["<rootDir>/probe.fuzz.js"], testRunner: require.resolve("@jazzer.js/jest-runner", { paths: ["%s"] }) };\n' "$P" > "$D/jest.config.js"
    $L start --id jest-probe-<n> --harness jest-probe --timeout 120 --env PATH="$RUN_PATH" -- sh -c '
        "$1" --config "$2/jest.config.js" && JAZZER_FUZZ=1 JAZZER_FUZZER_OPTIONS="[\"-runs=1000\"]" "$1" --config "$2/jest.config.js"
        rc=$?; rm -r "$2"; exit $rc' sh "$P/node_modules/.bin/jest" "$D"

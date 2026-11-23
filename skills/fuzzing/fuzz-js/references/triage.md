@@ -55,14 +55,12 @@ these reports:
   `finished`.
   <!-- ci: js-pp-tripwire -->
   ```sh
-  cat > "$F/tripwire.js" <<'EOF'
-  const proto = <prototype>.prototype, key = "<property>";
+  printf '%s\n' 'const proto = <prototype>.prototype, key = "<property>";
   Object.defineProperty(proto, key, { configurable: true, set(value) {
     // Other objects get their own property, as without the tripwire.
     if (this !== proto) return void Object.defineProperty(this, key, { value, writable: true, enumerable: true, configurable: true });
     console.error(new Error("<prototype>.prototype." + key + " written").stack);
-  } });
-  EOF
+  } });' > "$F/tripwire.js"
   $L start --id pp-$H-<n> --harness $H --timeout <timeout_s> --env PATH="$RUN_PATH" -- \
     node -r "$F/tripwire.js" "$P/node_modules/.bin/jazzer" "$P/<target_file>" "<finding>" --timeout=<input_timeout_ms>
   ```
