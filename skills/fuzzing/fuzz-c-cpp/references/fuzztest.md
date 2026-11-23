@@ -77,7 +77,16 @@ gtest_discover_tests(parser_fuzz_test)
 The macro sets flags only for its own directory and the directories below
 it. A library in a sibling directory, or one defined before the macro,
 stays uninstrumented. If the top-level `CMakeLists.txt` can't be edited,
-pass the flags as cache variables instead.
+pass the macro's flags as cache variables instead, in the `fuzztest`
+build below:
+- add `-g -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION -UNDEBUG
+  -fsanitize=address -fsanitize-coverage=inline-8bit-counters
+  -fsanitize-coverage=trace-cmp -DADDRESS_SANITIZER` to
+  `-DCMAKE_C_FLAGS` and `-DCMAKE_CXX_FLAGS`;
+- add `-fsanitize=address` to `-DCMAKE_EXE_LINKER_FLAGS`.
+
+These are the macro's flags in tag `2026-06-29`
+(`cmake/FuzzTestFlagSetup.cmake`); check them again after an upgrade.
 
 Either way, check the library's objects (`build.md`), and make the
 library static: FuzzTest reads only the first module's counters (warning:
