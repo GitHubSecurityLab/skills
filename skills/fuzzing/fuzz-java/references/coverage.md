@@ -66,7 +66,7 @@ build files and no coverage build variant.
      the ones that ran (a rebuild in between), `jacococli` warns
      "Execution data for class … does not match", still exits 0, and
      reports those classes as uncovered. The block stops there and keeps
-     the report log. Rebuild or replay again with the same classes.
+     the report log. Replay again on the current build (step 2).
    - **Keep the `.exec` files.** They're the only data that can be
      combined correctly.
    - The lcov file has line and branch records per source file. Its paths
