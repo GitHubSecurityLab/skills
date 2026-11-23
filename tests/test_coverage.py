@@ -199,6 +199,20 @@ class SummaryTests(unittest.TestCase):
         self.assertNotIn("Change (points)", out)
         self.assertIn("different code", err)
 
+    def test_summary_gives_no_change_when_a_file_is_gone(self):
+        prev = "SF:/w/a.c\nDA:1,1\nDA:2,0\nend_of_record\nSF:/w/b.c\nDA:1,1\nDA:2,1\nend_of_record\n"
+        new = "SF:/w/a.c\nDA:1,1\nDA:2,1\nend_of_record\n"  # a.c gained a line, b.c is gone
+        with tempfile.TemporaryDirectory() as tmp:
+            paths = []
+            for name, text in (("prev.lcov", prev), ("new.lcov", new)):
+                paths.append(os.path.join(tmp, name))
+                with open(paths[-1], "w") as handle:
+                    handle.write(text)
+            _, out, err = run("summary", paths[1], "--prev", paths[0], "--root", "/w")
+        self.assertIn("**Missing:** 1 file of the previous snapshot has no data in this one (b.c)", out)
+        self.assertNotIn("; previous", out)
+        self.assertIn("missing", err)
+
     def test_scope_entries_match_from_the_root_not_by_suffix(self):
         text = (
             "SF:/w/src/parse.c\nDA:1,1\nend_of_record\n"

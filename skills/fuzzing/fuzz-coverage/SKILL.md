@@ -115,14 +115,15 @@ only reads the gaps' code.
    python3 .seclab/fuzz/bin/coverage.py summary .seclab/fuzz/coverage/<h>/r<round>.lcov --prev .seclab/fuzz/coverage/<h>/r<round-1>.lcov --scope .seclab/fuzz/targets/<id>.scope --root .
    ```
    - If the scope code differs between the two snapshots, as after a fix
-     or a build patch: `summary` says so and gives no change. This
-     snapshot is a new baseline, and if it's a round's, that round doesn't
-     count toward the plateau.
+     or a build patch, or the previous snapshot has a scope file this one
+     lacks: `summary` says so and gives no change. This snapshot is a new
+     baseline, and if it's a round's, that round doesn't count toward the
+     plateau.
 
    Add a row to Coverage rounds, with the run's executions. If the row is
    for a round that doesn't count toward the plateau, its Change says why
-   instead. The reason is a crash that cut it short, different code, or
-   step 4's "Too slow" rule.
+   instead. The reason is a crash that cut it short, different code, a
+   missing file, or step 4's "Too slow" rule.
 4. **Plateau?** This decides when rounds stop and diagnosis starts. Don't
    diagnose earlier: a gap found before the plateau may be code the fuzzer
    would still reach.

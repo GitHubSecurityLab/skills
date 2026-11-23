@@ -508,7 +508,10 @@ def cmd_summary(args) -> int:
     if args.prev:
         prev_files, _ = filter_scope(_load(args, [args.prev]), mapper, scope)
     differs = sorted(d for d in set(files) & set(prev_files) if not _same_code(files[d], prev_files[d]))
-    compare = bool(args.prev) and not differs
+    # A file only the new snapshot has counts as reached (JS loads files lazily); one only the
+    # previous snapshot has would drop its coverage from the totals.
+    gone = sorted(set(prev_files) - set(files))
+    compare = bool(args.prev) and not differs and not gone
 
     totals = _totals(files)
     prev_totals = _totals(prev_files) if compare else None
@@ -542,6 +545,14 @@ def cmd_summary(args) -> int:
         )
         print()
         print("warning: different code than the previous snapshot: %s" % ", ".join(differs), file=sys.stderr)
+    if gone:
+        print(
+            "**Missing:** %d %s of the previous snapshot %s no data in this one (%s): the totals don't compare, "
+            "so there's no change; this snapshot is a new baseline"
+            % (len(gone), "file" if len(gone) == 1 else "files", "has" if len(gone) == 1 else "have", ", ".join(gone))
+        )
+        print()
+        print("warning: files missing since the previous snapshot: %s" % ", ".join(gone), file=sys.stderr)
     for key, name in (("br", "Branches"), ("ln", "Lines"), ("fn", "Functions")):
         hit, total = totals[key]
         text = "- **%s:** %s" % (name, _ratio(hit, total))
@@ -1781,7 +1792,10 @@ def build_parser() -> argparse.ArgumentParser:
     with_root(p)
     with_sf_base(p)
     with_scope(p)
-    p.add_argument("--prev", help="previous lcov snapshot to compare with (no change if its code differs)")
+    p.add_argument(
+        "--prev",
+        help="previous lcov snapshot to compare with (no change if its code differs or it has a file this one lacks)",
+    )
     p.add_argument("--top", type=int, default=40, help="max files listed (default 40)")
     p.set_defaults(func=cmd_summary)
 
