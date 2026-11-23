@@ -63,6 +63,10 @@ sees them only partly** (from the target's sink list):
 - an integrity check never accepts modified data (flip a byte of a signed
   input and assert verification fails).
 
+A sink group that no sanitizer, engine detector or such check can see is
+uncheckable: record that state in the target's Sinks table, with what goes
+unseen in its Note (`fuzz-coverage`, "Check the sinks").
+
 ## Preconditions and comparators
 
 - **Preconditions:** a property usually holds only for some inputs: a

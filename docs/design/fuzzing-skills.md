@@ -158,7 +158,7 @@ In develop, the agent fuzzes a harness in short rounds and measures branch cover
 - **Whether to keep it: only if it worked.** A harness or build change stays if the code it aimed at becomes covered, or if coverage at the next plateau is clearly higher than before. Seeds and dictionary entries always stay.
 
 Coverage shows that code ran, not that its dangerous values were tried, so sinks are tracked on their own, an idea from [GONDAR](https://arxiv.org/abs/2604.01645), a paper on sink-centric Java fuzzing:
-- **Each group of sinks has a state, so effort goes where bugs can still be found:** not reached, reached, triggered, tested (inputs aimed at it reached it and ran with sanitizers and detectors on, without a finding) or sanitized (the code provably blocks the attack). Tested and sanitized groups get no more inputs until their code changes.
+- **Each group of sinks has a state, so effort goes where bugs can still be found:** not reached, reached, triggered, sanitized (the code provably blocks the attack) or uncheckable (no sanitizer, detector or check in the harness can see a bug there). A reached group gets four tries of targeted inputs; after them, and once triggered or sanitized, it gets no more inputs until its code or checks change. An uncheckable group gets none, since no input can produce a finding there, and is left for review by hand.
 - **A sink that's reached but not triggered gets targeted inputs.** The condition that breaks it is stated, and a generator varies the inputs that reach it toward that condition, within the checks on the way, so the variants still reach it. The variants run with sanitizers and detectors on, since coverage shows only that the sink was reached. In C/C++, memory-safety hotspots get the same treatment.
 - **Regular expressions get their own check** in Java and JS. Those applied to input are screened for backtracking and confirmed through the harness, since a slow regular expression (ReDoS) rarely reaches the fuzzer's timeout at the small input sizes fuzzers use.
 
@@ -185,7 +185,7 @@ A long run fuzzes one harness for hours or days, with several copies (parallel f
 
 Analysis, when the user asks, turns a run's results into evidence, fixes and next steps:
 - **Evidence first, on the run's builds:** every finding is triaged on the build that found it, since a later build may no longer reproduce it. Fixes, reports, corpus merges and coverage follow on the current build.
-- **Each harness is sorted by its result:** one whose coverage still grew runs longer next time, one that plateaued with gaps goes back to develop, and sinks reached but not triggered get targeted inputs. One that plateaued with no gaps or pending sinks is done, so analysis can also end a target.
+- **Each harness is sorted by its result:** one whose coverage still grew runs longer next time, one that plateaued with gaps goes back to develop, and reached sinks with tries left get targeted inputs. One that plateaued with no gaps or pending sinks is done, so analysis can also end a target.
 - **A harness waits for its run's analysis.** Autonomous develop doesn't change a harness while it has a run going or not yet analyzed, so the next run starts from that run's inputs; in interactive mode, the user decides.
 
 ## 11. Triage and fixes

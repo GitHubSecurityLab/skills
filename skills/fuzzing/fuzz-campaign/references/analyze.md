@@ -85,7 +85,7 @@ checkout's `.cifuzz-corpus`.
    Then pick the harness's next steps; it can have more than one:
    - growing or unknown: run it longer next time;
    - plateaued with gaps: back to develop;
-   - sink groups still in state reached: targeted inputs
+   - sink groups in state reached, with tries left: targeted inputs
      (`fuzz-coverage`'s corpus.md) before its next run;
    - plateaued, with no gaps and no such sinks: nothing is left worth the
      cost. Once all of a target's harnesses end up here, the target

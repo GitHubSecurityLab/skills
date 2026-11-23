@@ -284,6 +284,7 @@ actions isn't the end: it leads to long runs and their analysis.
    - the targets' sink states, and whether they still grow
      ([references/analyze.md](references/analyze.md), "Sort each
      harness");
+   - the uncheckable sink groups, to review by hand;
    - findings by verdict, with report links;
    - items that need the user's decision;
    - held-back material, and the branches that must not be pushed (safety

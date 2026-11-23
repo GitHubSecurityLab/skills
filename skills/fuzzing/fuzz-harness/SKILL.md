@@ -58,8 +58,8 @@ unless they start with `.seclab/`:
 - `.seclab/threat-model.md`. Without one, invoke `security-threat-model` in
   focused mode for this entry point.
 - `targets/<id>.md`: Candidate (entry point, attacker control, checks,
-  setup, how to call), Scope files. Without one (standalone use): write
-  the minimal one first
+  setup, how to call), Scope files, Sinks. Without one (standalone use):
+  write the minimal one first
   ([references/target-file.md](references/target-file.md)).
 - `CAMPAIGN.md`: Harnesses (workflow of each existing harness).
 - The language skill (`fuzz-c-cpp`, `fuzz-java`, `fuzz-js`): harness format,
@@ -227,9 +227,9 @@ unless they start with `.seclab/`:
 
 What the steps in this file write or change. Paths are relative to
 `.seclab/fuzz/` unless they start with `.seclab/`:
-- `targets/<id>.md`: Harness (workflow, corpus and dictionary paths), Gate.
-  The target file's layout: `fuzz-campaign`'s ledger.md,
-  "`targets/<target>.md`".
+- `targets/<id>.md`: Harness (workflow, corpus and dictionary paths), Gate,
+  Sinks (uncheckable groups). The target file's layout:
+  `fuzz-campaign`'s ledger.md, "`targets/<target>.md`".
 - `CAMPAIGN.md`: Harnesses table.
 - A `fuzz(harness): ...` commit on the campaign branch.
 

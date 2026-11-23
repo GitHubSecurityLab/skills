@@ -11,9 +11,9 @@ same text in more than one way:
   that end in another character.
 
 1. **List** the regexes in the regular-expression sink groups whose state
-   is reached, and keep only those whose subject (the text matched) comes
-   from input. Write them one per line in `.seclab/fuzz/sinks/<id>.regex`,
-   with three tab-separated fields:
+   is reached, with tries left, and keep only those whose subject (the
+   text matched) comes from input. Write them one per line in
+   `.seclab/fuzz/sinks/<id>.regex`, with three tab-separated fields:
    - the site, as `file:line`;
    - the flags;
    - the pattern as the engine sees it, with a string literal's escapes
@@ -83,5 +83,7 @@ same text in more than one way:
        attack before the regex. For Java, the cause can also be that
        Java's engine doesn't backtrack on this pattern. If you find that
        limit or filter in the project's code, record the group as
-       sanitized, with the limit's or filter's `file:line`; otherwise
-       record it as tested.
+       sanitized, with the limit's or filter's `file:line`.
+
+A group still in state reached once its regexes are checked has used its
+tries: record "4 of 4 tries" in its Note.

@@ -52,8 +52,8 @@ a probe) before counting it.
 ## Sinks reached but not triggered
 
 Reaching a sink doesn't test it: the coverage build shows only that it
-ran. For each group that `SKILL.md`'s "Check the sinks" finds reached but
-not triggered, by language and sink kind:
+ran. For each group that `SKILL.md`'s "Check the sinks" finds reached,
+with tries left, by language and sink kind:
 - **Java/JS, with a detector that sees the whole call:** add seeds or
   dictionary entries with the detector's trigger value, the input that
   makes the detector fire; Jazzer typed parameters use `@ValuePool`
@@ -66,8 +66,8 @@ not triggered, by language and sink kind:
   check first (`fuzz-harness`, checks beyond crashes). A detector sees a
   sink only partly when it misses, for example, a command's arguments or a
   resolved path. Where the harness can't check it, fuzzing doesn't detect
-  it. A detector that can't see the sink proves nothing about
-  sanitization.
+  it: a group nothing sees is uncheckable (`SKILL.md`, "Check the sinks").
+  A detector that can't see the sink proves nothing about sanitization.
 - **Java/JS regular expressions applied to input:** fuzzing finds only
   exponential backtracking. Check them as redos.md next to this file says.
 - **C/C++ hotspots, after the first plateau:**
@@ -105,7 +105,7 @@ doesn't trigger:
 List the candidate actions:
 - one for each set of diagnosed gaps that a single action would unlock,
   such as all blocked branches that compare against the same keyword;
-- one for each sink group reached but not triggered;
+- one for each reached sink group with tries left;
 - the top new targets from `fuzz-campaign`'s target ranking.
 
 One rule picks among them: **the most security-relevant code unlocked

@@ -180,8 +180,8 @@ only reads the gaps' code.
    Read each top gap in scope in context and classify why it's uncovered,
    using [references/diagnosis.md](references/diagnosis.md). The reason
    decides the action (step 8).
-7. **Check the sinks.** A sink group's state says whether it still needs
-   inputs. Run `sites`:
+7. **Check the sinks.** A sink group's state, and for a reached group its
+   tries, say whether the group still needs inputs. Run `sites`:
    ```sh
    python3 .seclab/fuzz/bin/coverage.py sites .seclab/fuzz/coverage/<h>/r<round>.lcov --sites .seclab/fuzz/sinks/<id>.tsv --root .
    ```
@@ -191,26 +191,39 @@ only reads the gaps' code.
    - If it marks a site *to confirm*: check that its call ran before
      counting it (diagnosis.md, "Sites to confirm").
 
-   Update each group's state: not reached, reached, or one of these:
+   Update each group's state: **not reached** or **reached**, as `sites`
+   reports, or the first of these that applies:
    - **triggered:** a bucket in `crashes/` has its crash location or root
      cause at one of the group's sites;
-   - **tested:** its trigger or boundary inputs reached it and ran on the
-     sanitizer or detector build without a finding;
    - **sanitized:** the code blocks the attack before the sink, recorded
-     with the `file:line` that does.
+     with the `file:line` that does;
+   - **uncheckable:** no sanitizer, engine detector or check in the
+     harness can see a bug at its sites, and the harness can't get a
+     check that does (`fuzz-harness`'s properties.md, "Security checks at
+     sinks without an engine detector"). Its Note says what goes unseen.
 
-   Tested and sanitized groups get no more inputs until their code
-   changes. For the others:
+   A reached group's Note counts its tries with targeted inputs, e.g.
+   "2 of 4 tries"; the check of a regular expression applied to input
+   (redos.md) counts as all four.
+
+   Then act on each group by its state:
    - A high-ranked group **not reached**: follow its call path back to the
      deepest covered call with `show`, and diagnose the branch there as a
      gap (step 6).
-   - Groups **reached but not triggered**: step 8 chooses the action that
+   - Groups **reached** with tries left: step 8 chooses the action that
      triggers them. [references/diagnosis.md](references/diagnosis.md),
      "Sinks reached but not triggered", gives that action for each
      language and sink kind (targeted inputs:
      [references/corpus.md](references/corpus.md)). For Java/JS regular
      expressions, that action follows
      [references/redos.md](references/redos.md).
+   - **Triggered** and **sanitized** groups, and **reached** ones after
+     four tries: no more inputs until their code changes.
+   - **Uncheckable** groups: no inputs until something can see a bug at
+     their sites. The summary lists them for review by hand (step 10).
+
+   When a group's code or checks change, set its state again from
+   `sites`, with its tries back at 0.
 8. **Choose the next action.** A gap that got 3 actions without covering
    their aim is **hard**: mark it so in the target's Notes, and aim no
    further action at it until there's new evidence. Choose the action by
@@ -265,9 +278,9 @@ only reads the gaps' code.
     a long run. First minimize its corpus
     ([references/corpus.md](references/corpus.md), corpus upkeep). Then
     write a short summary into the target file: final scope coverage, main
-    remaining gaps with their classification, sink states, and whether a
-    long run is worthwhile (reached-but-untriggered sinks, deep code still
-    being found).
+    remaining gaps with their classification, sink states with the
+    uncheckable groups to review by hand, and whether a long run is
+    worthwhile (reached sinks, deep code still being found).
 11. **Overlap check** when the target has more than one harness, or after
     a new harness for an existing workflow: it finds harnesses that
     duplicate each other. `<last>` is each harness's latest snapshot. For

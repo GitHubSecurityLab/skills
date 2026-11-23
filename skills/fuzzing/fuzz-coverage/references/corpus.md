@@ -57,10 +57,10 @@ from it.
       - for a sink they reach, put the variants into the corpus and run a
         round (`fuzz-coverage`, "Run a round"), which runs them first: a
         sink's trigger shows only on the sanitizer or detector build.
-   5. Repeat from step 2 until the branch is covered, or until the
-      variants reach the sink and have run in a round. Stop after four
-      tries. For C/C++, value profiling or CmpLog can also help the
-      fuzzer climb toward the value.
+   5. Repeat from step 2 until the branch is covered or the sink is
+      triggered. Stop after four tries; for a sink, count them in its
+      group's Note (`fuzz-coverage`, "Check the sinks"). For C/C++, value
+      profiling or CmpLog can also help the fuzzer climb toward the value.
 
 2. **Corpus upkeep:** one corpus per harness, whichever engine runs it.
    Develop rounds write into it; long runs write into their own run
