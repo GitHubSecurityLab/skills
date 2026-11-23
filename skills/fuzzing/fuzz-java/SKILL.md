@@ -50,7 +50,7 @@ unless they start with `.seclab/`:
    | No fuzz tests, and the user names a format | that one |
    | JUnit 5, and the target parses a file format (binary or text) | `@FuzzTest` with one `byte[]` or `@NotNull @WithUtf8Length(max = …) String` parameter; a parser with options also gets a second, typed fuzz test for them (`harness.md`) |
    | JUnit 5 | `@FuzzTest` with typed parameters |
-   | JUnit 4 or TestNG | add JUnit 5 and `jazzer-junit` in test scope (`build.md`) |
+   | JUnit 4 or TestNG | add JUnit 5, `jazzer-junit` and the engine that keeps the existing tests running, in test scope (`build.md`, "Dependencies (test scope only)") |
 
 2. **Check the toolchain** with
    [references/install.md](references/install.md): check the JDK and
