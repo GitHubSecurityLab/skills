@@ -27,7 +27,9 @@ unless they start with `.seclab/`:
    "Setup card").
 2. **Toolchain.** Check what the language skill requires (compilers,
    engine versions, build tools) with the check in its `install.md`, which
-   runs no project code. Record the versions in the target file.
+   runs no project code. Record the versions in the target file, in the
+   block of the harness being built. At campaign setup, no target file
+   exists yet: the check then only makes the install plan.
    - **Install plan** from the language skill's `install.md`: only what's
      missing for this project, each item with the command for this OS and
      the expected time. Record what was installed in `decisions.md`.
@@ -148,6 +150,6 @@ to the next target.
 
 What the steps in this file write or change. Paths are relative to
 `.seclab/fuzz/` unless they start with `.seclab/`:
-- `targets/<id>.md`: Harness (build variants and commands), tool versions.
+- `targets/<id>.md`: Harness (build variants, commands and tool versions).
 - `CAMPAIGN.md`: Targets status (`set-aside` when it applies).
 - `decisions.md`: integration choice, installs.
