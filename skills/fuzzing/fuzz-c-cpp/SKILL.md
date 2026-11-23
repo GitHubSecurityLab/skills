@@ -13,7 +13,7 @@ One `LLVMFuzzerTestOneInput` harness serves libFuzzer and AFL++, so
 switching engines needs no harness changes. When unsure of an option,
 check the tool's own help first, then the linked docs: `afl-fuzz -hh`
 for AFL++; for libFuzzer and FuzzTest, a built fuzz binary's
-`<fuzzer> -help=1` or `<fuzztest binary> --helpfull`.
+`<binary> -help=1` or `<test_binary> --helpfull`.
 
 ## When to use
 

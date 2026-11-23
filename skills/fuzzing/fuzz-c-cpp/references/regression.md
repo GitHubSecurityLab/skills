@@ -43,7 +43,7 @@ add_test(NAME parse_fuzzer_regression COMMAND parse_fuzzer_replay ${PARSE_FUZZER
 ```
 
 In a libFuzzer build, the fuzz binary itself replays files the same way
-(`<fuzzer> <files>`), which suits a sanitizer CI job.
+(`<binary> <files>`), which suits a sanitizer CI job.
 
 ## The bug's reproducer (`fuzz-triage`)
 

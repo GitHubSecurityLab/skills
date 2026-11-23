@@ -2,7 +2,7 @@
 
 Docs: https://github.com/google/fuzztest/tree/main/doc. Checked by
 building and running tag `2026-06-29`. `doc/flags-reference.md` is
-incomplete: check `<test binary> --helpfull`.
+incomplete: check `<test_binary> --helpfull`.
 
 ## When
 
