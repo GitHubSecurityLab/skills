@@ -296,8 +296,8 @@ throws:
 python3 "$F/bin/reach.py" --harness $H --corpus "$P/.cifuzz-corpus/<corpus_dir>" --corpus "$P/<regression_dir>" \
   --file <file> --line <line> --env PATH="$RUN_PATH" --env JAZZER_TIMEOUT=<input_timeout_ms> \
   --env NODE_OPTIONS=--max-old-space-size=<memory_mb> --ok-exit 0,1 --timeout <timeout_s> \
-  --replay "$P/node_modules/.bin/jest --config $P/<jest_config> --rootDir $P $P/<test_file> --testNamePattern '^<test_title> ({names})(?!.)' --coverage --coverageReporters=lcov --coverageDirectory={out}" \
-  --export "python3 $F/bin/coverage.py merge {out}/lcov.info --sf-base {scratch} --root $F/../.. -o {lcov}"
+  --replay "'$P/node_modules/.bin/jest' --config '$P/<jest_config>' --rootDir '$P' '$P/<test_file>' --testNamePattern '^<test_title> ({names})(?!.)' --coverage --coverageReporters=lcov --coverageDirectory={out}" \
+  --export "python3 '$F/bin/coverage.py' merge {out}/lcov.info --sf-base {scratch} --root '$F/../..' -o {lcov}"
 ```
 
 **The gate's state-leak check** (`coverage.md`, "The gate's state-leak check"):

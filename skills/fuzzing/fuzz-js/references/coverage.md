@@ -51,8 +51,8 @@ instead of the corpus directories.
 ```sh
 python3 "$F/bin/reach.py" --harness $H --corpus "$F/corpus/$H" --file <file> --line <line> \
   --env PATH="$RUN_PATH" --timeout <timeout_s> \
-  --replay "$P/node_modules/.bin/jazzer $P/<target_file> {files} --timeout=<input_timeout_ms> --mode=regression --coverage --coverageReporters=lcov --coverageDirectory={out} -- -rss_limit_mb=<memory_mb>" \
-  --export "python3 $F/bin/coverage.py merge {out}/lcov.info --sf-base {scratch} --root $F/../.. -o {lcov}"
+  --replay "'$P/node_modules/.bin/jazzer' '$P/<target_file>' {files} --timeout=<input_timeout_ms> --mode=regression --coverage --coverageReporters=lcov --coverageDirectory={out} -- -rss_limit_mb=<memory_mb>" \
+  --export "python3 '$F/bin/coverage.py' merge {out}/lcov.info --sf-base {scratch} --root '$F/../..' -o {lcov}"
 ```
 
 **The gate's state-leak check** is the block below, for `fuzz-harness`'s
