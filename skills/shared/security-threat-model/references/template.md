@@ -22,6 +22,7 @@ Base commit: <sha> (<branch or tag>) · Updated: <date>
 | Id | Entry point | Untrusted input | Attacker controls | Bug means | Provenance |
 |---|---|---|---|---|---|
 | S1 | `png_read_info(png_ptr, info)` after `png_set_read_fn` | PNG file bytes | whole stream | memory error, hang, OOM on small input | [doc: README] |
+| S2 | `Unzip.extract(zip)` | ZIP archive | entry names and contents | file written outside the target dir | [code: src/Unzip.java:40] |
 
 ## Sinks
 Call sites go in Location.
@@ -32,7 +33,8 @@ Call sites go in Location.
 | H1 | `pngrutil.c` `png_handle_*` chunk handlers | size arithmetic on chunk lengths | sanitizers | S1 | length checks in png_read_chunk_header | [code: pngrutil.c:160] |
 
 ## Paths
-- **S2 → K1:** `extract(zip)` → `writeEntry(entry)` → `new FileOutputStream(base + entry.getName())`;
+- **S2 → K1:** `extract(zip)` → `writeEntry(entry)` →
+  `new FileOutputStream(dest)` with `dest = base + entry.getName()`;
   no canonicalization. [code: src/Unzip.java:40-88]
 
 ## Entry point: <name>
