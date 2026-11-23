@@ -90,9 +90,10 @@ line gives a similar first hint. Read the report, not only its title: a
 
    **Before `vulnerability`:** the bug's reproducer (`SKILL.md`, "Write
    the reproducer") calls the project's CLI or public API, and still
-   fails on a build without fuzzing-only patches. For C/C++ with such
-   patches, it also still fails against a build without the fuzzing-mode
-   macro, like the project's regression tests. Then ask three
+   fails on a build without fuzzing-only code. For C/C++, that's a build
+   without the fuzzing-mode macro, like the project's regression tests:
+   the macro turns on our fuzzing-only patches and the project's own
+   `FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION` blocks. Then ask three
    devil's-advocate questions, and write down the answers:
    - Would a real caller ever pass these values?
    - Does a check before this entry point already reject them?
