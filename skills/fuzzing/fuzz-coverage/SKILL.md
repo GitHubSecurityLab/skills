@@ -269,8 +269,9 @@ only reads the gaps' code.
        ([references/corpus.md](references/corpus.md)) cover it.
      - Scope coverage clearly rises when the next plateau covers at least
        5% more scope branches than the last snapshot before the change.
-       Compare `summary`'s covered counts, not percentages: the change can
-       add or remove branches.
+       Run `summary` once per snapshot, with the current scope file, since
+       step 5 may have changed the scope in between. Compare their covered
+       counts, not percentages: the change can add or remove branches.
 
      Otherwise revert its commit, rebuild, and replay the corpus again for
      a new baseline.
