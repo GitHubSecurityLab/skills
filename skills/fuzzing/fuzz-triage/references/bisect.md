@@ -33,6 +33,6 @@
    cut off: remove it (`fuzz-campaign`'s long-runs.md, "Cleanup") and
    run the block again.
 
-   If skipped commits leave several candidates ("The first bad commit
-   could be any of"), the introducing commit is one of them: record them
-   all.
+   If skipped commits leave several candidates, git prints "There are
+   only 'skip'ped commits left to test" and then lists them. The
+   introducing commit is one of them: record them all.
