@@ -35,16 +35,22 @@ compress → decompress, escape → unescape.
 
 **Differential.** Two implementations or modes of the same operation must
 agree: streaming vs. one-shot parsing, fast path vs. reference
-implementation, strict vs. lenient mode on inputs both accept, two libraries
-for the same format.
+implementation, strict vs. lenient mode on inputs the strict mode accepts,
+two libraries for the same format.
 
 ```
 a = parse_streaming(input); b = parse_whole(input)
 assert outcome(a) == outcome(b)        # both fail, or both succeed with equal values
 ```
 
-Compare only when both sides consumed the whole input with the same
-options; otherwise a difference is expected and the check reports noise.
+Give both sides the same input and options. One side rejecting what the
+other accepts is what this check finds, so a failure isn't a reason to
+skip the comparison. Skip it only where a difference is expected, or the
+check reports noise:
+- a side succeeded without reading to the end of the input, e.g. a
+  parser that reads only the first value;
+- a side is meant to reject more, e.g. a strict mode against a lenient
+  one: skip only the inputs that side rejects.
 
 **Invariants that hold for all inputs:**
 - idempotence: `normalize(normalize(x)) == normalize(x)`;
@@ -71,9 +77,9 @@ unseen in its Note (`fuzz-coverage`, "Check the sinks").
 
 - **Preconditions:** a property usually holds only for some inputs: a
   complete document without trailing data, unique keys, finite numbers,
-  valid escapes, inputs both sides accept. Check the precondition in the
-  harness and skip only the assertion, never the call. Record each one in
-  the target file, so the user sees what isn't checked.
+  valid escapes, inputs a strict mode accepts. Check the precondition in
+  the harness and skip only the assertion, never the call. Record each
+  one in the target file, so the user sees what isn't checked.
 - **Comparators:** use an equality whose semantics you know for every
   value. A library's own `compare` or `equals` may differ on duplicate
   keys, NaN or numeric tolerance. With a deterministic serializer,
