@@ -297,10 +297,10 @@ reports.
   "Minimize").
 - **The reproducer's values:** the regression test draft
   (`=== Regression test draft`) calls the property function with the
-  failing arguments. A `FUZZ_TEST_F` gets no draft. The property function
-  is our harness, so take only the argument values from the draft, for
-  the reproducer's direct API call (`regression.md`, "The bug's
-  reproducer").
+  failing arguments. The property function is our harness, so take only
+  the argument values from the draft, for the reproducer's direct API
+  call (`regression.md`, "The bug's reproducer"). A `FUZZ_TEST_F` gets no
+  draft: take its values from the report's `argument <i>: ...` lines.
 - **Seeds in `.WithSeeds({...})`** run in every mode, including the short
   unit-test run in normal CI. So they are a harness check, not a bug's
   test.
