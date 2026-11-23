@@ -20,7 +20,9 @@ unless they start with `.seclab/`:
 
 1. **Freshness:** run fix.md's check ("Check the precondition, then
    freshness") again if upstream moved since it last ran. If it never ran,
-   as for a report asked for before any fix, run it now.
+   as for a report asked for before any fix, run it now. Here the check
+   only records what it finds; it never leads to a fix or a commit. If
+   upstream fixed the bug, step 5 says what the draft gives as the fix.
 2. **Known-bug search** in:
    - public issues and pull requests
      (`gh search issues --repo OWNER/REPO "<function>"`, the same with
