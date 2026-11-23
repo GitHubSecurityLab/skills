@@ -112,7 +112,8 @@ check below catches other forced build types.
   `-DFUZZING_ENGINE="$LIB_FUZZING_ENGINE"`.
 
 **Autotools** (untested in CI): configure from the build directory:
-`cd .seclab/fuzz/build/libfuzzer && <repo>/configure CC=... CFLAGS="..." --disable-shared && make`.
+`cd .seclab/fuzz/build/libfuzzer && <repo>/configure CC=... CFLAGS="..."
+CXX=... CXXFLAGS="..." --disable-shared && make`.
 A git checkout often has no `configure` yet. If so, first run the
 project's `./autogen.sh` or `./bootstrap` in the checkout, or
 `autoreconf -fi` if it has neither. Then check with `git status` that
@@ -160,7 +161,7 @@ later command looks, with a link to the worktree:
 W="<checkout>/../<repo>.seclab-worktrees/build/<variant>"
 map="-fcoverage-prefix-map=$(cd "$W" && pwd)=$PWD -fcoverage-prefix-map=$(cd "$W" && pwd -P)=$PWD"
 make -C "$W" CC=<llvm_bin>/clang CFLAGS="<compile_flags> $map -fno-sanitize=function" \
-  LDFLAGS="<link_flags> -fno-sanitize=function" <targets>
+  CXX=<llvm_bin>/clang++ CXXFLAGS="<compile_flags> $map" LDFLAGS="<link_flags> -fno-sanitize=function" <targets>
 rm -rf "$F/build/<variant>" && ln -s "$W" "$F/build/<variant>"
 ```
 Another tree (for a long run, `base` or the freshness check) gets a
@@ -213,7 +214,9 @@ offers them for `projects/<name>/`.
 - **Before running anything:** each project library the harnesses link
   has the variant's hooks. Check the library's archive or objects, not a
   linked binary: a binary has the harness's hooks too, and linking drops
-  `__profc_`. The counts are totals, so check one library per command:
+  `__profc_`. The counts are totals, which can hide objects without
+  hooks. So check one library per command, and if the library mixes C
+  and C++, also one object of each language:
   <!-- ci: c-hooks-check -->
   ```sh
   nm -A <library> 2>/dev/null | awk '/sanitizer_cov/ {c++} /__asan_/ {a++} /__cmplog_ins_hook/ {l++} /__profc_/ {p++}
@@ -244,6 +247,7 @@ offers them for `projects/<name>/`.
 | duplicate symbol `main` | A library or tool object defines `main`; leave it out of the fuzz target |
 | `-Werror` fails on new warnings, or a `coverage` link on `argument unused during compilation: '-mllvm -runtime-counter-relocation'` | Add `-Wno-error` to the fuzz and coverage variants only |
 | undefined `__asan_*` at link | Link with the same `-fsanitize=` flags as the compile |
+| undefined `__ubsan_vptr_type_cache` or `__ubsan_handle_dynamic_type_cache_miss*` at link (Linux) | A C harness linked with `clang` against C++ objects: add `-fsanitize-link-c++-runtime` to the link flags |
 | `-Wl,-z,defs` or `--no-undefined` errors | Remove them for sanitizer builds |
 | `-fsanitize=vptr` not allowed with `-fno-rtti` | Add `-fno-sanitize=vptr` |
 | profile version errors in `llvm-profdata` | Tools from another LLVM version than the compiler (e.g. `xcrun llvm-cov` with Homebrew clang); use the compiler's |
