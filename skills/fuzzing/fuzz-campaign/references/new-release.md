@@ -31,8 +31,10 @@
    found doesn't affect the verdict.
 6. Still-open bugs are blocking, so they're handled before the gate. For
    each bug:
-   - **fixed upstream** (the reproducer passes): mark it. Its fix isn't
-     re-applied.
+   - **fixed upstream** (the reproducer passes): record the fixing commit
+     as the bucket's Fixed upstream, released in `<release tag>`
+     (`fuzz-triage`'s fix.md, "Check the precondition, then freshness").
+     Our old fix isn't re-applied.
    - **still open, with a fix:** for a held-back bug, use a new
      `seclab/held-back/<bucket>-<date>` branch for the cherry-pick
      (`fuzz-triage`'s fix.md, "Commit"). Cherry-pick the old fix. If it
