@@ -23,7 +23,9 @@ arguments array or `sh -c`.
 ```
 child_process|shelljs|execa|\b(cp|childProcess|shell)\.\w+\s*\(|(^|[^.A-Za-z0-9_$])(exec|execSync|execFile|execFileSync|spawn|spawnSync|fork)\s*\(
 ```
-Check: input in the command or arguments; `shell: true`.
+Check: input in the command or its arguments. A shell parses the whole
+command line of `exec`, `execSync` and any call with `shell: true`, so
+shell metacharacters in the input run other commands.
 
 ## File paths
 Detector: partly (path-traversal): not a path already resolved.
