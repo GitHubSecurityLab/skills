@@ -88,10 +88,10 @@ these reports:
 
 ## Minimize
 
-Minimize through the CLI target, with `--sync` for a synchronous target.
-The target file records whether the target is synchronous (`run.md` next
-to this file). In async mode, minimization can keep an input that
-doesn't crash.
+Minimize through the CLI target. The command below has `--sync`: drop it
+for an async target. The target file records which kind the target is
+(`run.md` next to this file). In async mode, minimization can keep an
+input that doesn't crash.
 
 <!-- ci: js-cli-minimize -->
 ```sh
