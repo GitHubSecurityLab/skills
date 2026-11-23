@@ -121,14 +121,16 @@ python3 "$F/bin/coverage.py" overlap "$C/gate-one.lcov" "$C/gate-fresh.lcov" --u
 - The test classes are included: state often leaks in the harness.
 
 **Inputs that reach a line**: `reach.py` finds them, for targeted inputs
-(`fuzz-coverage`'s corpus.md):
+(`fuzz-coverage`'s corpus.md). It splits the `--replay` and `--export`
+strings into arguments as a shell would, so the block single-quotes each
+path in them. `$JOPTS` stays unquoted, to split into its flags:
 
 <!-- ci: java-reach -->
 ```sh
 python3 "$F/bin/reach.py" --harness $H --corpus "$F/corpus/$H" --file <file> --line <line> \
   --env PATH="$RUN_PATH" --env JAVA_HOME="$JAVA_HOME" --timeout <timeout_s> --ok-exit 0,77 \
-  --replay "$JAVA_HOME/bin/java $JOPTS -javaagent:$F/build/jacoco/jacocoagent.jar=destfile={out}/jacoco.exec -cp $CP com.code_intelligence.jazzer.Jazzer --target_class=<fuzz_class> --target_method=<fuzz_method> --keep_going=1 -runs=0 -timeout=<input_timeout_s> -rss_limit_mb=0 {files}" \
-  --export "sh -c '$JAVA_HOME/bin/java -jar \$0 report \$1/jacoco.exec --classfiles \$2 --xml \$1/r.xml > /dev/null && python3 \$3 from-jacoco \$1/r.xml --source-root \$4 -o \$5' $F/build/jacoco/jacococli.jar {out} <module>/target/classes $F/bin/coverage.py <module>/src/main/java {lcov}"
+  --replay "'$JAVA_HOME/bin/java' $JOPTS '-javaagent:$F/build/jacoco/jacocoagent.jar=destfile={out}/jacoco.exec' -cp '$CP' com.code_intelligence.jazzer.Jazzer --target_class=<fuzz_class> --target_method=<fuzz_method> --keep_going=1 -runs=0 -timeout=<input_timeout_s> -rss_limit_mb=0 {files}" \
+  --export "sh -c '\"\$0\" -jar \"\$1\" report \"\$2/jacoco.exec\" --classfiles \"\$3\" --xml \"\$2/r.xml\" > /dev/null && python3 \"\$4\" from-jacoco \"\$2/r.xml\" --source-root \"\$5\" -o \"\$6\"' '$JAVA_HOME/bin/java' '$F/build/jacoco/jacococli.jar' {out} '<module>/target/classes' '$F/bin/coverage.py' '<module>/src/main/java' {lcov}"
 ```
 
 Jazzer writes no finding file for inputs given as files. With
