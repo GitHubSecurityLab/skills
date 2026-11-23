@@ -67,8 +67,8 @@ unless they start with `.seclab/`:
    - gaps of existing harnesses;
    - sinks.
 
-   For each candidate, fill in the Candidate section of `targets/<id>.md`
-   (template in ledger.md next to this file):
+   For each candidate, fill in the Entry point line and the Candidate
+   section of `targets/<id>.md` (template in ledger.md next to this file):
    - entry point, using the outermost function real callers use;
    - what the attacker controls;
    - **checks**: sanitizers or the engine's detectors, DoS signals, and
@@ -174,7 +174,7 @@ unless they start with `.seclab/`:
 
 What the steps in this file write or change. Paths are relative to
 `.seclab/fuzz/` unless they start with `.seclab/`:
-- `targets/<id>.md`: Candidate; for the top 1–3, Scope files and Sinks,
-  `targets/<id>.scope` and `sinks/<id>.tsv`.
+- `targets/<id>.md`: Entry point and Candidate; for the top 1–3, Scope
+  files and Sinks, `targets/<id>.scope` and `sinks/<id>.tsv`.
 - `CAMPAIGN.md`: Targets table (status `candidate`, rank order; scope
   branches when the scope is set).

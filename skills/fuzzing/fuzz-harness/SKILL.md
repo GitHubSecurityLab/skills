@@ -57,7 +57,7 @@ What the steps in this file read. Paths are relative to `.seclab/fuzz/`
 unless they start with `.seclab/`:
 - `.seclab/threat-model.md`. Without one, invoke `security-threat-model` in
   focused mode for this entry point.
-- `targets/<id>.md`: Candidate (entry point, attacker control, checks,
+- `targets/<id>.md`: Entry point, Candidate (attacker control, checks,
   setup, how to call), Scope files, Sinks. Without one (standalone use):
   write the minimal one first
   ([references/target-file.md](references/target-file.md)).
