@@ -36,5 +36,4 @@ credentials, nothing can be pushed.
 - Long runs: when develop is done, give the long-run commands and stop.
   The status stays `running`: only the user ends a campaign. Never poll
   or sleep for the runs; the user runs them and asks for the analysis.
-- Re-read the ledger index at the start of every loop iteration.
 - Keep tool output short (tails, summaries) to save context.
