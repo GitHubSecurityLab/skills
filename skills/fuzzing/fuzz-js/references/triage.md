@@ -4,9 +4,10 @@ Jest `it.fuzz` tests: reproduce as `jest.md`, "Triage", says. The rest of
 this file applies to them too. For them, its commands run a temporary CLI
 target that calls the same code (`jest.md`, "Runs").
 
-Every command below executes the target. Run it through the launcher
-(`repro-<h>-<n>`), with `L`, `F`, `H` and `P` as in `run.md` next to this
-file. The report is in `runs/repro-<h>-<n>/copy-0/log`. For a long run's
+Every command below executes the target. Run it through the launcher,
+with its block's run id (`repro-<h>-<n>`, `pp-<h>-<n>`, `prof-<h>-<n>` or
+`min-<h>-<n>`), and with `L`, `F`, `H` and `P` as in `run.md` next to
+this file. The report is in `runs/<id>/copy-0/log`. For a long run's
 finding, set `P` to `<tree_package>` (`run.md`, "CLI target").
 
 ## Reproduce
