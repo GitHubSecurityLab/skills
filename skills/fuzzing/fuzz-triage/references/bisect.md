@@ -1,8 +1,10 @@
 # Finding the introducing commit
 
-1. **Good tag.** Find the newest release tag where the reproducer builds
-   and passes: the good end of the bisect. For new code, that's the last
-   release itself.
+1. **Good tag.** Find the newest release tag before the base that doesn't
+   have the bug: the good end of the bisect. Either the reproducer builds
+   and passes there, or the code the bug is in doesn't exist there yet
+   (`git log` on it). In the second case the reproducer may not build,
+   which is fine: the bisect never tests its good end.
 2. **Test script.** Write `bisect.sh` in `crashes/<bucket>/`:
    - It builds the library at the commit the bisect checks out, with the
      reproducer's sanitizer flags. It uses the project's own build, since
