@@ -117,7 +117,8 @@ The fuzzer gets coverage feedback only from instrumented classes.
 
   Every command and JUnit run takes `JOPTS` (`run.md`). To widen or
   narrow the set, add `-Djazzer.instrument=com.example.**,org.lib.**`
-  (commas) to `JOPTS`:
+  (commas) to `JOPTS`. It replaces the default set, so list the project's
+  own packages too:
   - for a multi-module Gradle build, list every module's packages;
   - add a library's package too when scope code extends it or passes it
     the input to parse (Commons CSV's lexer reads through a commons-io
