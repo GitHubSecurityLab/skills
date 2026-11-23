@@ -199,16 +199,17 @@ offers them for `projects/<name>/`.
 ## Instrumentation checks
 
 - **Assertions on, little optimization:** no compile line may contain
-  `-DNDEBUG` or `-O2` and above. CMake and Meson write the compile lines
-  to `compile_commands.json`, which this command checks (other builds:
-  one compile line of a verbose build, e.g. `make V=1`):
+  `-DNDEBUG`, or an optimization level above `-O1` (`-O2`, `-O3`, `-Os`,
+  `-Oz`, `-Ofast`). CMake and Meson write the compile lines to
+  `compile_commands.json`, which this command checks (other builds: one
+  compile line of a verbose build, e.g. `make V=1`):
   <!-- ci: c-build-check -->
   ```sh
-  test -s "$F/build/<variant>/compile_commands.json" && ! grep -E -- '-DNDEBUG|-O[23s]([ "]|$)' "$F/build/<variant>/compile_commands.json"
+  test -s "$F/build/<variant>/compile_commands.json" && ! grep -E -- '-DNDEBUG|-O([23sz]|fast)([ "]|$)' "$F/build/<variant>/compile_commands.json"
   ```
   If the `grep` matches, the project forces its own flags: override them.
-  For CMake, set `-DCMAKE_C_FLAGS_<TYPE>=` for the build type the project
-  sets.
+  For CMake, set `-DCMAKE_C_FLAGS_<TYPE>= -DCMAKE_CXX_FLAGS_<TYPE>=` for
+  the build type the project sets.
 - **Before running anything:** each project library the harnesses link
   has the variant's hooks. Check the library's archive or objects, not a
   linked binary: a binary has the harness's hooks too, and linking drops
