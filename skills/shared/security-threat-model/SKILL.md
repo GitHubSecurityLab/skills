@@ -44,7 +44,7 @@ deciding whether a single finding is real (that's `fuzz-triage`).
     - new or changed entry points and files
       (`git diff --stat <old base>..HEAD`);
     - new CVEs and security fixes since the old base, from step 1's
-      sources;
+      sources (record new advisories and CVEs as step 1 says);
   - keep the other entries and every `[user]` entry, and update `Base
     commit`.
 - **Focused:** when another skill needs a quick answer on one entry point.
@@ -68,7 +68,8 @@ sections by name.
      (`curl -s -d '{"package":{"name":"<pkg>","ecosystem":"<ecosystem>"}}' https://api.osv.dev/v1/query`;
      C/C++ without a package ecosystem: `"name":"<repository URL>","ecosystem":"GIT"`),
      and security fixes in history: `git log --oneline -i -E --grep='cve|overflow|oob|out of bounds|use.after|double.free|leak|injection|traversal|security|crash|fuzz'`.
-     Past bugs show which code and bug classes matter.
+     Past bugs show which code and bug classes matter. Record each
+     advisory or CVE, with its fix site, under Past advisories and CVEs.
    - How dependents use it (for libraries), to learn whether real callers
      pass untrusted data: search public code for its main API calls, leaving
      out vendored copies of the library (hits in files named like its own).
