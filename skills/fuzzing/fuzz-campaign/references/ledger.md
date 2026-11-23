@@ -52,8 +52,8 @@ Rules:
 ```markdown
 # Fuzzing campaign: <project>
 
-Resume: invoke `fuzz-campaign` (it runs `init.py`), then the first Next action
-(each is `skill: step — target or detail`).
+Resume: invoke `fuzz-campaign`, which runs `init.py`. Then do the first
+Next action; each reads `skill: step — target or detail`.
 
 - **Status:** standalone | running | finished
 - **Base commit:** <sha> (<branch or tag>), chosen <date>
@@ -104,16 +104,17 @@ scope was set (the baseline; 0% without one) → now.
 
 State: the bucket file's (`fuzz-triage`'s verdicts.md). Progress:
 `triaged` (verdict assigned), `queued` (its fix waits for the batch,
-`fuzz-triage`'s Route), `fixed-locally` (fix.md), `needs-decision` (no
-safe fix). Report: `-`, or `drafted` (report.md). Whether the user
-reported it is the bucket file's Disclosure.
+`fuzz-triage`'s Route), `fixed-locally` (`fuzz-triage`'s fix.md),
+`needs-decision` (no safe fix). Report: `-`, or `drafted` (`fuzz-triage`'s
+report.md). Whether the user reported it is the bucket file's Disclosure.
 
 ## Long runs
 | Run id | Harness | Command | Tree | Cores | Duration | State | Findings | Analysis |
 |---|---|---|---|---|---|---|---|---|
 | png_read-long1 | png_read | `python3 .../launcher.py start --spec ...` | worktree 3f2a9c1 | 14 | 24 h | finished | 2 | phase 1 |
 
-State from `launcher.py status`; analysis: no, phase 1, done (`references/analyze.md`).
+State: from `launcher.py status`. Analysis: `no`, `phase 1` or `done`
+(`fuzz-campaign`'s analyze.md).
 
 ## Next actions
 1. <skill>: <step> — <target or detail>
