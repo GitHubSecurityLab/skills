@@ -99,8 +99,10 @@ seed.
 
 ## Merging a run's corpus back (analysis, `fuzz-campaign`)
 
-Merge with `-merge=1` on the **current** code, into the merge run's own
-corpus. That corpus then replaces the persistent corpus (`fuzz-campaign`):
+Merge with `-merge=1` on the **current** build, into the merge run's own
+corpus. For plain JS, that's the current code; for TypeScript, the `tsc`
+output rebuilt from the current sources (`build.md`). The merge run's
+corpus then replaces the persistent corpus (`fuzz-campaign`):
 
 <!-- ci: js-cli-merge -->
 ```sh
