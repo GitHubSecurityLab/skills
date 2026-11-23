@@ -173,8 +173,13 @@ unless they start with `.seclab/`:
    checksum or signature: reproduce with a fixed-up input before
    assigning a verdict.
 
-   Two buckets with the same root cause become one
-   (State `duplicate of <bucket>`).
+   Two buckets with the same root cause become one. A bucket from an
+   earlier pass keeps its State over one from this pass; otherwise keep
+   either. The other gets State `duplicate of <kept bucket>`. Move to the
+   kept bucket what only the duplicate has, such as a fix or a report. If
+   the duplicate's crash shows a worse impact (verdicts.md, "Impact by
+   crash type"), such as a write where the kept one has a read, add it to
+   the kept bucket's evidence and decide that bucket's verdict again.
 6. **Write the reproducer** for every real bug (its root cause is in the
    target, not our harness) right away, on the build that found it.
    Follow the language skill's regression.md, "The bug's reproducer".

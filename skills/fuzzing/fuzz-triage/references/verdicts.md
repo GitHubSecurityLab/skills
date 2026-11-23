@@ -71,7 +71,8 @@ line gives a similar first hint. Read the report, not only its title: a
    verdict).
 2. **Does it reproduce?** No after `SKILL.md`'s "Reproduce" attempts →
    State `non-reproducible`.
-3. **Same root cause as a known bucket?** → State `duplicate of <bucket>`.
+3. **Same root cause as a known bucket?** → State `duplicate of <bucket>`
+   (which bucket keeps its State: `SKILL.md`, "Find the root cause").
 4. **Type of failure:** memory error, detector finding, property, exception,
    resource exhaustion, assertion.
 5. **Attacker path:** using the threat model, name the real entry point
