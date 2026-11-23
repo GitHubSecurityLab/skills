@@ -25,8 +25,10 @@ says whether upstream fixed it.
 | `non-reproducible` | the inputs don't crash in `SKILL.md`'s "Reproduce" attempts | the suspected cause (threads, time, state) |
 | `needs investigation` | unresolved: needs a human | what was tried and what is unclear |
 
-The verdict and Kind stay what they are in every state; a finding without
-a verdict yet has its crash type's default.
+A State doesn't change a bucket's Kind (its crash type) or its verdict,
+except that a duplicate takes the verdict of the bucket it duplicates. A
+bucket without a verdict yet, such as a `non-reproducible` one, has `-`;
+its Kind still counts for the hold-back rule.
 
 **Fixed upstream** records the fixing commit, from the reproducer passing
 on upstream HEAD, and whether the latest release is still affected. If
