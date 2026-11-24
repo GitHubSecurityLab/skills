@@ -182,9 +182,30 @@ class TimedRunTests(LauncherTestCase):
 
     def test_files_written_after_the_stop_are_not_findings(self):
         # libFuzzer's exit hook saves the input in flight when a JVM is stopped: "fuzz target exited".
-        script = "trap 'echo x > \"{run}/artifacts/copy-{copy}/crash-at-exit\"; exit 1' TERM; sleep 30 & wait"
-        # 2 s: under load, a TERM after 1 s can reach sh before its trap is set.
-        code, out, _ = self.run_main("start", "--id", "r7-h", "--harness", "h", "--time", "2", "--", "sh", "-c", script)
+        # The stand-in saves its file in a TERM handler. Not an sh trap: when the TERM to the group also
+        # kills sh's child, sh's `wait` can return first, and sh exits 0 without running the trap.
+        # Under load, the TERM can come before the handler is set (the deadline counts from before the
+        # start), and the KILL before the handler has run. So the stand-in inherits TERM blocked from this
+        # process, where the launcher runs, and unblocks it once the handler is set; the KILL waits 30 s.
+        script = (
+            "import signal, sys, time\n"
+            "def stop(*_):\n"
+            "    with open(sys.argv[1], 'w') as handle:\n"
+            "        handle.write('x')\n"
+            "    sys.exit(1)\n"
+            "signal.signal(signal.SIGTERM, stop)\n"
+            "signal.pthread_sigmask(signal.SIG_UNBLOCK, [signal.SIGTERM])\n"
+            "time.sleep(30)\n"
+        )
+        old = lc.STOP_GRACE_SECONDS
+        lc.STOP_GRACE_SECONDS = 30.0
+        mask = signal.pthread_sigmask(signal.SIG_BLOCK, [signal.SIGTERM])
+        try:
+            code, out, _ = self.run_main("start", "--id", "r7-h", "--harness", "h", "--time", "1", "--",
+                                         sys.executable, "-c", script, "{run}/artifacts/copy-{copy}/crash-at-exit")
+        finally:
+            signal.pthread_sigmask(signal.SIG_SETMASK, mask)
+            lc.STOP_GRACE_SECONDS = old
         self.assertEqual(code, 0)
         copy = self.meta("r7-h")["copies"][0]
         self.assertEqual((copy["state"], copy["new_findings"]), ("finished", []))
