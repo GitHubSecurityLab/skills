@@ -65,6 +65,15 @@ feedback if the binary loads another copy of it, e.g. an installed one.
   `afl-clang-fast` if each binary loads the variant's copy. The
   instrumentation checks below verify that. FuzzTest needs the library
   static (`fuzztest.md`).
+  - If it links another project library (CMake `target_link_libraries`,
+    Meson `link_with`), build the project's libraries shared: use
+    `-DBUILD_SHARED_LIBS=ON` or `--default-library=shared` in place of
+    the recipes' static flags. Built static, the other library is copied
+    into the shared one, and into the fuzz binary if the harness links it
+    too. Each copy has its own globals: on Linux, ASan stops at start with
+    `odr-violation`; on macOS, state such as a registry splits without an
+    error. FuzzTest: make the shared-only library static instead
+    (`fuzztest.md`), which leaves one copy.
 - If you build `msan`: do so only for C code without other dependencies,
   or through the project's OSS-Fuzz MSan build. Every linked library, the
   C++ standard library included, must be built with MSan, or reports are
@@ -253,3 +262,4 @@ offers them for `projects/<name>/`.
 | `-fsanitize=vptr` not allowed with `-fno-rtti` | Add `-fno-sanitize=vptr` |
 | profile version errors in `llvm-profdata` | Tools from another LLVM version than the compiler (e.g. `xcrun llvm-cov` with Homebrew clang); use the compiler's |
 | MSan reports in the standard library | Uninstrumented dependencies; skip MSan |
+| ASan `odr-violation` at start | A global in two modules, e.g. a static project library linked into a shared project library and into the fuzz binary: build the project's libraries shared ("Variants") |
