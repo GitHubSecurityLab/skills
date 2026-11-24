@@ -1664,7 +1664,7 @@ def build_fuzztest_toy(ctx: Context, variants=("fuzztest", "coverage")) -> None:
     "fuzztest",
     ["c-env", "c-ub", "fuzztest-build", "fuzztest-coverage-build", "fuzztest-develop", "fuzztest-repro", "fuzztest-minimize", "triage-rebucket",
      "fuzztest-cov-replay", "fuzztest-cov-replay-files", "fuzztest-long", "fuzztest-merge",
-     "c-cov-export", "fuzztest-leak-check", "fuzztest-reach"],
+     "c-cov-export", "fuzztest-leak-check", "fuzztest-reach", "fuzztest-leak-replay"],
 )
 def c_fuzztest(ctx: Context) -> None:
     ctx.set(H="record")
@@ -1763,6 +1763,21 @@ def c_fuzztest(ctx: Context) -> None:
     line = next(i for i, text in enumerate(open(os.path.join(ctx.repo, "src", "record.cc")), 1) if "name->assign" in text)
     out = ctx.block("fuzztest-reach", file="src/record.cc", line=line, timeout_s=120, **common).stdout
     ctx.expect("reached: " in out, "reach.py finds an input that reaches src/record.cc:%d" % line)
+
+    # A memory leak: FuzzTest checks for leaks only at exit, so the run records no finding. Replaying its
+    # corpus one file per process names the inputs that leak, those starting with "LK" (the seed is one).
+    ctx.set(H="leaking")
+    ctx.sh('mkdir -p "$F/corpus/$H"')
+    leaks = dict(common, fuzz_test="RecordTest.LeaksMemory")
+    ctx.block("fuzztest-develop", round=1, run_s=10, **leaks)
+    ctx.expect("LeakSanitizer: detected memory leaks" in ctx.log("r1-leaking") and not ctx.findings("r1-leaking"),
+               "the run's log ends in a leak report, with no finding")
+    ctx.block("fuzztest-leak-replay", n=1, timeout_s=300, corpus="$F/corpus/$H", **leaks)
+    ctx.expect_state("leaks-leaking-1", "finished")
+    named = re.findall(r"^failed: (\S+)$", ctx.log("leaks-leaking-1"), re.M)
+    inputs = ctx.files(".seclab/fuzz/corpus/leaking")
+    ctx.expect(0 < len(named) < len(inputs) and all(b"LK" in open(f, "rb").read() for f in named),
+               "the replay names only inputs that leak (%d of %d)" % (len(named), len(inputs)))
 
 
 def check(blocks: dict) -> list:

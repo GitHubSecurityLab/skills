@@ -1,3 +1,5 @@
+#include <cstdlib>
+#include <cstring>
 #include <string>
 
 #include "fuzztest/fuzztest.h"
@@ -24,3 +26,22 @@ void ParsesLeaky(const std::string& data) {
   ParseRecord(data, &name);
 }
 FUZZ_TEST(RecordTest, ParsesLeaky).WithDomains(fuzztest::Arbitrary<std::string>());
+
+// A fuzz test that leaks on inputs starting with "LK", its seed included, for
+// the leak triage: FuzzTest checks for leaks only at exit.
+__attribute__((noinline)) static char* CopyPrefix(const std::string& data) {
+  char* prefix = static_cast<char*>(malloc(3));
+  memcpy(prefix, data.data(), 2);
+  prefix[2] = 0;
+  return prefix;
+}
+
+void LeaksMemory(const std::string& data) {
+  if (data.size() < 2) return;
+  char* prefix = CopyPrefix(data);
+  if (data[0] == 'L' && data[1] == 'K') return;
+  free(prefix);
+}
+FUZZ_TEST(RecordTest, LeaksMemory)
+    .WithDomains(fuzztest::Arbitrary<std::string>())
+    .WithSeeds({std::string("LK")});

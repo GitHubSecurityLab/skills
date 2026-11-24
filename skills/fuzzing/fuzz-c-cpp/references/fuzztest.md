@@ -286,6 +286,26 @@ reports.
     "<build>/fuzztest/<test_binary>" --gtest_filter=<fuzz_test> \
     --time_limit_per_input=<input_timeout_s>s --rss_limit_mb=<memory_mb>
   ```
+- **A leak has no reproducer:** FuzzTest checks for leaks only once, at
+  exit, after the test has passed. So a run with no finding whose log ends
+  in a LeakSanitizer report
+  (`ERROR: LeakSanitizer: detected memory leaks`) found a leak. It ends
+  `failed`, or `stopped` if it was stopped by hand, as a long run with no
+  duration is. To find the inputs that leak, replay the run's corpus one
+  file per process, on the fuzzing build. `<corpus>` is `$F/corpus/$H` for
+  a develop run, and `$F/runs/<id>/corpus` for a long run:
+  <!-- ci: fuzztest-leak-replay -->
+  ```sh
+  $L start --id leaks-$H-<n> --harness $H --timeout <timeout_s> --env ASAN_OPTIONS="$ASAN_OPTIONS" \
+    --env UBSAN_OPTIONS="$UBSAN_OPTIONS" --env FUZZTEST_REPRODUCERS_OUT_DIR="{run}/artifacts/copy-{copy}" \
+    --env PATH="$RUN_PATH" -- sh -c '
+      b=$1; dir=$2; log=$3; shift 3
+      for f in "$dir"/*; do FUZZTEST_REPLAY=$f "$b" "$@" > "$log" 2>&1 || { echo "failed: $f"; cat "$log"; }; done' \
+    sh "<build>/fuzztest/<test_binary>" "<corpus>" "{scratch}/replay.log" --gtest_filter=<fuzz_test> \
+    --time_limit_per_input=<input_timeout_s>s --rss_limit_mb=<memory_mb>
+  ```
+  Each input that leaks gets a `failed: <file>` line, then its report.
+  Reproduce one of them as above: it's then a finding like any other.
 - **Minimize:** `FUZZTEST_MINIMIZE_REPRODUCER` exits at the first smaller
   input that crashes, whatever the crash. So run it in a loop that takes
   each result as the next input, until a step finds nothing smaller
@@ -347,6 +367,8 @@ $L start --prepare --id $H-long<n> --harness $H --copies <copies> --time <run_s>
 - Each copy stops at its first finding; the others continue.
 - No `--jobs=<n>`: it needs Bazel's Centipede.
 - If the run has no duration: `run.md`, "Settings to flags".
+- At analysis, look at each copy's log tail: a LeakSanitizer report there
+  is a leak with no finding (Triage, above).
 - At analysis, merge by minimizing the union of the persistent corpus and
   the run's corpus (Run, above).
 
