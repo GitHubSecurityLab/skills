@@ -58,7 +58,7 @@ overrides the project's `noEmitOnError`. The build starts from an empty
 `$F/build/ts` and keeps its build info there: a project's own build info
 could make `tsc` skip files, and would be overwritten. So every file there
 comes from this build. Check that the target's `.js` files are there: a
-library that builds its JS with another tool may emit only declarations.
+wrong `<entry>` also makes `tsc` exit 2, and leaves its `.js` file missing.
 
 The `package.json` keeps an ESM package's `"type": "module"` from
 applying to the compiled files. The source maps give stack traces the
