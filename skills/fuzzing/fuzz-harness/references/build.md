@@ -102,10 +102,12 @@ unless they start with `.seclab/`:
    commits on the campaign branch. Record the variants and their build
    commands in the target file (Harness, Build variants).
 
-   After each build, record the commit it came from:
+   After each build, record the commit it came from, and whether the
+   checkout had uncommitted changes:
    <!-- ci: build-record -->
    ```sh
-   git rev-parse HEAD > .seclab/fuzz/build/<variant>/built-from
+   c=$(git rev-parse HEAD); [ -z "$(git status --porcelain)" ] || c="$c+uncommitted"
+   echo "$c" > .seclab/fuzz/build/<variant>/built-from
    ```
    `<variant>` is the build's directory under `.seclab/fuzz/build/`:
    - C/C++: the variant's directory;
@@ -114,24 +116,33 @@ unless they start with `.seclab/`:
    - TypeScript: `ts/`;
    - plain JS builds nothing there.
 
-   A build of uncommitted changes, such as a new harness, records the
-   commit before them. Record it again once they're committed (`SKILL.md`,
-   "Record and commit"); otherwise the build looks stale after that commit.
+   A build of uncommitted changes, such as a new harness, records
+   `<sha>+uncommitted`, which step 9 always calls stale: by then the
+   changes may have been reverted or deleted. Once they're committed, and
+   nothing changed since the build, record it again (`SKILL.md`, "Record
+   and commit").
 
    After a build change, including a fuzzing-only patch (step 7), each
    harness built with it goes through the gate before any other run
    (gate.md next to this file).
 9. **Before reusing builds** (Resume, or after anything switched or reset
-   the checkout), rebuild every variant this check calls stale:
+   the checkout), rebuild every variant this check calls stale. A build is
+   current only if it was recorded at the current commit with no
+   uncommitted changes, and the checkout still has none. A directory
+   without `built-from`, from a build that failed or wasn't recorded, is
+   stale too. `bin/` and `jacoco/` hold tools, not builds:
    <!-- ci: build-stale -->
    ```sh
-   find -L .seclab/fuzz/build -mindepth 2 -maxdepth 2 -name built-from | while IFS= read -r f; do
-     [ "$(cat "$f")" = "$(git rev-parse HEAD)" ] &&
-       [ -z "$(git status --porcelain --untracked-files=no)" ] || echo "stale: ${f%built-from}"
+   find -L .seclab/fuzz/build -mindepth 1 -maxdepth 1 -type d ! -name bin ! -name jacoco | while IFS= read -r d; do
+     [ "$(cat "$d/built-from" 2>/dev/null)" = "$(git rev-parse HEAD)" ] &&
+       [ -z "$(git status --porcelain)" ] || echo "stale: $d/"
    done
    ```
-   Rebuilding is cheap: C/C++ and Java builds are incremental, and the
-   TypeScript build compiles only what the target imports.
+   While the checkout has uncommitted changes, such as a harness not yet
+   committed, the check calls every build stale, including the ones just
+   rebuilt: rebuild each variant once. Rebuilding is cheap: C/C++ and Java
+   builds are incremental, and the TypeScript build compiles only what the
+   target imports.
 
 ## When the build fails
 

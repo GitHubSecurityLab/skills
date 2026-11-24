@@ -440,6 +440,20 @@ def c_libfuzzer(ctx: Context) -> None:
     for variant in ("libfuzzer", "coverage"):
         ctx.block("build-record", variant=variant)
     ctx.expect("stale" not in ctx.block("build-stale").stdout, "fresh builds aren't stale")
+    # A build of an edit that is then reverted stays stale, and so does a directory without built-from;
+    # bin/ and jacoco/ hold tools, not builds.
+    ctx.sh("echo '/* tried */' >> src/record.c")
+    build_c_toy(ctx, ("libfuzzer",))
+    ctx.block("build-record", variant="libfuzzer")
+    ctx.sh('git checkout -q -- src/record.c && mkdir "$F/build/unrecorded" "$F/build/bin" "$F/build/jacoco"')
+    stale = ctx.block("build-stale").stdout
+    ctx.expect("build/libfuzzer/" in stale and "build/unrecorded/" in stale
+               and not any(d in stale for d in ("build/coverage/", "build/bin/", "build/jacoco/")),
+               "a build of a reverted edit and an unrecorded build are stale, tools aren't (%s)" % stale.strip())
+    ctx.sh('rmdir "$F/build/unrecorded" "$F/build/bin" "$F/build/jacoco"')
+    build_c_toy(ctx, ("libfuzzer",))
+    ctx.block("build-record", variant="libfuzzer")
+    ctx.expect("stale" not in ctx.block("build-stale").stdout, "the rebuilt variant is current again")
     ctx.sh('cp seeds/ok "$F/corpus/$H/" 2>/dev/null || { mkdir -p "$F/corpus/$H" && cp seeds/ok "$F/corpus/$H/"; }')
     # The dictionary from the scope's literals, in every quote style; the develop round's -dict parses it.
     fixture = os.path.join(os.path.dirname(ctx.repo), "dict-fixture.js")
