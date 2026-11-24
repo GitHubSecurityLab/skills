@@ -206,7 +206,8 @@ excludes win. `includes` defaults to `["*"]`, and `excludes` to
   instrumented.
 
 To fuzz a dependency too, list it with absolute paths (`"src/"` alone
-also matches every package's `src/`), and don't exclude `node_modules`:
-`JAZZER_INCLUDES='["<pkg>/src/","<pkg>/node_modules/<dep>/"]' JAZZER_EXCLUDES='[]'`.
-Instrumenting all of `node_modules` slows fuzzing a lot. Environment
-values are JSON.
+also matches every package's `src/`), and don't exclude `node_modules`.
+Pass both settings to every run of the harness, as launcher options:
+`--env JAZZER_INCLUDES="[\"$P/src/\",\"$P/node_modules/<dep>/\"]"`
+and `--env JAZZER_EXCLUDES='[]'`. Instrumenting all of `node_modules`
+slows fuzzing a lot. Environment values are JSON.
