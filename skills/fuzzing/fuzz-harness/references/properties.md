@@ -6,10 +6,11 @@ property produces `harness_bug` verdicts, not findings.
 **A check must be able to fail:** it compares values computed
 independently, and its failure reaches the engine.
 
-**Reuse first:** a property-based test of the project (the threat model
-notes them) states a property its maintainers accept. Run its assertion
-on the harness's decoded value before writing new ones, and add its
-example values to the seeds.
+**Reuse first:** a property-based test of the project states a property
+its maintainers accept. The threat model lists these tests, in the
+Property tests column of Sources (focused mode: in the entry point's
+section). Run a test's assertion on the harness's decoded value before
+writing new ones, and add its example values to the seeds.
 
 How to signal a failure: `abort()` (or `__builtin_trap()`) in C/C++, a
 thrown exception or failed assertion in Java and JS, a failing `EXPECT_*` or

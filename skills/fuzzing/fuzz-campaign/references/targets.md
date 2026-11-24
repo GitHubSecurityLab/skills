@@ -7,8 +7,8 @@ checks that decide what counts as a bug.
 
 What the steps in this file read. Paths are relative to `.seclab/fuzz/`
 unless they start with `.seclab/`:
-- `.seclab/threat-model.md`: Context, Sources, Sinks, Paths. If it's
-  missing, invoke `security-threat-model` first.
+- `.seclab/threat-model.md`: Context, Past advisories and CVEs, Sources,
+  Sinks, Paths. If it's missing, invoke `security-threat-model` first.
 - `CAMPAIGN.md`: Targets, Harnesses. Merged coverage in
   `coverage/merged/` when it exists.
 
@@ -62,8 +62,8 @@ unless they start with `.seclab/`:
    - public APIs that receive attacker-controlled data of any type:
      bytes, strings, files, numbers, options, structured values, call
      sequences;
-   - the fix sites of the threat model's past CVEs: the fixed function
-     and its siblings;
+   - the fix sites in the threat model's Past advisories and CVEs: the
+     fixed function and its siblings;
    - gaps of existing harnesses;
    - sinks.
 
@@ -76,7 +76,8 @@ unless they start with `.seclab/`:
      - an encode/decode or parse/serialize pair (round-trip);
      - two implementations or modes of one operation (differential);
      - normalizers (idempotence);
-     - those the project's property-based tests cover (threat model);
+     - those the project's property-based tests cover (the Property tests
+       column of the threat model's Sources);
    - setup and prior state it needs;
    - how to call it, from the project's tests and examples (`path:line`).
 4. **Rank all candidates cheaply.** Rough estimates rank them all; only
