@@ -47,7 +47,9 @@ base-directory check; archive entry names written to disk ("zip slip").
 
 ## JNDI and LDAP
 Detector: yes for remote JNDI lookups (`NamingContextLookup`); partly for
-LDAP (`LdapInjection`): only names and filters that become invalid syntax.
+LDAP (`LdapInjection`): a search that throws any `NamingException`. That
+includes names and filters that become invalid syntax, but also a search
+base that doesn't exist or a lost connection.
 ```
 \.lookup\s*\(|lookupLink\s*\(|InitialContext|DirContext|\.search\s*\(
 ```
@@ -62,17 +64,22 @@ createStatement|executeQuery|executeUpdate|\.execute\s*\([^)]*\+|prepareStatemen
 Check: queries built by string concatenation with input.
 
 ## Expression languages and scripting
-Detector: partly: `ExpressionLanguageInjection` for EL, Spring EL, OGNL,
-JEXL 2 and MVEL; `ScriptEngineInjection`; `TemplateInjection` for
-FreeMarker. Not Velocity, Groovy or other template engines.
+Detector: partly: EL, Spring EL, OGNL and JEXL 2 are reported when they
+call the honeypot `jaz.Zer` (`ReflectiveCall`), MVEL and FreeMarker when
+they run the command `jazze` (`OsCommandInjection`), and scripts by
+`ScriptEngineInjection`. `ExpressionLanguageInjection` and
+`TemplateInjection` only steer the fuzzer there. Not Velocity, Groovy or
+other template engines.
 ```
 ExpressionFactory|ELProcessor|SpelExpressionParser|parseExpression|Ognl\.|OgnlUtil|MVEL\.|ScriptEngine|\.eval\s*\(|GroovyShell|freemarker\.template|Velocity|TemplateEngine
 ```
 Check: input used as an expression, script or template source.
 
 ## Reflection and class loading
-Detector: partly (`ReflectiveCall`): class and native library loading,
-not `getMethod`, `invoke` or `newInstance` on existing classes.
+Detector: partly (`ReflectiveCall`): code that constructs or calls the
+honeypot class `jaz.Zer` named in the input, or loads a native library
+named in the input. A class that is only loaded isn't reported, nor
+`getMethod`, `invoke` or `newInstance` on existing classes.
 ```
 Class\.forName\s*\(|loadClass\s*\(|getMethod\s*\(|getDeclaredMethod\s*\(|\.invoke\s*\(|newInstance\s*\(
 ```

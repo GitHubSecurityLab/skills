@@ -121,16 +121,21 @@ checks, as of Jazzer 0.30.0:
 | OS command injection: `ProcessBuilder.start` | the executable (`argv[0]`) is `jazze` | the arguments: `sh -c <input>`, option injection. **Partly**: any other command runs for real |
 | SQL injection: `Statement.execute*`, JPA native queries | the driver throws a syntax error for the query | queries a mock or a stub driver never parses: test with in-memory H2 or SQLite. A failing `PreparedStatement` shows as an `ArrayIndexOutOfBoundsException` (`triage.md`) |
 | Path traversal: `java.io` streams, readers and writers, `Files`, `FileChannel`, `Scanner` | the normalized path is the target `../jazzer-traversal` | other files outside the directory the API may touch. **Partly** |
-| Reflection, expression languages (EL, SpEL, OGNL, JEXL 2, MVEL, Bean Validation messages), FreeMarker templates, script engines | the honeypot class `jaz.Zer` loads, or the script runs `jaz`+`zer` | `Method.invoke` and `getMethod` on existing classes; other expression and template engines |
+| Reflection, expression languages (EL, SpEL, OGNL, JEXL 2, Bean Validation messages) | code constructs the honeypot class `jaz.Zer` or calls one of its methods (expressions are steered to call `jaz.Zer.el()`), or loads the native library `jazzer_honeypot` | a class name from the input that is only loaded, never constructed or called; `Method.invoke` and `getMethod` on existing classes; other expression languages |
+| Script engines: `ScriptEngine.eval` | the script contains `"jaz"+"zer"` | scripts run another way, e.g. `GroovyShell` |
 | Deserialization: `ObjectInputStream` | a gadget chain reaches the honeypot | other deserializers (Jackson, XStream, Kryo, YAML), unless they construct or call the honeypot (below) |
-| LDAP, XPath injection | the query or filter is invalid syntax | injections that stay valid syntax |
+| LDAP injection: `DirContext.search` | `search` throws any `NamingException`: invalid syntax, but also a search base that doesn't exist or a lost connection. The finding doesn't say which | injections that stay valid syntax |
+| XPath injection: `XPath.compile`, `XPath.evaluate*` | the expression is invalid syntax | injections that stay valid syntax |
 | JNDI lookups: `Context.lookup` | the name starts with `ldap://g.co/` or `rmi://g.co/` | |
 | SSRF: sockets, `SocketChannel` | any connection not allowed (`allowNetworkConnections`) | |
 | Regex injection: `Pattern`, `String.matches` and friends | the *pattern* comes from the input and is invalid or explosive | a fixed pattern on input text (ReDoS: `fuzz-coverage`, "Check the sinks") |
 
-Some detectors only guide the fuzzer, towards XML external entities or
-huge `BigDecimal` exponents. They report through another detector or as
-a timeout.
+Some detectors only guide the fuzzer; another detector or a timeout
+reports the bug. MVEL expressions and FreeMarker templates are steered
+towards running the command `jazze`, which the OS command injection
+detector reports. XML parsers are steered towards external entities,
+which the SSRF detector reports. `BigDecimal` is steered towards huge
+exponents, which show as a timeout.
 
 - Disable a detector only with a recorded reason:
   `jazzer.disabled_hooks=<detector class>` in `junit-platform.properties`
