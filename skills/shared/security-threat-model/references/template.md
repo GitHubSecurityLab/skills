@@ -51,6 +51,10 @@ Call sites go in Location. An unreachable sink keeps its row, with
 - **S2 → K1:** `extract(zip)` → `writeEntry(entry)` →
   `new FileOutputStream(dest)` with `dest = base + entry.getName()`;
   no canonicalization. [code: src/Unzip.java:40-88]
+- **S1 → H1:** `png_read_info` → `png_read_chunk_header` returns the
+  chunk's `length`, capped by `png_check_chunk_length` →
+  `png_handle_*(png_ptr, info_ptr, length)`; each handler checks `length`
+  against its chunk's layout. [code: pngread.c:108-139]
 
 ## Entry point: <name>
 (Focused mode: the four questions for one entry point.)
