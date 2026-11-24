@@ -9,8 +9,9 @@ the installed plugin (the agent shows each skill's directory):
 
 It is idempotent. Each run:
   - refuses Windows and Python before 3.9, with a clear error;
-  - checks that the current directory is inside a git repository, and warns
-    about a repository path that libFuzzer's merges can't use;
+  - checks that the current directory is inside a git repository; refuses
+    a repository path with whitespace, where every $L command splits, and
+    warns about other characters that libFuzzer's merges can't use;
   - refuses a repository that tracks files under .seclab/, in any case
     (macOS's file system ignores it): their ledger, threat model and Next
     actions would come from the repository, not from the user; and refuses
@@ -457,6 +458,12 @@ def run(args: argparse.Namespace) -> int:
     refuse_foreign_workspace()
     print("repository: %s" % root)
     bad = SHELL_UNSAFE.search(root)
+    if bad and bad.group(0).isspace():
+        raise InitError(
+            "the repository path contains whitespace (%r): every launcher command ($L) splits there, so no "
+            "run, replay or gate can start. Tell the user to move or clone the checkout to a path without "
+            "whitespace." % bad.group(0)
+        )
     if bad:
         print(
             "warning: the repository path contains %r: libFuzzer's merges and minimizing can't run "
