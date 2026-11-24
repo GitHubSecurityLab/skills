@@ -293,8 +293,8 @@ actions isn't the end: it leads to long runs and their analysis.
    - the uncheckable sink groups, to review by hand;
    - findings by verdict, with report links;
    - items that need the user's decision;
-   - held-back material, and the branches that must not be pushed (safety
-     rules);
+   - held-back material, and the branches and refs that must not be
+     pushed (safety rules);
    - suggested next steps.
 
    Use the skills' terms in the summary, each explained in a few words
@@ -346,11 +346,15 @@ actions isn't the end: it leads to long runs and their analysis.
   have (State `introduced by our fix for <bucket>`, `fuzz-triage`):
   there's nothing to disclose, and its correction goes where that
   bucket's fix goes. Until a covered finding is public and fixed
-  upstream, every summary lists the branches that must not be pushed:
+  upstream, every summary lists the branches and refs that must not be
+  pushed:
   - `seclab/held-back/*`;
   - each branch with commits that reach or reveal the finding, such as
     the campaign's branch with its harnesses (with `--branch current`,
-    the user's own).
+    the user's own);
+  - each earlier campaign's archive ref, `refs/seclab/campaign-<date>`
+    ([references/new-release.md](references/new-release.md)), whose
+    commits reach or reveal the finding.
 - Keep the caps in Settings: memory and per-input timeout.
 - No `sudo` or system settings changes outside a disposable environment.
 - Never stop or restart a long run the user started, unless they ask.

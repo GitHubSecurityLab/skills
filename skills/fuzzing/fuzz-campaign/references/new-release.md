@@ -7,8 +7,12 @@
    their run directories.
 2. Keep the old branch tip as a ref outside `refs/tags`:
    `git update-ref refs/seclab/campaign-<date> HEAD`. The archived ledger
-   can then still name the old branch's commits, and `git push`, `--tags`
-   and `--all` never send the ref. Archive the old ledger under
+   can then still name the old branch's commits. `git push`, `--all` and
+   `--tags` don't send the ref, but a mirror push does (`--mirror`, or a
+   remote with `remote.<name>.mirror` set), and so does a refspec that
+   matches it. So while its commits reach or reveal a finding the
+   hold-back rule covers, it's on the list of what must not be pushed
+   (`SKILL.md`, "Safety rules"). Archive the old ledger under
    `archive/<date>/`. Still-open bugs keep their bucket files and
    reproducers.
 3. Start a new branch at the release with

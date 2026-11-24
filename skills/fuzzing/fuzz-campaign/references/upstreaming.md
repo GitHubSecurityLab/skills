@@ -152,9 +152,11 @@ unless they start with `.seclab/`:
 8. **Summary for the user:**
    - the branches ready to push, and their PR texts;
    - held-back items, and when they can be released;
-   - the branches that must not be pushed, by the hold-back rule:
-     `git branch --list 'seclab/held-back/*'` and the campaign's
-     branches;
+   - the branches and refs that must not be pushed, by the hold-back
+     rule: `git branch --list 'seclab/held-back/*'`, the campaign's
+     branches, and the archive refs of earlier campaigns
+     (`git for-each-ref refs/seclab/`) whose commits reach or reveal a
+     finding the rule covers;
    - the next steps: the user pushes and opens the pull requests.
 
 ## Done when

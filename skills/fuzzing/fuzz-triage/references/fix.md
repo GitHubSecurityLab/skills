@@ -131,9 +131,9 @@ unless they start with `.seclab/`:
    its own branch on top.
 
    Tell the user, now and in every later summary, that the branch they
-   started on doesn't have the fix. Also tell them which branches must
-   not be pushed (the hold-back rule). The branch they started on is one
-   of them if its harnesses reach the bug.
+   started on doesn't have the fix. Also tell them which branches and
+   refs must not be pushed (the hold-back rule). The branch they started
+   on is one of them if its harnesses reach the bug.
 7. **Record** in the bucket's Fix section: the commit, each validation
    result, the review's answers, and any sibling places noted. Set the
    bucket's Progress to `fixed-locally`. For a queued bug, do that only
