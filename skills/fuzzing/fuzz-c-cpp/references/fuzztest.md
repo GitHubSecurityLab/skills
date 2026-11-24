@@ -313,6 +313,13 @@ reports.
   the argument values from the draft, for the reproducer's direct API
   call (`regression.md`, "The bug's reproducer"). A `FUZZ_TEST_F` gets no
   draft: take its values from the report's `argument <i>: ...` lines.
+  The draft and the `argument` lines cut long values. A value that ends
+  in ` ...<value too long>` was cut at 2048 printed characters, where an
+  escaped byte such as `\001` counts four. In the `argument` lines, a
+  string or byte vector that ends in ` ..."` was cut after 1000 bytes.
+  Print a cut value once from the property function instead, replaying
+  the reproducer (Reproduce, above). The reproducer file doesn't show the
+  values: FuzzTest's serialization is binary.
 - **Seeds in `.WithSeeds({...})`** run in every mode, including the short
   unit-test run in normal CI. So they are a harness check, not a bug's
   test.
