@@ -220,6 +220,13 @@ run only one Jest long run per harness per tree. Each copy picks up the
 others' inputs (`RELOAD` lines), and stops at its first finding. Add the
 checkout's `.cifuzz-corpus/...` as an extra seed directory.
 
+If the run has no duration: drop `--time` and the `-max_total_time` entry
+of `JAZZER_FUZZER_OPTIONS`. The copies then run until stopped: Jest's
+own test timeout, about 6 days in fuzzing mode, doesn't end them. For a
+fuzz test without `sync: true`, Jest reports a failed test at that point
+(`Exceeded timeout of 525600000 ms`), while the fuzzing goes on. That
+failure isn't a finding.
+
 Before the worktree is removed (`fuzz-campaign`'s long-runs.md), copy the
 new files of its `.cifuzz-corpus` into the checkout's. libFuzzer names the
 files by their content, so overwriting is harmless. `cp -n`, by contrast,
