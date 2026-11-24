@@ -126,5 +126,7 @@ shorten and replay) is often as quick.
 
 ## Debugging
 
-Run the CLI target under `node --inspect-brk`, or add `console.error`
-calls to the harness temporarily. Remove both before committing.
+Add `console.error` calls to the harness or the library temporarily, and
+rerun the reproduction above. TypeScript needs its build before each
+rerun, and again once the calls are removed (`build.md` next to this
+file). Remove them before committing.

@@ -113,13 +113,11 @@ Reports that change the verdict:
 
 ## Debugging
 
-Run the input under a debugger, through the launcher:
-`lldb --batch -o run -o bt -- <binary> <file>` on macOS,
-`gdb -batch -ex run -ex bt --args <binary> <file>` on Linux.
-- If the sandbox blocks `ptrace` (Codex's default sandbox): debuggers
-  can't attach there. Debug in a terminal outside the sandbox.
-- If it's an MSan report: rebuild with `-fsanitize-memory-track-origins=2`
-  to see where the uninitialized value came from.
+Print values from the harness or the library temporarily
+(`fprintf(stderr, ...)`), rebuild the variant (`build.md` next to this
+file), and rerun the reproduction above. Remove the prints before
+committing, and rebuild again. An MSan report already says where the
+uninitialized value was created, since the `msan` variant tracks origins.
 
 ## Fuzzing-only patches
 

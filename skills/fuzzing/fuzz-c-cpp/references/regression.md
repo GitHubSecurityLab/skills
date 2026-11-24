@@ -51,7 +51,7 @@ Every real bug gets one, written in triage on the build that found it: a
 small program in `crashes/<bucket>/repro.c` (or `.cc`). Its `main()`
 calls the project's API with the concrete values the harness derived from
 the input, not through the harness and not as a crash file. To get the
-values, print them once from the harness, or read them in a debugger.
+values, print them once from the harness (triage.md, "Debugging").
 FuzzTest prints them itself (`fuzztest.md`, "Triage"). `xxd -i <file>`
 prints a byte buffer as a C array.
 

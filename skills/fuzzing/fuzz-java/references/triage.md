@@ -161,7 +161,7 @@ $L start --id decode-$H-<n> --harness $H --timeout <timeout_s> --env PATH="$RUN_
 
 ## Debugging
 
-Run the reproduction in the foreground. To debug it, add
-`-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005` to
-the JVM flags, then attach a debugger; or print values from the fuzz
-test temporarily. Remove both before committing.
+Print values from the fuzz test or the library temporarily
+(`System.err.println`), recompile with the project's build (`build.md`
+next to this file), and rerun the reproduction above. Remove the prints
+before committing, and recompile again.
