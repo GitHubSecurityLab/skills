@@ -65,9 +65,10 @@ checkout's `.cifuzz-corpus`.
    buckets phase 1 triaged. Step 6 picks what follows.
 6. **Sort each harness.** Judge its growth on every copy that meets both
    of these conditions:
-   - It didn't end at a finding: its state is `finished`, `stopped`, or
-     `died`, and a copy that died is judged up to its last sample. A copy
-     cut short by a finding always looks like it's growing.
+   - It wasn't cut short by a finding: its state is `finished`,
+     `stopped`, `failed`, or `died`. A copy cut short by a finding always
+     looks like it's growing. A copy that died is judged up to its last
+     sample.
    - It has at least two progress samples in the last quarter of its own
      elapsed time, in `progress.tsv` or in AFL++'s `plot_data`
      (`edges_found`). `progress.tsv` samples every 5 minutes, so every
@@ -78,7 +79,7 @@ checkout's `.cifuzz-corpus`.
      1% in its last quarter, or the run reached a scope function or sink
      that the snapshot before the run didn't (step 5);
    - **unknown:** otherwise, if no copy is left to judge, because all
-     ended at a finding or lack the samples;
+     were cut short by a finding or lack the samples;
    - **plateaued:** otherwise.
 
    Then pick the harness's next steps; it can have more than one:
