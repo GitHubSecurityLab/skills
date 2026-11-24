@@ -85,7 +85,8 @@ unless they start with `.seclab/`:
      regression tests in its CI.
    - OSS-Fuzz builds FuzzTest harnesses with Bazel. A CMake project's
      FuzzTest harnesses need libavif's patched compatibility-mode build
-     there (`fuzz-c-cpp`'s fuzztest.md): say so.
+     there (`fuzz-c-cpp`'s fuzztest.md). The PR text for those harnesses
+     (step 7) says so, and leaves the choice to the maintainers.
 4. **Build upstreaming branches** from the current upstream HEAD, each in
    its own worktree, so the checkout and its builds stay on the campaign
    branch. Upstream is the `upstream` remote in a fork's clone, else
@@ -99,7 +100,7 @@ unless they start with `.seclab/`:
    ```
    Add fuzzing-mode patches only if the maintainers want them. Reword
    commits to the project's conventions. If the project requires DCO
-   sign-off, use `git commit -s`; if it requires a CLA, mention the CLA.
+   sign-off, use `git commit -s`.
 
    Then give the worktree a workspace of its own, from the checkout.
    There, the gate runs on the worktree's builds, without our fixes, and
@@ -172,7 +173,8 @@ unless they start with `.seclab/`:
      branches, and the archive refs of earlier campaigns
      (`git for-each-ref refs/seclab/`) whose commits reach or reveal a
      finding the rule covers;
-   - the next steps: the user pushes and opens the pull requests.
+   - the next steps: the user signs the project's CLA if it requires one,
+     then pushes and opens the pull requests.
 
 ## Done when
 
