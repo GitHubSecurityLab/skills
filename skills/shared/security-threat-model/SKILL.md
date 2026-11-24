@@ -122,8 +122,11 @@ sections by name.
    sanitization on the way (bounds checks, allow-lists, canonicalization)
    and whether it looks complete. Keep unreachable sinks listed, marked
    as unreachable.
-7. **Mark provenance** on every entry: `[code: path:line]`, `[doc: path]`,
-   or `[user]`. Guesses stay marked as assumptions.
+7. **Mark provenance** on every entry: `[code: path:line]`, `[doc: path]`
+   (`[doc: URL]` for a source outside the repository, such as an
+   advisory), or `[user]`. Mark a guess `(assumption)`, followed by the
+   provenance of what it rests on: `<guess> (assumption) [doc: README.md]`.
+   A guess with nothing behind it goes under Open questions instead.
 8. **Review.** In interactive use, show the context and the top entry
    points, and ask only what the code can't answer. For example: "Is the
    config file trusted?", "Is this API reachable with network data in

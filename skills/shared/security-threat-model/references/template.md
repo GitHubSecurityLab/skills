@@ -1,7 +1,7 @@
 # Threat model file structure
 
 Keep entries short; link to code with `path:line`. Every entry ends with
-its provenance. Mark guesses as `(assumption)`.
+its provenance, guesses included (`SKILL.md`, "Mark provenance").
 
 ```markdown
 # Threat model: <project>
