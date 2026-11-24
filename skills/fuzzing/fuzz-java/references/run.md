@@ -168,7 +168,8 @@ project's tests once online, as a build step. For Maven, use
 `mvn -q test -Dtest=<fuzz_class>`, which also fetches Surefire's JUnit
 provider.
 
-Through the launcher, the working directory and `HOME` are in scratch. So:
+Through the launcher, the working directory, `HOME` and `user.home` are
+in scratch. So:
 - Name the build with an absolute path (`-f`, `-p`).
 - Run a wrapper from the build's root: in place of `mvn`, use
   `sh -c 'cd "$0" && exec ./mvnw "$@"' "<root>"`, and likewise for
@@ -178,6 +179,18 @@ Through the launcher, the working directory and `HOME` are in scratch. So:
   its Maven in `MAVEN_USER_HOME`: add `--env MAVEN_USER_HOME=<home>/.m2`.
   `gradlew` keeps its Gradle in `GRADLE_USER_HOME`, which the Gradle
   block passes.
+- Pass the user's Maven files, which Maven reads from `.m2` under
+  `user.home`: if `<home>/.m2/settings.xml` exists, add
+  `-s "<home>/.m2/settings.xml"`, and if `<home>/.m2/toolchains.xml`
+  exists, `-t "<home>/.m2/toolchains.xml"`. A missing file is an error.
+  If `settings.xml` sets `<localRepository>`, use that path in place of
+  `<home>/.m2/repository`.
+- If the Gradle build sets a toolchain (`build.md`, "JDK"), pass its JDK:
+  Gradle misses the JDKs it looks up in the user's home, such as SDKMAN's,
+  asdf's or those in `<home>/.m2/toolchains.xml`. In the shell,
+  `gradle -q javaToolchains` lists the JDKs with their locations. Add the
+  one matching the toolchain:
+  `-Porg.gradle.java.installations.paths=<jdk_dir>`.
 - Pass the shell's `PATH` with the JDK first. That `PATH` finds the build
   tool.
 
