@@ -107,8 +107,9 @@ Reports that change the verdict:
   it reproduces on a build with everything instrumented.
 - **UBSan integer checks** (`ubsan-int` build): a bucket from these
   checks starts in State `needs investigation`, since unsigned
-  wrap-around is often intended. Look for what the wrapped value is used
-  for, such as a size or an index.
+  wrap-around and implicit conversions that change a value are often
+  intended. Look for what the changed value is used for, such as a size
+  or an index.
 
 ## Debugging
 

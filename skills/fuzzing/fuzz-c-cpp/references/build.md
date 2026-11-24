@@ -19,7 +19,7 @@ compiler instead (the table below).
 | `cmplog` | as `aflpp-plain`, with `AFL_LLVM_CMPLOG=1` in its wrappers | as `aflpp-plain` |
 | `coverage` | `-g -O1 -fprofile-instr-generate -fcoverage-mapping -mllvm -runtime-counter-relocation -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION`, no sanitizers | `-fprofile-instr-generate -fsanitize=fuzzer` (libFuzzer's `main` replays the corpus) |
 | `msan` (Linux, optional; untested in CI) | `-fsanitize=fuzzer-no-link,memory -fsanitize-memory-track-origins` | `-fsanitize=fuzzer,memory` |
-| `ubsan-int` (optional; untested in CI) | `libfuzzer` plus `-fsanitize=unsigned-integer-overflow,implicit-conversion,alignment` | as `libfuzzer` |
+| `ubsan-int` (optional; untested in CI) | `libfuzzer` plus `-fsanitize=unsigned-integer-overflow,implicit-conversion` | as `libfuzzer` |
 
 Two of the `coverage` variant's flags:
 - `-mllvm -runtime-counter-relocation`, the relocation flag, lets
@@ -30,12 +30,12 @@ Two of the `coverage` variant's flags:
   `return` as run.
 
 `$UB` is the one UBSan list of every build, reproducer, test build and CI
-template. It is OSS-Fuzz's list; `ubsan-int` adds
-`unsigned-integer-overflow`. `$HARDEN` turns on libstdc++'s and libc++'s
-bounds checks. They catch an index past a `std::vector`'s size but within
-its capacity, which ASan with libstdc++ doesn't. Every variant but
-`coverage` compiles with `$HARDEN`, and so do reproducers and test
-builds. Add both to `.seclab/fuzz/env.sh` (`run.md`):
+template. It is OSS-Fuzz's list; `ubsan-int` adds two integer checks,
+`unsigned-integer-overflow` and `implicit-conversion`. `$HARDEN` turns on
+libstdc++'s and libc++'s bounds checks. They catch an index past a
+`std::vector`'s size but within its capacity, which ASan with libstdc++
+doesn't. Every variant but `coverage` compiles with `$HARDEN`, and so do
+reproducers and test builds. Add both to `.seclab/fuzz/env.sh` (`run.md`):
 <!-- ci: c-ub -->
 ```sh
 UB=array-bounds,bool,builtin,enum,function,integer-divide-by-zero,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,unreachable,vla-bound,vptr
