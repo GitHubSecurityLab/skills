@@ -1341,7 +1341,9 @@ def java_gradle(ctx: Context, task: str, module: str, fuzz_class: str, method: s
     ctx.block("java-gradle-junit", run_id="repro-%s-1" % module, ok=(1,), **junit)
     log = ctx.log("repro-%s-1" % module)
     ctx.expect("IllegalStateException" in log, "Gradle's JUnit run replays the crash file")
-    ctx.expect(re.search(r"> Task \S*:test FAILED\n.*^Picked up JAVA_TOOL_OPTIONS: .*-XX:-OmitStackTraceInFastThrow", log, re.M | re.S),
+    # The test JVM's "Picked up" line comes after the test task's header (Gradle's own comes before any);
+    # Gradle 9.8 prints that header without FAILED, 9.9 with it.
+    ctx.expect(re.search(r"^> Task \S*:test\b.*\n(?:.*\n)*?Picked up JAVA_TOOL_OPTIONS: .*-XX:-OmitStackTraceInFastThrow", log, re.M),
                "the test JVM gets JOPTS")
     shutil.rmtree(inputs)
     ctx.block("java-gradle-junit", run_id="repro-%s-2" % module, **junit)
