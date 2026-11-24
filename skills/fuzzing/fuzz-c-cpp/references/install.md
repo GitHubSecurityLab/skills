@@ -22,11 +22,11 @@ afl-fuzz --version         # AFL++, if used
 
 ## Install plan
 
-List only what's missing, for the project's build system. Run **`sudo`**
-only in a disposable environment (`fuzz-harness`'s build.md); otherwise
-print the command for the user. On Ubuntu, run `sudo apt-get update`
-before the first install: fresh images, including the devcontainer, ship
-without package lists.
+List only what's missing, for the project's build system. Who runs each
+command, and when `sudo` is allowed: `fuzz-harness`'s build.md,
+"Toolchain". On Ubuntu, `sudo apt-get update` goes before the first
+`apt-get install`, in the same command: fresh images, including the
+devcontainer, ship without package lists.
 
 | What | When | Ubuntu 24.04 | macOS (Homebrew) | Time |
 |---|---|---|---|---|

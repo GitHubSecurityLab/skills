@@ -26,10 +26,11 @@ choose the JDK for Jazzer.
 
 ## Install plan
 
-List only what's missing. Use `sudo` only in a disposable environment
-(`fuzz-harness`'s build.md). Otherwise, print the command for the user,
-or use SDKMAN (`sdk list java` shows the versions). On Ubuntu, run
-`sudo apt-get update` before the first install.
+List only what's missing. Who runs each command, and when `sudo` is
+allowed: `fuzz-harness`'s build.md, "Toolchain". Without `sudo`, SDKMAN
+installs a JDK at user level (`sdk list java` shows the versions). On
+Ubuntu, `sudo apt-get update` goes before the first `apt-get install`, in
+the same command.
 
 | What | When | Ubuntu 24.04 | macOS (Homebrew) | Time |
 |---|---|---|---|---|

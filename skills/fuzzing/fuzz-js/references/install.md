@@ -37,8 +37,9 @@ the systems above, such as a `node:24-trixie` container.
 
 ## Install plan
 
-List only what's missing. Times were measured on a clean Ubuntu 24.04 with
-a fast network; slower machines take a few times longer.
+List only what's missing. Who runs each command: `fuzz-harness`'s
+build.md, "Toolchain". Times were measured on a clean Ubuntu 24.04 with a
+fast network; slower machines take a few times longer.
 
 | What | When | Linux | macOS (Homebrew) | Time |
 |---|---|---|---|---|

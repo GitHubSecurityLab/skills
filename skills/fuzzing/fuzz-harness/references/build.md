@@ -34,15 +34,18 @@ unless they start with `.seclab/`:
      missing for this project, each item with the command for this OS and
      the expected time. Record what was installed in `decisions.md`.
    - Installs go to user level where possible: Homebrew, `~/.local`, fnm,
-     SDKMAN, or project-local Maven and npm dependencies.
+     SDKMAN, or project-local Maven and npm dependencies. The agent runs
+     these itself, in interactive mode only after the user approves the
+     plan at the build changes checkpoint (below).
    - **Build changes checkpoint** in interactive mode: show the install
      plan and ask before installing; a campaign asks first in its setup
      card (`fuzz-campaign`, "Setup card"). Changes to build files are
      asked about after step 4 chooses them.
-   - `sudo` and system settings changes (package installs,
-     `afl-system-config`) only when the environment is disposable. On the
-     user's own machine, print the command for the user to run, or use the
-     engine's documented environment workaround.
+   - `sudo` and system settings changes (system package installs such as
+     `apt-get`, installing Homebrew itself, `afl-system-config`) only when
+     the environment is disposable. On the user's own machine, print the
+     command for the user to run, or use the engine's documented
+     environment workaround.
 3. **Understand the project's build.** Find the build system, existing
    fuzzing or sanitizer options (e.g. a CMake `*_FUZZ*` or `*_SANITIZE*`
    option, an existing `fuzz/` target, OSS-Fuzz's `build.sh`), and how the
