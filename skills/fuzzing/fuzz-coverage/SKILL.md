@@ -322,6 +322,11 @@ only reads the gaps' code.
 What the steps in this file write or change. Paths are relative to
 `.seclab/fuzz/` unless they start with `.seclab/`:
 - `coverage/<h>/r<round>.lcov`.
+- `corpus/<h>/` (Jest: the test's directory in `.cifuzz-corpus/`): each
+  round's new inputs, a corpus copied in for standalone use, seeds,
+  targeted inputs, merged and minimized corpora (corpus.md).
+- `dict/<h>.dict`: dictionary entries.
+- `generators/`: generators of targeted inputs (corpus.md).
 - `targets/<id>.md`: Coverage rounds, Scope files (corrections), Sinks
   (states), Notes; `targets/<id>.scope`. The target file's layout:
   `fuzz-campaign`'s ledger.md, "`targets/<target>.md`".
