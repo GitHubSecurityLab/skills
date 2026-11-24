@@ -13,6 +13,7 @@ unless they start with `.seclab/`:
 - `CAMPAIGN.md`: Harnesses, Open crashes. `crashes/*.md`: verdicts,
   Disclosure, Fix, Fixed upstream. `targets/*.md`: Harness, build
   variants.
+- `crashes/<bucket>/`: reproducers, for a freshness check run again.
 - `coverage/<h>/<last>.lcov`: each harness's last coverage.
 - `runs/repro-<h>-<n>/`: the held-back buckets' reproduction logs.
 - `bin/`, `targets/`, `dict/`, `leaks/`, `corpus/` and `build/jacoco/`,
@@ -58,9 +59,18 @@ unless they start with `.seclab/`:
 
    Record what is held back, and the condition for releasing it, in
    `CAMPAIGN.md`'s Next actions.
-2. **Regression tests** for every bug that isn't held back. Each is the
-   test that `fuzz-triage`'s fix made from the bug's reproducer, in the
-   project's test framework; it's in the bug's `fuzz(fix)` commit.
+2. **Regression tests** for every bug that isn't held back and isn't
+   fixed upstream. If upstream moved since a bug's freshness check last
+   ran, run it again first (`fuzz-triage`'s fix.md, "Check the
+   precondition, then freshness"): upstream may have fixed the bug since.
+   Here the check only records what it finds; it never leads to a fix or
+   a commit.
+
+   Each test is the one `fuzz-triage`'s fix made from the bug's
+   reproducer, in the project's test framework; it's in the bug's
+   `fuzz(fix)` commit. A bug fixed upstream contributes none: upstream's
+   fix usually has its own test, and maintainers rarely take one for a
+   bug they already fixed.
 
    Never add crash inputs to a directory the project's CI replays, such
    as seeds, inputs or regression inputs. CI would fail until the fix
@@ -68,8 +78,6 @@ unless they start with `.seclab/`:
    The harnesses' seed replays (the language skill's regression.md, "Seed
    replay: the harness as a test") stay, as checks that the harnesses
    still run.
-   - If the project fixed the bug its own way: check that the regression
-     test passes with that fix.
 3. **Choose the destination:** the project's own repository, or the
    project's folder in `google/oss-fuzz` if the project keeps its
    harnesses in OSS-Fuzz instead.
@@ -188,5 +196,7 @@ What the steps in this file write or change. Paths are relative to
 `.seclab/fuzz/` unless they start with `.seclab/`:
 - `seclab/upstream-*` branches (local), `upstreaming/*.md`,
   `upstreaming/held-back.tsv`.
+- `crashes/*.md`: Evidence and Fixed upstream, from a freshness check
+  run again.
 - `targets/*.md`: Gate, from the gate runs in the worktrees.
 - `CAMPAIGN.md`: held-back list in Next actions.
