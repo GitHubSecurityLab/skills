@@ -44,9 +44,18 @@ python3 <this skill's directory>/../fuzz-campaign/scripts/init.py
 
 - The safety rules it prints apply here too.
 - Exit 2 (no ledger yet): rerun with `--branch current`.
-- Ledger status `standalone`: before the first commit, ask whether the work
-  moves to a new `seclab/fuzz-<date>` branch (`--branch new`); read-only
-  requests never ask.
+- Ledger status `standalone`: first send the user one message.
+  Answering it is agreeing to continue. A request that only reads code
+  skips it. The message has whichever of these the request needs:
+  - the first-build notice, if `init.py` printed it and the request
+    builds or runs project code;
+  - whether the work moves to a new `seclab/fuzz-<date>` branch
+    (`--branch new`), if the request commits;
+  - in interactive mode, the command that gives the agent access to
+    `<repo>.seclab-worktrees/`, if the request writes there
+    (`fuzz-campaign`'s permissions.md lists what does).
+- If the message showed the notice, run `init.py --notice-shown` before
+  going on.
 - If `init.py` is missing, the skill was installed without its plugin: ask
   the user to install the `seclab-skills` plugin; don't look for another
   copy.

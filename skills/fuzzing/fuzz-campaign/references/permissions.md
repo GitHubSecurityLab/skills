@@ -5,7 +5,7 @@ The following worktrees and builds go to
 project's own tools don't see a second copy (long-runs.md, "Which tree"):
 - builds for long runs;
 - the `base` build;
-- develop's builds of C/C++ projects that build only in-tree;
+- builds of C/C++ projects that build only in-tree;
 - upstreaming's worktrees and their builds;
 - `fuzz-triage`'s freshness and bisect worktrees.
 
@@ -15,11 +15,11 @@ needs no extra command: its start command grants everything
 (autonomous.md).
 
 A skill can't grant access, so in interactive mode, show the user the
-command for their agent once. Show it on the setup card, or at the start
-of a single-step request that writes there, since such a request skips
-Setup. The command creates the directory and restarts the agent in the
-checkout with access to it, so showing it first loses no work. Fill in
-the checkout's directory name for `<repo>`.
+command for their agent once. Show it on the setup card, or in the first
+message of a request that skips Setup and writes there: a single-step
+request, or a skill used on its own. The command creates the directory
+and restarts the agent in the checkout with access to it, so showing it
+first loses no work. Fill in the checkout's directory name for `<repo>`.
 
 | Agent | Command, run in the checkout |
 |---|---|

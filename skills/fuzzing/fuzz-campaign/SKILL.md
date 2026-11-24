@@ -71,13 +71,19 @@ rules. Then:
   fuzz?", one long-run command, upstreaming or a CI job) needs no full
   Setup:
   - On exit 2, rerun `init.py --branch current`.
-  - Before the first commit, ask whether the work stays on this branch or
-    moves to a new `seclab/fuzz-<date>` branch. Read-only requests never
-    ask.
-  - In interactive mode, if the request writes to
-    `<repo>.seclab-worktrees/`, such as a long-run command or
-    upstreaming, start by showing the command that gives the agent access
-    there ([references/permissions.md](references/permissions.md)).
+  - Start with one card. As on the setup card, answering it is agreeing
+    to continue. A request that only reads code skips it. The card has
+    whichever of these the request needs:
+    - the first-build notice, if `init.py` printed it and the request
+      builds or runs project code, such as a local replay of a CI job;
+    - whether the work stays on this branch or moves to a new
+      `seclab/fuzz-<date>` branch, if the request commits;
+    - in interactive mode, the command that gives the agent access to
+      `<repo>.seclab-worktrees/`, if the request writes there, such as a
+      long-run command or upstreaming
+      ([references/permissions.md](references/permissions.md)).
+  - If the card showed the notice, run `init.py --notice-shown` before
+    going on.
   - Do only the steps of the reference that covers the request, and stop.
 - Exit 2, no ledger yet: run **Setup**. Its setup card decides the branch
   and base commit, and `init.py` then writes the ledger.
