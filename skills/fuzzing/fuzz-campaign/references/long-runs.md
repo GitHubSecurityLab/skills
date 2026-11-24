@@ -131,8 +131,12 @@ The findings of those runs must reproduce on the builds that found them.
 
 After phase 1 of every run that used it, remove a launch worktree: run
 corpora live in the checkout's `runs/`. Before that, copy a Jest run's new
-corpus files out (`fuzz-js`); nothing else in it needs keeping. Other
-worktrees (`base`, bisect, upstreaming) go when their step says so.
+corpus files out (`fuzz-js`); nothing else in it needs keeping. Bisect
+and upstreaming worktrees go when their step is done. `base` and
+`fuzz-triage`'s freshness worktrees, `fresh-head` and `fresh-release`,
+are kept for reuse. Remove them when the campaign finishes (`SKILL.md`,
+"Finishing"), or, without a running campaign, when the request that made
+them is done. A new `base` replaces the old one before that.
 
 Remove a worktree with `--force`: a plain `git worktree remove` refuses
 when the worktree has initialized submodules, or build outputs the project

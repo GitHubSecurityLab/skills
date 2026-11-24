@@ -42,6 +42,9 @@ unless they start with `.seclab/`:
      git -C "$W/fresh-release" checkout -q --detach <release_tag>
      ```
      Later freshness checks move the same worktrees to the new commits.
+     Remove them when the campaign finishes, or, without a running
+     campaign, when the request is done (`fuzz-campaign`'s long-runs.md,
+     "Cleanup").
    - **Build and run the reproducer in each.** The reproducer calls the
      project's API directly, not through a harness, so build only what it
      needs (`fuzz-harness`'s build.md and runs.md). Then run it as the

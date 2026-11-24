@@ -289,7 +289,10 @@ actions isn't the end: it leads to long runs and their analysis.
 
 1. Upstreaming: [references/upstreaming.md](references/upstreaming.md).
    It can also run earlier, on request.
-2. Write the summary into the index and show it to the user. The summary
+2. Remove the worktrees kept for reuse: `base`, `fresh-head` and
+   `fresh-release` ([references/long-runs.md](references/long-runs.md),
+   "Cleanup"). The checkout's builds stay, in-tree ones included.
+3. Write the summary into the index and show it to the user. The summary
    lists:
    - the targets, with their scope branch coverage from the start to now
      (Targets table);
@@ -372,8 +375,9 @@ actions isn't the end: it leads to long runs and their analysis.
 
 ## Done when
 
-- The user ended the campaign, upstreaming ran, and the summary is in the
-  index and shown to the user.
+- The user ended the campaign, upstreaming ran, the worktrees kept for
+  reuse are removed, and the summary is in the index and shown to the
+  user.
 
 ## Pitfalls and shortcuts to reject
 

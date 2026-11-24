@@ -322,6 +322,9 @@ fix run without the file.
   (verdicts.md, "State and Fixed upstream").
 - Every real bug has a reproducer that fails.
 - The Open crashes table lists every bucket with its State and Progress.
+- Without a running campaign, the worktrees this request made for reuse
+  are removed: `base`, and the freshness check's `fresh-head` and
+  `fresh-release` (`fuzz-campaign`'s long-runs.md, "Cleanup").
 
 ## Pitfalls and shortcuts to reject
 
