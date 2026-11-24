@@ -122,8 +122,7 @@ unless they start with `.seclab/`:
    harness built with it goes through the gate before any other run
    (gate.md next to this file).
 9. **Before reusing builds** (Resume, or after anything switched or reset
-   the checkout), rebuild every variant this check calls stale; builds are
-   incremental, so it's cheap:
+   the checkout), rebuild every variant this check calls stale:
    <!-- ci: build-stale -->
    ```sh
    find -L .seclab/fuzz/build -mindepth 2 -maxdepth 2 -name built-from | while IFS= read -r f; do
@@ -131,6 +130,8 @@ unless they start with `.seclab/`:
        [ -z "$(git status --porcelain --untracked-files=no)" ] || echo "stale: ${f%built-from}"
    done
    ```
+   Rebuilding is cheap: C/C++ and Java builds are incremental, and the
+   TypeScript build compiles only what the target imports.
 
 ## When the build fails
 
