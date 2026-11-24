@@ -121,9 +121,12 @@ unless they start with `.seclab/`:
      (https://docs.github.com/en/code-security/tutorials/fix-reported-vulnerabilities/collaborate-in-a-fork),
      not in the public repository. The `fuzz(fix)` commit from the
      `seclab/held-back/<bucket>` branch goes there. A bug fixed upstream
-     needs no fork: its fix is already public. Release the fix and
-     publish the advisory. The held-back harnesses and tests land after
-     that (`fuzz-campaign`'s upstreaming.md).
+     needs no fork: its fix is already public. Once the fix is merged,
+     publish a new release that contains it, unless a release already
+     does. Then publish the advisory, or close it if the maintainers don't
+     judge the bug a vulnerability: a bug sent as an ordinary bug report
+     may not be one. The held-back harnesses and tests land once the bug
+     is public and fixed upstream (`fuzz-campaign`'s upstreaming.md).
    - For everyone else: report through the project's private
      vulnerability reporting
      (https://docs.github.com/en/code-security/how-tos/report-and-fix-vulnerabilities/report-privately)
@@ -134,6 +137,13 @@ unless they start with `.seclab/`:
    For a bug sent in public: the user files its draft as an issue or pull
    request, following the project's rules. Each fix of ours goes upstream
    on its own branch, which `fuzz-campaign`'s upstreaming.md prepares.
+
+   Record each bug's Disclosure in its bucket file from what the user
+   says: `reported <date, channel>` once they sent the report, and
+   `public` once the bug is public. That's when its advisory or issue is
+   published, the release notes name it, or the maintainers agree that it
+   can be discussed openly. A fix in the public repository alone doesn't
+   make it public.
 
 ## Done when
 
