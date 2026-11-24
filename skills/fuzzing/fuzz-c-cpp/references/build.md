@@ -34,8 +34,9 @@ template. It is OSS-Fuzz's list; `ubsan-int` adds two integer checks,
 `unsigned-integer-overflow` and `implicit-conversion`. `$HARDEN` turns on
 libstdc++'s and libc++'s bounds checks. They catch an index past a
 `std::vector`'s size but within its capacity, which ASan with libstdc++
-doesn't. Every variant but `coverage` compiles with `$HARDEN`, and so do
-reproducers and test builds. Add both to `.seclab/fuzz/env.sh` (`run.md`):
+doesn't. Every ASan build compiles with `$HARDEN`: `libfuzzer`, `aflpp`,
+`ubsan-int`, FuzzTest's `fuzztest`, reproducers and test builds. The variants
+without ASan leave it out. Add both to `.seclab/fuzz/env.sh` (`run.md`):
 <!-- ci: c-ub -->
 ```sh
 UB=array-bounds,bool,builtin,enum,function,integer-divide-by-zero,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,unreachable,vla-bound,vptr
