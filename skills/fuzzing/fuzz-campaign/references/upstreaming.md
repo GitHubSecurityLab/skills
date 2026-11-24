@@ -11,7 +11,13 @@ The agent prepares everything; the user opens the pull requests.
 What the steps in this file read. Paths are relative to `.seclab/fuzz/`
 unless they start with `.seclab/`:
 - `CAMPAIGN.md`: Harnesses, Open crashes. `crashes/*.md`: verdicts,
-  Disclosure, Fix. `targets/*.md`: Harness, build variants.
+  Disclosure, Fix, Fixed upstream. `targets/*.md`: Harness, build
+  variants.
+- `coverage/<h>/<last>.lcov`: each harness's last coverage.
+- `runs/repro-<h>-<n>/`: the held-back buckets' reproduction logs.
+- `bin/`, `targets/`, `dict/`, `leaks/`, `corpus/` and `build/jacoco/`,
+  copied into each worktree's workspace, and `env.sh`, which that
+  workspace's own is made from.
 - The project's CONTRIBUTING and `SECURITY.md`, from its checkout rather
   than `.seclab/fuzz/`.
 - Any AI-assistance policy of the project, and its commit conventions
@@ -50,7 +56,8 @@ unless they start with `.seclab/`:
      file: JS coverage leaves out `node_modules`, and Java's lists only
      the classes given.
 
-   Record what is held back and the condition for releasing it.
+   Record what is held back, and the condition for releasing it, in
+   `CAMPAIGN.md`'s Next actions.
 2. **Regression tests** for every bug that isn't held back. Each is the
    test that `fuzz-triage`'s fix made from the bug's reproducer, in the
    project's test framework; it's in the bug's `fuzz(fix)` commit.
@@ -179,5 +186,7 @@ unless they start with `.seclab/`:
 
 What the steps in this file write or change. Paths are relative to
 `.seclab/fuzz/` unless they start with `.seclab/`:
-- `seclab/upstream-*` branches (local), `upstreaming/*.md`.
+- `seclab/upstream-*` branches (local), `upstreaming/*.md`,
+  `upstreaming/held-back.tsv`.
+- `targets/*.md`: Gate, from the gate runs in the worktrees.
 - `CAMPAIGN.md`: held-back list in Next actions.
