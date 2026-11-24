@@ -29,7 +29,7 @@ commit.
 
 | Id | Bug | Fix site | Fixed in | Provenance |
 |---|---|---|---|---|
-| CVE-2017-12652 | chunk lengths not checked against the user limit | `png_read_chunk_header`, `pngrutil.c:160`; `png_push_read_chunk`, `pngpread.c:167` | 1.6.32, `347538e` | [doc: https://osv.dev/vulnerability/CVE-2017-12652] |
+| CVE-2017-12652 | chunk lengths not checked against the user limit | `png_read_chunk_header`, `pngrutil.c:156`; `png_push_read_chunk`, `pngpread.c:167` | 1.6.32, `347538e` | [doc: https://osv.dev/vulnerability/CVE-2017-12652] |
 
 ## Sources
 | Id | Entry point (trust boundary) | Untrusted input | Trusted around it | Attacker controls | Bug means | Property tests | Provenance |
@@ -45,7 +45,7 @@ Call sites go in Location. An unreachable sink keeps its row, with
 |---|---|---|---|---|---|---|
 | K1 | `Unzip.writeEntry`: `src/Unzip.java:88` `new FileOutputStream(dest)`, `:95` `Files.copy` | file write (path traversal) | partly | S2 | none found | [code: src/Unzip.java:88] |
 | K2 | `Config.load`: `src/Config.java:12` `new FileInputStream(path)` | file read (path traversal) | partly | unreachable: `path` comes from operator config | n/a | [code: src/Config.java:12] |
-| H1 | `pngrutil.c` `png_handle_*` chunk handlers | size arithmetic on chunk lengths | sanitizers | S1 | length checks in png_read_chunk_header | [code: pngrutil.c:160] |
+| H1 | `pngrutil.c` `png_handle_*` chunk handlers | size arithmetic on chunk lengths | sanitizers | S1 | length checks in png_read_chunk_header | [code: pngrutil.c:185] |
 
 ## Paths
 - **S2 → K1:** `extract(zip)` → `writeEntry(entry)` →
