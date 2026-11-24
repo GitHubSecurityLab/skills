@@ -342,7 +342,11 @@ actions isn't the end: it leads to long runs and their analysis.
   exceptions and property violations go upstream as ordinary bugs, unless
   a condition above holds. A finding this rule covers stays covered,
   whatever a later triage says, until it's public and fixed upstream.
-  Until then, every summary lists the branches that must not be pushed:
+  The one exception is a bug in our own fix that upstream's code doesn't
+  have (State `introduced by our fix for <bucket>`, `fuzz-triage`):
+  there's nothing to disclose, and its correction goes where that
+  bucket's fix goes. Until a covered finding is public and fixed
+  upstream, every summary lists the branches that must not be pushed:
   - `seclab/held-back/*`;
   - each branch with commits that reach or reveal the finding, such as
     the campaign's branch with its harnesses (with `--branch current`,

@@ -211,8 +211,13 @@ unless they start with `.seclab/`:
      - If that commit is upstream's fix (fix.md, "Check the precondition,
        then freshness"), the bug is upstream's too: the State stays
        `open`.
-     - Otherwise set the State to `introduced by our fix for <bucket>`,
-       naming that commit's bucket.
+     - If that commit is ours, run the reproducer on upstream's HEAD, as
+       fix.md's freshness check does. If it passes there, the bug is only
+       in our fix: set the State to `introduced by our fix for <bucket>`,
+       naming that commit's bucket. If it fails the same way, upstream's
+       code has the bug too, for example because upstream merged our fix:
+       the State stays `open`. If it fails another way, the check is
+       inconclusive.
    - If it fails first on another bug we fixed, the check is
      inconclusive.
 9. **Note** the bug class and a CWE candidate for the report.

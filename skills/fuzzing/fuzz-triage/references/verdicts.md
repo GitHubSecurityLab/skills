@@ -22,7 +22,7 @@ says whether upstream fixed it.
 |---|---|---|
 | `open` | the default | |
 | `duplicate of <bucket>` | same root cause as another bucket; it takes that bucket's verdict | the shared root cause |
-| `introduced by our fix for <bucket>` | the bug is in our fix for that bucket: the reproducer passes without our fixes (`SKILL.md`, "Rule out our own fixes") | the `base` run, and the fix commit after which the reproducer fails |
+| `introduced by our fix for <bucket>` | the bug is in our fix for that bucket: the reproducer passes without our fixes and on upstream's HEAD (`SKILL.md`, "Rule out our own fixes") | the `base` run, the fix commit after which the reproducer fails, and the run on upstream's HEAD |
 | `non-reproducible` | the inputs don't crash in `SKILL.md`'s "Reproduce" attempts | the suspected cause (threads, time, state) |
 | `needs investigation` | unresolved: needs a human | what was tried and what is unclear |
 
@@ -38,7 +38,8 @@ with the user. Being fixed isn't being public, so nothing else changes.
 
 Once the hold-back rule (`fuzz-campaign`, safety rules) covers a finding,
 a later triage never reclassifies the finding out of the rule until it's
-public and fixed upstream; it adds a note instead.
+public and fixed upstream; it adds a note instead. The rule's one
+exception is a bug in our own fix that upstream's code doesn't have.
 
 Our own local fixes (fix.md) go in the bucket's Fix section.
 
