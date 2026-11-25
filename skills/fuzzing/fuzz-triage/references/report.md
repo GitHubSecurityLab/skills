@@ -44,7 +44,13 @@ unless they start with `.seclab/`:
    AI-assisted reports or contributions, and follow them (reporting
    channel, required details, language rules). Some projects ask for
    reports written in the reporter's own words; raise such rules at the
-   report checkpoint.
+   report checkpoint. For a project on GitHub:
+   - Without a `SECURITY.md` of its own (in the root, `docs/` or
+     `.github/`), it may use its owner's:
+     `gh api -H 'Accept: application/vnd.github.raw' repos/<owner>/.github/contents/SECURITY.md`.
+   - Check whether it takes private vulnerability reports:
+     `gh api repos/<owner>/<repo>/private-vulnerability-reporting` prints
+     `{"enabled":true}` if it does.
 5. **Write the draft** to `.seclab/fuzz/reports/<id>.md`. A
    `vulnerability` gets a security report:
    - default (`report_format: advisory`): the fields of a GitHub Security
@@ -127,11 +133,17 @@ unless they start with `.seclab/`:
      judge the bug a vulnerability: a bug sent as an ordinary bug report
      may not be one. The held-back harnesses and tests land once the bug
      is public and fixed upstream (`fuzz-campaign`'s upstreaming.md).
-   - For everyone else: report through the project's private
-     vulnerability reporting
-     (https://docs.github.com/en/code-security/how-tos/report-and-fix-vulnerabilities/report-privately)
-     or the `SECURITY.md` contact. Follow GitHub Security Lab's
-     coordinated disclosure policy
+   - For everyone else: report through the first of these the project
+     has:
+     - the channel its `SECURITY.md` names (step 4). Private
+       vulnerability reporting counts only if step 4 found it enabled;
+     - private vulnerability reporting
+       (https://docs.github.com/en/code-security/how-tos/report-and-fix-vulnerabilities/report-privately),
+       if enabled;
+     - a private contact the maintainers give when asked, in an issue or
+       message with no details of the bug.
+
+     Follow GitHub Security Lab's coordinated disclosure policy
      (https://securitylab.github.com/advisories/#policy) as a reference.
 
    For a bug sent in public: the user files its draft as an issue or pull
