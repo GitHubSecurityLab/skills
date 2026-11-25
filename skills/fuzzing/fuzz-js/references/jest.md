@@ -241,10 +241,19 @@ cp -R "<worktree>/<package>/.cifuzz-corpus/." "<checkout>/<package>/.cifuzz-corp
 executions, and the run exits 0. A merge adds nothing, and none is
 needed: new inputs already land in the generated corpus.
 
-To minimize the corpus on request, and only if the fuzz test needs no
-Jest mocks:
-1. Write a temporary CLI target in scratch that calls the same code as
-   the fuzz test.
+**A temporary CLI target** in scratch calls the same code as the fuzz
+test (`run.md`, "CLI target"). Minimizing the corpus, and the commands of
+`triage.md` after Reproduce, go through it. It works only if the fuzz
+test needs no Jest mocks (`jest.mock()`, ...). Otherwise:
+- Leave the corpus as it is, and tell the user why.
+- Minimize a crash by hand: shorten it, and reproduce each shorter input
+  (Triage, below). Or keep the original as `minimized`, and note why
+  (`fuzz-triage`, "Minimize").
+- Find a hang's loop or a polluting write with temporary `console.error`
+  calls in the reproduction (`triage.md`, "Debugging").
+
+To minimize the corpus on request:
+1. Write a temporary CLI target.
 2. Merge with it into a new directory (`run.md`).
 3. Replace the test's generated corpus with that directory.
 
@@ -335,6 +344,10 @@ reproduce through a copy:
 - Each file runs as its own test, named after the file. The state
   `exited 1`, with that test failed, means the finding reproduced.
 - Escape regex characters in `<input_name>` (Exact subset, above).
+- **100 runs in one process** (`fuzz-triage`, "Reproduce"): copy the
+  finding under 100 names, `repeat-1` to `repeat-100`, and pass the
+  pattern `repeat-[0-9]+` as `<input_name>`, unescaped. The tests of one
+  file run in one process.
 - Jest adds its own failure block with a code frame; the `==<pid>==` block
   comes first.
 - **Frame names can be off:** source maps name a frame after the
@@ -345,10 +358,9 @@ reproduce through a copy:
 - **A synchronous hang** ignores `JAZZER_TIMEOUT` in regression mode, so
   the state `timed out` counts as a reproduced hang. No log has the
   hang's JS stack. Instead, `crash_buckets.py` reads its kind from the
-  fuzzing run's log, and a temporary CLI target, like the one for
-  Minimize below, names its loop (`triage.md`, "Timeouts").
-- **Minimize** through a temporary CLI target in scratch that calls the
-  same code (`triage.md`).
+  fuzzing run's log, and a temporary CLI target (Runs) names its loop
+  (`triage.md`, "Timeouts").
+- **Minimize** through a temporary CLI target (Runs; `triage.md`).
 
 ## Regression tests and upstreaming
 

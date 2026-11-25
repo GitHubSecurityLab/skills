@@ -1493,6 +1493,12 @@ def js(ctx: Context) -> None:
     ctx.expect("TypeError" in ctx.log("repro-record-1"), "the reproduction prints the TypeError")
     buckets = ctx.sh('python3 "$F/bin/crash_buckets.py" "$F"/runs/repro-*/copy-*/log --root .').stdout
     ctx.expect("record.js" in buckets, "crash_buckets.py names the project file")
+    # 100 runs in one process, here 3: the finding's copies run as tests of one process.
+    ctx.sh('for i in 1 2 3; do cp "%s" "%s/repeat-$i"; done' % (finding, regression_dir))
+    ctx.block("jest-repro", n=2, timeout_s=120, input_name="repeat-[0-9]+", ok=(1,), **jest)
+    ctx.sh('rm "%s"/repeat-*' % regression_dir)
+    pids = re.findall(r"==(\d+)== Uncaught Exception", ctx.log("repro-record-2"))
+    ctx.expect(len(pids) == 3 and len(set(pids)) == 1, "the copies of a finding run in one process (%s)" % pids)
     ctx.block("jest-cov-replay", n=1, timeout_s=300, **jest)
     ctx.expect_state("cov-record-1", "finished")
     ctx.block("js-cov-export", n=1, round=1)

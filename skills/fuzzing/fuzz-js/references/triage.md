@@ -2,7 +2,8 @@
 
 Jest `it.fuzz` tests: reproduce as `jest.md`, "Triage", says. The rest of
 this file applies to them too. For them, its commands run a temporary CLI
-target that calls the same code (`jest.md`, "Runs").
+target that calls the same code, if the fuzz test needs no Jest mocks
+(`jest.md`, "Runs").
 
 Every command below executes the target. Run it through the launcher,
 with its block's run id (`repro-<h>-<n>`, `pp-<h>-<n>`, `prof-<h>-<n>` or
