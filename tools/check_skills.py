@@ -116,6 +116,8 @@ DENY_RULES = {
 }
 # Brace expansion in an sh block: bash and zsh only; sh (dash) passes {1..3} on as it is.
 BRACE_RANGE_RE = re.compile(r"\{[^{}\s]+\.\.[^{}\s]+\}")
+# A heredoc (<<EOF, <<-'EOF', <<\EOF; not <<< or a shift by a number).
+HEREDOC_RE = re.compile(r"(?<!<)<<-?\s*\\?(['\"]?)[A-Za-z_]\w*\1")
 # Pointers the link check doesn't see: `fuzz-harness`'s build.md, init.py by its path next to the skill,
 # and the scripts init.py copies to .seclab/fuzz/bin/.
 POINTER_RE = re.compile(r"`((?:fuzz|security)-[a-z0-9-]+)`'s ([A-Za-z0-9_.-]+\.md)")
@@ -540,17 +542,25 @@ def check_qualified_phrases(report: Report, root: str) -> None:
 
 
 def check_sh_blocks(report: Report, root: str) -> None:
-    """Commands run in any POSIX shell."""
+    """Commands run in any POSIX shell, and as copied from the file. In a block indented under a list item, a
+    heredoc's closing line keeps the indent and never ends it; run_doc_blocks.py strips the indent, so CI
+    doesn't see that."""
     for path in sorted(glob.glob(os.path.join(root, "skills", "**", "*.md"), recursive=True)):
-        in_sh = False
+        rel = os.path.relpath(path, root)
+        in_sh = indented = False
         with open(path, encoding="utf-8") as handle:
             for number, line in enumerate(handle, 1):
+                where = "%s:%d" % (rel, number)
                 if line.strip().startswith("```"):
                     in_sh = not in_sh and line.strip() == "```sh"
+                    indented = line[:1].isspace()
                 elif in_sh:
                     for match in BRACE_RANGE_RE.finditer(line):
-                        report.error("%s:%d" % (os.path.relpath(path, root), number),
-                                     "brace expansion %r runs only in bash and zsh: list the arguments" % match.group(0))
+                        report.error(where, "brace expansion %r runs only in bash and zsh: list the arguments"
+                                     % match.group(0))
+                    if indented and HEREDOC_RE.search(line):
+                        report.error(where, "heredoc in an indented sh block: copied as it is, its closing line "
+                                            "keeps the indent and doesn't end it; use printf or a quoted argument")
 
 
 def check_pointers(report: Report, root: str, skills: list) -> None:

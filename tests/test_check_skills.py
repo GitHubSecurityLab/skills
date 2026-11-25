@@ -483,6 +483,17 @@ class CheckSkillsTests(unittest.TestCase):
         self.assertEqual(len(errors), 1, errors)
         self.assertIn("references/group.md:2", errors[0])
 
+    def test_indented_commands_have_no_heredoc(self):
+        # A list item's block keeps its indent when copied: the closing "   EOF" doesn't end the heredoc.
+        self.add("fuzzing", "fuzz-triage")
+        path = os.path.join(self.root, "skills", "fuzzing", "fuzz-triage", "references", "group.md")
+        write(path, "```sh\ncat > a <<'EOF'\nx\nEOF\n```\n1. Step:\n   ```sh\n   cat <<- \"EOF\" > b\n   x\n   EOF\n"
+                    "   cat <<\\EOF > c\n   EOF\n   cat <<< x; echo $((1 << 2))\n   ```\n")
+        errors = [e for e in cs.check(self.root).errors if "heredoc" in e]
+        self.assertEqual(len(errors), 2, errors)
+        self.assertIn("references/group.md:8", errors[0])
+        self.assertIn("references/group.md:11", errors[1])
+
     def test_repository_passes(self):
         report = cs.check(ROOT)
         if os.path.isdir(os.path.join(ROOT, "skills")) and cs.find_skills(ROOT):
