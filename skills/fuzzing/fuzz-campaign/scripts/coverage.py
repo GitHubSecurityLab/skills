@@ -490,13 +490,15 @@ def cmd_merge(args) -> int:
 
 
 def _same_code(a: FileCov, b: FileCov) -> bool:
-    """Whether two snapshots of a file have the same lines and branches,
-    i.e. come from the same code and build."""
+    """Whether two snapshots have matching line, branch and function layouts."""
     return (
         set(a.lines) == set(b.lines)
         and set(a.branches) == set(b.branches)
+        and {name: values[:2] for name, values in a.functions.items()}
+        == {name: values[:2] for name, values in b.functions.items()}
         and a.line_counts()[1] == b.line_counts()[1]
         and a.branch_counts()[1] == b.branch_counts()[1]
+        and a.function_counts()[1] == b.function_counts()[1]
     )
 
 
