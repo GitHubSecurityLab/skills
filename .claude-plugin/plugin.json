@@ -1,6 +1,6 @@
 {
   "name": "seclab-skills",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Security research and vulnerability discovery skills from GitHub Security Lab. First topic: fuzzing campaigns for C/C++, Java and JavaScript/TypeScript.",
   "author": {
     "name": "GitHub Security Lab",
