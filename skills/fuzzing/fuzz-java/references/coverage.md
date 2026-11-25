@@ -96,7 +96,8 @@ that only changes counts stays hidden:
 
 <!-- ci: java-leak-check -->
 ```sh
-G="$F/runs/gate-$H-<n>"; S="$G/sample"; C="$F/coverage/$H"; J="$F/build/jacoco"; mkdir -p "$S" "$C"
+G="$F/runs/gate-$H-<n>"; S="$G/sample"; C="$F/coverage/$H"; J="$F/build/jacoco"; mkdir -p "$S" "$C"; ok=1
+rm -f "$C/gate-one.lcov" "$C/gate-fresh.lcov" "$C/gate-union.lcov"
 find "$F/corpus/$H" -type f -size +0c | sort -R | awk 'NR <= <sample_size>' | while IFS= read -r f; do i=$((i+1)); cp "$f" "$S/$i-${f##*/}"; done
 for side in one fresh; do
   $L start --id "gate-$H-<n>-$side" --harness $H --timeout <timeout_s> --env PATH="$RUN_PATH" --env JOPTS="$JOPTS" -- sh -c '
@@ -105,17 +106,20 @@ for side in one fresh; do
         -cp "$cp" com.code_intelligence.jazzer.Jazzer --target_class=<fuzz_class> --target_method=<fuzz_method> \
         --keep_going=0 -runs=0 -timeout=<input_timeout_s> -rss_limit_mb=0 "$@"; }
       if [ "$side" = one ]; then j "$@"; exit; fi
-      for f; do j "$f" || exit; done' sh "$JAVA_HOME/bin/java" "$J/jacocoagent.jar" "$CP" "{run}" "$side" "$S"/* > /dev/null
+      for f; do j "$f" || exit; done' sh "$JAVA_HOME/bin/java" "$J/jacocoagent.jar" "$CP" "{run}" "$side" "$S"/* > /dev/null ||
+    { echo "inconclusive: the $side side didn't finish (status $?, log $F/runs/gate-$H-<n>-$side/copy-0/log)"; ok=0; break; }
   cp "$F/runs/gate-$H-<n>-$side/jacoco.exec" "$G/$side.exec"
 done
-"$JAVA_HOME/bin/java" -jar "$J/jacococli.jar" merge "$G/one.exec" "$G/fresh.exec" --destfile "$G/union.exec" > /dev/null
-for p in one fresh union; do
-  "$JAVA_HOME/bin/java" -jar "$J/jacococli.jar" report "$G/$p.exec" --classfiles <module>/target/classes \
-    --classfiles <module>/target/test-classes --xml "$G/$p.xml" > /dev/null
-  python3 "$F/bin/coverage.py" from-jacoco "$G/$p.xml" --source-root <module>/src/main/java \
-    --source-root <module>/src/test/java -o "$C/gate-$p.lcov"
-done
-python3 "$F/bin/coverage.py" overlap "$C/gate-one.lcov" "$C/gate-fresh.lcov" --union "$C/gate-union.lcov" --root .
+[ $ok = 1 ] && {
+  "$JAVA_HOME/bin/java" -jar "$J/jacococli.jar" merge "$G/one.exec" "$G/fresh.exec" --destfile "$G/union.exec" > /dev/null
+  for p in one fresh union; do
+    "$JAVA_HOME/bin/java" -jar "$J/jacococli.jar" report "$G/$p.exec" --classfiles <module>/target/classes \
+      --classfiles <module>/target/test-classes --xml "$G/$p.xml" > /dev/null
+    python3 "$F/bin/coverage.py" from-jacoco "$G/$p.xml" --source-root <module>/src/main/java \
+      --source-root <module>/src/test/java -o "$C/gate-$p.lcov"
+  done
+  python3 "$F/bin/coverage.py" overlap "$C/gate-one.lcov" "$C/gate-fresh.lcov" --union "$C/gate-union.lcov" --root .
+}
 ```
 
 - The test classes are included: state often leaks in the harness.

@@ -977,6 +977,7 @@ def c_shared(ctx: Context) -> None:
     ctx.expect(clean_leak_check(ctx.block("c-leak-check", n=1, **leak).stdout), "the leak check finds nothing")
     ctx.expect_covered("$F/coverage/$H/gate-one.lcov", "src/record.c")
     ctx.expect_covered("$F/coverage/$H/gate-fresh.lcov", "src/record.c")
+    leak_check_crash(ctx, "c-leak-check", "seeds/ok", ctx.findings("r1-record")[0], **leak)
 
     ctx.sh('mkdir -p "$F/crashes/overflow" && cp repro.c "$F/crashes/overflow/repro.c"')
     reproducer = dict(bucket="overflow", include_dir=os.path.join(ctx.repo, "src"),
@@ -1273,6 +1274,11 @@ def java(ctx: Context) -> None:
     out = ctx.block("java-leak-check", n=1, sample_size=8, timeout_s=300, module="record",
                     **dict(common, fuzz_method="parseLeaky")).stdout
     ctx.expect("### Only A" in out and "RecordFuzzTest.java" in out, "the leak check points at the leaking harness")
+    # A side that doesn't finish makes the check inconclusive. A throwing input doesn't end a side (--keep_going=0),
+    # the kill limit does: here during the JVM's startup.
+    out = ctx.block("java-leak-check", n=2, ok=(1,), sample_size=8, timeout_s=0.001, module="record",
+                    **dict(common, fuzz_method="parseLeaky")).stdout
+    expect_leak_check_stopped(ctx, out, "gate-leaky-2", timed_out=True)
 
     # Detector gaps (harness.md's table): the built-in detector misses a command run through a shell.
     shutil.copy(os.path.join(ctx.repo, "ToolsFuzzTest.java.in"),
@@ -1385,6 +1391,26 @@ def clean_leak_check(out: str) -> bool:
     """Same hit counts, or differences only in code that runs once per process (JS module loading)."""
     return ("same hit count on every branch and line" in out or "differ only on code that runs once per process" in out) \
         and "### Different hit counts" not in out
+
+
+def expect_leak_check_stopped(ctx: Context, out: str, run: str, timed_out: bool = False) -> None:
+    """The leak check stopped at its one side: it prints only that side's status (124: the kill limit) and log,
+    and starts no fresh side."""
+    status = re.fullmatch(r"inconclusive: the one side didn't finish \(status (\d+), log (.*)\)\n", out)
+    log = os.path.join(ctx.F, "runs", run + "-one", "copy-0", "log")
+    ctx.expect(status and (status.group(1) == "124") == timed_out
+               and os.path.realpath(status.group(2)) == os.path.realpath(log)
+               and not os.path.exists(os.path.join(ctx.F, "runs", run + "-fresh")),
+               "a side that didn't finish makes the leak check inconclusive (%s)" % out.strip())
+
+
+def leak_check_crash(ctx: Context, block: str, valid: str, crash: str, **values) -> None:
+    """The leak check on a valid input and one that crashes the harness: the one side doesn't finish."""
+    h = ctx.env["H"]
+    ctx.set(H="crashy")
+    ctx.sh('mkdir -p "$F/corpus/$H" && cp "%s" "$F/corpus/$H/valid" && cp "%s" "$F/corpus/$H/crash"' % (valid, crash))
+    expect_leak_check_stopped(ctx, ctx.block(block, n=1, ok=(1,), **values).stdout, "gate-crashy-1")
+    ctx.set(H=h)
 
 
 def node_bin() -> str:
@@ -1517,6 +1543,7 @@ def js(ctx: Context) -> None:
     ctx.expect_state("cov-record-cli-1", "finished")
     ctx.block("js-cov-export", n=1, round=1)
     ctx.expect_covered("$F/coverage/$H/r1.lcov", "src/record.js")
+    leak_check_crash(ctx, "js-cli-leak-check", "seeds/ok", finding, sample_size=8, timeout_s=120, **cli)
 
     # The JS CI template before the fix: the blocking replay passes on the seeds, the fuzz step
     # finds the planted bug, and the replay fails once the crashing input is in the corpus.
@@ -1771,6 +1798,8 @@ def c_fuzztest(ctx: Context) -> None:
     ctx.set(H="leaky")
     out = ctx.block("fuzztest-leak-check", n=1, **dict(leak, fuzz_test="RecordTest.ParsesLeaky")).stdout
     ctx.expect("### Different hit counts" in out and "record_fuzz_test.cc" in out, "the leak check points at the leaking fuzz test")
+    leak_check_crash(ctx, "fuzztest-leak-check", "$F/corpus/record/" + ctx.files(".seclab/fuzz/corpus/record")[0],
+                     finding, **dict(leak, fuzz_test="RecordTest.ParsesLeaky"))
 
     # reach.py on FuzzTest: the chosen inputs go in through FUZZTEST_REPLAY={dir}.
     ctx.set(H="record")

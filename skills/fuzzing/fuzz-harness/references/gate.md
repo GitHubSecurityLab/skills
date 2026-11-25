@@ -145,6 +145,11 @@ runs:
   for the first input, such as a cache or a "parsed" flag, is a leak.
 - If the harness is Java: the block compares covered sets
   (`fuzz-java`'s coverage.md).
+- If a side didn't finish (the block prints `inconclusive:` with the
+  side's exit status and log): the check is **inconclusive**. Status 124
+  means the kill limit ended it: run the block again with a longer one
+  and the next `<n>`. Otherwise the log shows the cause; an input that
+  crashed or timed out is a crash in the gate (step 5).
 - If `overlap` exits 1 (a side has no coverage): the check is
   **inconclusive**; the replay or the paths are broken. It isn't a pass.
 

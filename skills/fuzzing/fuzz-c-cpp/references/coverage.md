@@ -83,19 +83,20 @@ exactly those inputs. `<objects>` is as in step 3:
 
 <!-- ci: c-leak-check -->
 ```sh
-G="$F/runs/gate-$H-<n>"; S="$G/sample"; B="$F/build/coverage/<binary>"; mkdir -p "$S" "$F/coverage/$H"
+G="$F/runs/gate-$H-<n>"; S="$G/sample"; B="$F/build/coverage/<binary>"; mkdir -p "$S" "$F/coverage/$H"; ok=1
 find "$F/corpus/$H" -type f -size +0c | sort -R | awk 'NR <= <sample_size>' | while IFS= read -r f; do i=$((i+1)); cp "$f" "$S/$i-${f##*/}"; done
 for side in one fresh; do
   $L start --id "gate-$H-<n>-$side" --harness $H --timeout <timeout_s> --env PATH="$RUN_PATH" \
     --env LLVM_PROFILE_FILE="{run}/profraw/%p.profraw" -- sh -c '
       b=$1; side=$2; shift 2; o="-rss_limit_mb=<memory_mb> -timeout=<input_timeout_s>"; a="-artifact_prefix={run}/artifacts/copy-{copy}/"
       if [ "$side" = one ]; then exec "$b" $o "$a" "$@"; fi
-      for f; do "$b" $o "$a" "$f" || exit; done' sh "$B" "$side" "$S"/* > /dev/null
+      for f; do "$b" $o "$a" "$f" || exit; done' sh "$B" "$side" "$S"/* > /dev/null ||
+    { echo "inconclusive: the $side side didn't finish (status $?, log $F/runs/gate-$H-<n>-$side/copy-0/log)"; ok=0; break; }
   llvm-profdata merge -sparse "$F/runs/gate-$H-<n>-$side"/profraw/*.profraw -o "$G/$side.profdata"
   llvm-cov export -format=lcov -instr-profile="$G/$side.profdata" "$B" <objects> > "$F/coverage/$H/gate-$side.lcov"
 done
-python3 "$F/bin/coverage.py" overlap "$F/coverage/$H/gate-one.lcov" "$F/coverage/$H/gate-fresh.lcov" --counts \
-  --processes $(ls "$S" | wc -l) --root .
+[ $ok = 1 ] && python3 "$F/bin/coverage.py" overlap "$F/coverage/$H/gate-one.lcov" "$F/coverage/$H/gate-fresh.lcov" \
+  --counts --processes $(ls "$S" | wc -l) --root .
 ```
 
 **One function,** with its branch counts:

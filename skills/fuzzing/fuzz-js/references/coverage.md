@@ -61,7 +61,8 @@ process, then each input of the sample in a fresh process:
 
 <!-- ci: js-cli-leak-check -->
 ```sh
-G="$F/runs/gate-$H-<n>"; S="$G/sample"; mkdir -p "$S" "$F/coverage/$H"
+G="$F/runs/gate-$H-<n>"; S="$G/sample"; mkdir -p "$S" "$F/coverage/$H"; ok=1
+rm -f "$F/coverage/$H/gate-one.lcov" "$F/coverage/$H/gate-fresh.lcov"
 find "$F/corpus/$H" -type f -size +0c | sort -R | awk 'NR <= <sample_size>' | while IFS= read -r f; do i=$((i+1)); cp "$f" "$S/$i-${f##*/}"; done
 for side in one fresh; do
   $L start --id "gate-$H-<n>-$side" --harness $H --timeout <timeout_s> --env PATH="$RUN_PATH" -- sh -c '
@@ -69,13 +70,14 @@ for side in one fresh; do
       j() { "$jazzer" "$target" "$@" --timeout=<input_timeout_ms> --mode=regression --coverage \
         --coverageReporters=lcov --coverageDirectory="$run/raw-$i" -- -rss_limit_mb=<memory_mb>; }
       if [ "$side" = one ]; then j "$@"; exit; fi
-      for f; do i=$((i+1)); j "$f" || exit; done' sh "$P/node_modules/.bin/jazzer" "$P/<target_file>" "{run}" "$side" "$S"/* > /dev/null
+      for f; do i=$((i+1)); j "$f" || exit; done' sh "$P/node_modules/.bin/jazzer" "$P/<target_file>" "{run}" "$side" "$S"/* > /dev/null ||
+    { echo "inconclusive: the $side side didn't finish (status $?, log $F/runs/gate-$H-<n>-$side/copy-0/log)"; ok=0; break; }
   R="$F/runs/gate-$H-<n>-$side"
   python3 "$F/bin/coverage.py" merge "$R"/raw-*/lcov.info --sf-base "$R/copy-0/work" --root "$F/../.." \
     -o "$F/coverage/$H/gate-$side.lcov"
 done
-python3 "$F/bin/coverage.py" overlap "$F/coverage/$H/gate-one.lcov" "$F/coverage/$H/gate-fresh.lcov" --counts \
-  --processes $(ls "$S" | wc -l) --root .
+[ $ok = 1 ] && python3 "$F/bin/coverage.py" overlap "$F/coverage/$H/gate-one.lcov" "$F/coverage/$H/gate-fresh.lcov" \
+  --counts --processes $(ls "$S" | wc -l) --root .
 ```
 
 ## TypeScript
