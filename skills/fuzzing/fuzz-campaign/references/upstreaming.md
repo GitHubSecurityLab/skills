@@ -99,8 +99,9 @@ unless they start with `.seclab/`:
    git -C "$W" cherry-pick <fuzz(harness) and fuzz(build) commits>
    ```
    Add fuzzing-mode patches only if the maintainers want them. Reword
-   commits to the project's conventions. If the project requires DCO
-   sign-off, use `git commit -s`.
+   commits to the project's conventions, but never sign them off
+   (`Signed-off-by`, `git commit -s`): a DCO sign-off is the user's
+   certification, like a CLA. Step 8 tells the user.
 
    Then give the worktree a workspace of its own, from the checkout.
    There, the gate runs on the worktree's builds, without our fixes, and
@@ -174,7 +175,10 @@ unless they start with `.seclab/`:
      (`git for-each-ref refs/seclab/`) whose commits reach or reveal a
      finding the rule covers;
    - the next steps: the user signs the project's CLA if it requires one,
-     then pushes and opens the pull requests.
+     and signs off each branch's commits if it requires DCO sign-off
+     (`git rebase --signoff --keep-base <remote>/HEAD seclab/<name>`,
+     where `<remote>` is step 4's upstream remote). Then the user pushes
+     and opens the pull requests.
 
 ## Done when
 
