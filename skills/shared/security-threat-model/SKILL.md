@@ -85,10 +85,10 @@ Write `.seclab/threat-model.md` with the structure in
 [references/template.md](references/template.md). Other skills read its
 sections by name.
 
-1. **Collect context, cheapest sources first.** Stop when you can describe
-   the deployment; it decides which inputs are untrusted.
-   - README, docs, `SECURITY.md`, and examples: what the project is, who calls
-     it, with what data.
+1. **Collect context** from each of these sources:
+   - README, docs, `SECURITY.md`, and examples: what the project is, who
+     calls it, with what data. Read the cheapest first, and stop when you
+     can describe the deployment; it decides which inputs are untrusted.
    - Past advisories and CVEs: `gh api repos/OWNER/REPO/security-advisories`,
      the project's OSV entries
      (`curl -s -d '{"package":{"name":"<pkg>","ecosystem":"<ecosystem>"}}' https://api.osv.dev/v1/query`;
@@ -97,8 +97,9 @@ sections by name.
      Past bugs show which code and bug classes matter. Record each
      advisory or CVE, with its fix site, under Past advisories and CVEs.
    - How dependents use it (for libraries), to learn whether real callers
-     pass untrusted data: search public code for its main API calls, leaving
-     out vendored copies of the library (hits in files named like its own).
+     pass untrusted data (the docs say only how they should): search
+     public code for its main API calls, leaving out vendored copies of
+     the library (hits in files named like its own).
 2. **Write the context.** Describe:
    - the assets worth protecting;
    - the attacker (remote peer, uploaded file, crafted package, ...);
