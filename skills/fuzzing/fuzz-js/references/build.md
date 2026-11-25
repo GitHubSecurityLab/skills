@@ -40,17 +40,27 @@ there (`F` and `P` as in `run.md`).
 
 <!-- ci: js-ts-build -->
 ```sh
-printf '{"extends": "%s", "include": [], "files": ["%s"]}\n' "$P/tsconfig.json" "$P/<entry>" > "$F/build/tsconfig.json"
-rm -rf "$F/build/ts" && mkdir "$F/build/ts"
-"$P/node_modules/.bin/tsc" -p "$F/build/tsconfig.json" --noEmit false --emitDeclarationOnly false --noEmitOnError false \
-  --incremental --tsBuildInfoFile "$F/build/ts/tsbuildinfo" --rootDir "$P" --outDir "$F/build/ts" --sourceMap \
-  --module commonjs || echo "tsc exited $?: check the .js files"
-echo '{"type": "commonjs"}' > "$F/build/ts/package.json"
+rm -rf "$F/build/ts" && mkdir "$F/build/ts"; C="$P/<tsconfig>"
+if [ -f "$C" ]; then
+  printf '{"extends": "%s", "include": [], "files": ["%s"]}\n' "$C" "$P/<entry>" > "$F/build/tsconfig.json"
+  "$P/node_modules/.bin/tsc" -p "$F/build/tsconfig.json" --noEmit false --emitDeclarationOnly false \
+    --noEmitOnError false --incremental --tsBuildInfoFile "$F/build/ts/tsbuildinfo" --rootDir "$P" \
+    --outDir "$F/build/ts" --sourceMap --module commonjs || echo "tsc exited $?: check the .js files"
+  echo '{"type": "commonjs"}' > "$F/build/ts/package.json"
+else
+  echo "no $C: give the config that compiles the target's sources"; false
+fi
 ```
 
-`<entry>` is the path from `$P` of the module the target imports. For
-several modules, give `files` one `"%s"` per module, as in
-`["%s", "%s"]`, and pass one `"$P/<module>"` argument per module.
+- `<tsconfig>` is the path from `$P` of the config that compiles the
+  target's sources: the one the project's build passes to `tsc` (`-p` or
+  `-b`), else `tsconfig.json`. If that config only lists `references`,
+  take the referenced one that includes the sources. A config without
+  the project's `compilerOptions` still builds, with `tsc`'s defaults,
+  which differ from the project's.
+- `<entry>` is the path from `$P` of the module the target imports. For
+  several modules, give `files` one `"%s"` per module, as in
+  `["%s", "%s"]`, and pass one `"$P/<module>"` argument per module.
 
 `tsc` exits 2 on a type error, or on a project option that only fits ESM
 (TypeScript 5 with `bundler`). It still writes the files: the command

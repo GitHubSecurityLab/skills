@@ -1336,10 +1336,14 @@ def js_ts(ctx: Context) -> None:
     """An ESM package in TypeScript (bundler resolution, extensionless imports): the CLI target fuzzes its build."""
     ctx.sh('PATH="%s:$PATH" npm install --no-audit --no-fund --loglevel=error' % node_bin())
     ctx.env_block("js-env", node_bin=node_bin(), package_dir=ctx.repo)
-    ctx.block("js-ts-build", entry="src/record.ts")
+    ctx.block("js-ts-build", entry="src/record.ts", tsconfig="tsconfig.json")
     ctx.expect(os.path.exists(os.path.join(ctx.F, "build", "ts", "src", "record.js")), "tsc writes the target's .js files")
     built = glob.glob(os.path.join(ctx.F, "build", "ts", "**", "*.js"), recursive=True)
     ctx.expect(not [p for p in built if p.endswith(".test.js")], "the build leaves the project's tests out")
+    # A config name the project doesn't have: the block stops, and leaves no build for the target to load.
+    out = ctx.block("js-ts-build", entry="src/record.ts", tsconfig="tsconfig.build.json", ok=(1,)).stdout
+    ctx.expect("no %s/tsconfig.build.json" % ctx.repo in out and os.listdir(os.path.join(ctx.F, "build", "ts")) == [],
+               "a missing config stops the build (%s)" % out.strip())
     # A project with noEmitOnError and its own build-info file: a type error still rebuilds the .js files.
     with open(os.path.join(ctx.repo, "tsconfig.json")) as handle:
         config = json.load(handle)
@@ -1347,7 +1351,7 @@ def js_ts(ctx: Context) -> None:
     with open(os.path.join(ctx.repo, "tsconfig.json"), "w") as handle:
         json.dump(config, handle)
     ctx.sh("""printf 'export const rebuilt: number = "yes";\\n' >> src/util.ts""")
-    ctx.block("js-ts-build", entry="src/record.ts")
+    ctx.block("js-ts-build", entry="src/record.ts", tsconfig="tsconfig.json")
     with open(os.path.join(ctx.F, "build", "ts", "src", "util.js")) as handle:
         ctx.expect("rebuilt" in handle.read(), "a type error under noEmitOnError still rebuilds the .js files")
     ctx.expect(not os.path.exists(os.path.join(ctx.repo, "cache")), "the build leaves the project's build info alone")
