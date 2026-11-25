@@ -1295,16 +1295,30 @@ def java(ctx: Context) -> None:
                     **dict(common, fuzz_method="parseLeaky")).stdout
     expect_leak_check_stopped(ctx, out, "gate-leaky-2", timed_out=True)
 
-    # Detector gaps (harness.md's table): the built-in detector misses a command run through a shell.
+    # Detector gaps (harness.md's table): the built-in detectors miss a command run through a shell, and a path
+    # resolved against a base directory, unless the harness sets an allow predicate.
     shutil.copy(os.path.join(ctx.repo, "ToolsFuzzTest.java.in"),
                 os.path.join(ctx.repo, "record", "src", "test", "java", "toy", "ToolsFuzzTest.java"))
     build_java_toy(ctx)
     ctx.set(H="tools")
-    ctx.sh('printf "x;jazze" > cmd-input')
+    ctx.sh('printf "x;jazze" > cmd-input && printf "../secret" > path-input && printf "ok" > name-input')
+    tools = dict(common, fuzz_class="toy.ToolsFuzzTest")
     ctx.block("java-repro", n=1, timeout_s=120, finding=os.path.join(ctx.repo, "cmd-input"),
-              **dict(common, fuzz_class="toy.ToolsFuzzTest", fuzz_method="greet"))
+              **dict(tools, fuzz_method="greet"))
     ctx.expect_state("repro-tools-1", "finished")
     ctx.say("   ok: the built-in command detector misses sh -c")
+    ctx.block("java-repro", n=2, timeout_s=120, finding=os.path.join(ctx.repo, "path-input"),
+              **dict(tools, fuzz_method="readData"))
+    ctx.expect_state("repro-tools-2", "finished")
+    ctx.say("   ok: the built-in traversal detector misses a path outside the base directory")
+    ctx.block("java-repro", n=3, timeout_s=120, finding=os.path.join(ctx.repo, "path-input"), ok=(77,),
+              **dict(tools, fuzz_method="readDataChecked"))
+    ctx.expect("Path is not allowed by the user-defined predicate" in ctx.log("repro-tools-3"),
+               "the allow predicate reports the path outside the base directory")
+    ctx.block("java-repro", n=4, timeout_s=120, finding=os.path.join(ctx.repo, "name-input"),
+              **dict(tools, fuzz_method="readDataChecked"))
+    ctx.expect_state("repro-tools-4", "finished")
+    ctx.say("   ok: the allow predicate passes a path inside the base directory")
 
 
 @scenario("js-ts", "js-ts", ["js-env", "js-ts-build", "js-cli-develop"])

@@ -1,12 +1,39 @@
 package toy;
 
+import com.code_intelligence.jazzer.api.BugDetectors;
+import com.code_intelligence.jazzer.api.SilentCloseable;
 import com.code_intelligence.jazzer.junit.FuzzTest;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 // The java scenario copies this into record/ for its detector-gap step.
 class ToolsFuzzTest {
+  private static final Path BASE = Paths.get("data").toAbsolutePath().normalize();
+
   @FuzzTest
   void greet(byte[] data) throws Exception {
     Tools.greet(new String(data, StandardCharsets.UTF_8));
+  }
+
+  @FuzzTest
+  void readData(byte[] data) {
+    try {
+      Tools.readData(BASE, new String(data, StandardCharsets.UTF_8));
+    } catch (IOException e) {
+      // a missing file
+    }
+  }
+
+  // harness.md's allow predicate: the detector checks every path the target opens.
+  @FuzzTest
+  void readDataChecked(byte[] data) {
+    try (SilentCloseable ignored = BugDetectors.setFilePathTraversalAllowPath(
+             p -> p.toAbsolutePath().normalize().startsWith(BASE))) {
+      Tools.readData(BASE, new String(data, StandardCharsets.UTF_8));
+    } catch (IOException e) {
+      // a missing file
+    }
   }
 }

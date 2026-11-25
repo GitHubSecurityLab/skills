@@ -157,7 +157,10 @@ $L start --id decode-$H-<n> --harness $H --timeout <timeout_s> --env PATH="$RUN_
 - **SSRF:** the detector reports any connection the harness didn't
   allow. Check that the host comes from attacker input.
 - **Path traversal:** the default trigger path is `../jazzer-traversal`.
-  Check the path the application used against its base directory.
+  A finding `Path is not allowed by the user-defined predicate` comes
+  from the harness's allow predicate (`harness.md`); if the target opened
+  that file on its own, fix the predicate. Check the path the
+  application used against its base directory.
 
 ## Debugging
 

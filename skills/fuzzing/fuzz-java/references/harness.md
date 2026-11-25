@@ -120,7 +120,7 @@ checks, as of Jazzer 0.30.0:
 |---|---|---|
 | OS command injection: `ProcessBuilder.start` | the executable (`argv[0]`) is `jazze` | the arguments: `sh -c <input>`, option injection. **Partly**: any other command runs for real |
 | SQL injection: `Statement.execute*`, JPA native queries | the driver throws a syntax error for the query | queries a mock or a stub driver never parses: test with in-memory H2 or SQLite. A failing `PreparedStatement` shows as an `ArrayIndexOutOfBoundsException` (`triage.md`) |
-| Path traversal: `java.io` streams, readers and writers, `Files`, `FileChannel`, `Scanner` | the normalized path is the target `../jazzer-traversal` | other files outside the directory the API may touch. **Partly** |
+| Path traversal: `java.io` streams, readers and writers, `Files`, `FileChannel`, `Scanner` | the normalized path is the target `../jazzer-traversal`, or one the harness's allow predicate rejects (below) | without that predicate, other files outside the directory the API may touch. **Partly** |
 | Reflection, expression languages (EL, SpEL, OGNL, JEXL 2, Bean Validation messages) | code constructs the honeypot class `jaz.Zer` or calls one of its methods (expressions are steered to call `jaz.Zer.el()`), or loads the native library `jazzer_honeypot` | a class name from the input that is only loaded, never constructed or called; `Method.invoke` and `getMethod` on existing classes; other expression languages |
 | Script engines: `ScriptEngine.eval` | the script contains `"jaz"+"zer"` | scripts run another way, e.g. `GroovyShell` |
 | Deserialization: `ObjectInputStream` | a gadget chain reaches the honeypot | other deserializers (Jackson, XStream, Kryo, YAML), unless they construct or call the honeypot (below) |
@@ -150,6 +150,21 @@ exponents, which show as a timeout.
   ```
   `setFilePathTraversalTarget(() -> path)` changes the path the traversal
   detector looks for.
+- If a file path comes from the input: wrap the call in an allow
+  predicate. The traversal detector then checks every path the target
+  opens with the table's APIs: the check `fuzz-harness`'s properties.md
+  asks for, that the resolved path stays inside the base directory:
+  ```java
+  Path base = Paths.get(dataDir).toAbsolutePath().normalize();
+  try (SilentCloseable ignored = BugDetectors.setFilePathTraversalAllowPath(
+           p -> p.toAbsolutePath().normalize().startsWith(base))) {
+    store.read(name);
+  }
+  ```
+  - The predicate gets the path as the code passed it: make it absolute,
+    as above, or every relative path is rejected.
+  - It also sees the target's own files, such as temporary files: allow
+    them too, or each one is a finding.
 - An in-process fake must keep the oracle: a stub that stands in for the
   database and never rejects a query hides SQL injection.
 - If a deserializer takes a class name from its input: Jazzer reports
