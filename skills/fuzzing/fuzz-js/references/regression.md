@@ -69,7 +69,10 @@ the fix commit, with the bug named in a comment.
 ## Upstreaming (`fuzz-campaign`)
 
 - CLI targets: the replay test above joins the project's normal test job,
-  with the seeds in `fuzz/corpus/<thing>/`. Also add the npm script
-  that fuzzes the target.
+  with the seeds in `fuzz/corpus/<thing>/`. There, drop the guard, so
+  that the loop reads `for (const name of fs.readdirSync(dir))`: a
+  missing or misnamed seed directory then fails the test. The guard is
+  only for the campaign branch, whose seeds are in `.seclab/fuzz/corpus/`.
+  Also add the npm script that fuzzes the target.
 - Hooks used only for the campaign stay off the upstreaming branches
   unless the fuzz test needs them.
