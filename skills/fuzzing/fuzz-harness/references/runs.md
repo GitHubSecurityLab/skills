@@ -163,4 +163,6 @@ What the steps in this file write or change. Paths are relative to
 `.seclab/fuzz/` unless they start with `.seclab/`:
 - `runs/<id>/`: `spec.json`, `meta.json`, `progress.tsv`, `artifacts/`,
   `copy-<i>/log`.
+- `corpus/<h>/` (Jest: the test's directory in the package's
+  `.cifuzz-corpus/`): each round's new inputs.
 - `CAMPAIGN.md`: Long runs. `targets/<id>.md`: Coverage rounds, Notes.
