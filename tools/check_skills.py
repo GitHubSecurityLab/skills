@@ -176,6 +176,10 @@ SINGLE_SOURCES = {
         os.path.join("skills", "shared", "security-threat-model", "SKILL.md"),
         "the sink drop rule (`security-threat-model`, \"Find sinks\")",
     ),
+    "or `sizeof": (
+        os.path.join("skills", "shared", "security-threat-model", "references", "c-cpp.md"),
+        "the C/C++ drop rule (`security-threat-model`'s c-cpp.md)",
+    ),
     "but none of the project or the harness": (
         os.path.join("skills", "fuzzing", "fuzz-triage", "SKILL.md"),
         "the engine-leak rule (`fuzz-triage`, \"Group\")",

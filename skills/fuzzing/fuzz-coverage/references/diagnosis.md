@@ -83,8 +83,8 @@ with tries left, by language and sink kind:
 After the first plateau (above), for a hotspot that fuzzing reaches but
 doesn't trigger:
 
-1. Grep its code with the patterns of `security-threat-model`'s C/C++
-   catalog, and drop sites whose operands are constants or `sizeof`.
+1. Grep its code with the patterns of `security-threat-model`'s
+   c-cpp.md, and drop sites as that catalog says.
 2. Group the sites by the input field that feeds them, e.g. `hdr->len` or
    `chunk.size`. Rank the groups by the factors below, then keep the
    target's top groups within the cap from Settings (`sink_groups`,
