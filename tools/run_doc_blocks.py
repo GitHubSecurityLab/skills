@@ -1122,6 +1122,7 @@ def java(ctx: Context) -> None:
     ctx.block("jacoco-setup")
     ctx.sh('mkdir -p "$F/corpus/$H" && cp seeds/ok "$F/corpus/$H/" && cp record.dict "$F/dict/$H.dict"')
     common = dict(fuzz_class="toy.RecordFuzzTest", fuzz_method="parse", memory_mb=512, input_timeout_s=10)
+    jacoco = dict(classfiles="--classfiles record/target/classes", source_roots="--source-root record/src/main/java")
 
     ctx.block("java-develop", round=1, run_s=120, **common)
     ctx.expect_state("r1-record", "found-crash")
@@ -1207,7 +1208,7 @@ def java(ctx: Context) -> None:
     ctx.block("java-cov-replay", n=1, timeout_s=300, **common)
     ctx.expect_state("cov-record-1", "finished")
     ctx.expect(len(ctx.findings("cov-record-1")) == 1, "the replay continues past the crashing input and records it")
-    ctx.block("java-cov-export", n=1, round=1, module="record")
+    ctx.block("java-cov-export", n=1, round=1, **jacoco)
     ctx.expect_covered("$F/coverage/$H/r1.lcov", "record/src/main/java/toy/Record.java")
     # Upstreaming on a JaCoCo-derived lcov: a harness reaching a held-back bug's line is held back.
     ctx.sh('mkdir -p "$F/upstreaming" && printf "id\\tfile\\tline\\nsioobe\\trecord/src/main/java/toy/Record.java\\t14\\n" '
@@ -1221,7 +1222,7 @@ def java(ctx: Context) -> None:
     ctx.expect(len(ctx.findings("merge-record-1")) >= 1, "the first merge reports the crashing input")
 
     # reach.py with the crashing input in the corpus.
-    reach = dict(file="record/src/main/java/toy/Record.java", line=14, timeout_s=300, module="record")
+    reach = dict(file="record/src/main/java/toy/Record.java", line=14, timeout_s=300, **jacoco)
     out = ctx.block("java-reach", **reach, **common).stdout
     ctx.expect("reached: " in out, "reach.py finds an input that reaches Record.java:14")
     # A classic target too, where the only input that reaches the line comes after one that throws.
@@ -1273,16 +1274,16 @@ def java(ctx: Context) -> None:
     ctx.sh('rm -rf "$F/corpus/$H" && mv "$F/runs/merge-$H-2/corpus" "$F/corpus/$H"')
 
     # The gate's leak check: clean for this harness, a difference for a leaky one.
-    out = ctx.block("java-leak-check", n=1, sample_size=8, timeout_s=300, module="record", **common).stdout
+    out = ctx.block("java-leak-check", n=1, sample_size=8, timeout_s=300, module="record", **jacoco, **common).stdout
     ctx.expect("cover exactly the same" in out, "the leak check finds nothing in a clean harness")
     ctx.sh('mkdir -p "$F/corpus/leaky" && cp "$F/corpus/$H"/* "$F/corpus/leaky/"')
     ctx.set(H="leaky")
-    out = ctx.block("java-leak-check", n=1, sample_size=8, timeout_s=300, module="record",
+    out = ctx.block("java-leak-check", n=1, sample_size=8, timeout_s=300, module="record", **jacoco,
                     **dict(common, fuzz_method="parseLeaky")).stdout
     ctx.expect("### Only A" in out and "RecordFuzzTest.java" in out, "the leak check points at the leaking harness")
     # A side that doesn't finish makes the check inconclusive. A throwing input doesn't end a side (--keep_going=0),
     # the kill limit does: here during the JVM's startup.
-    out = ctx.block("java-leak-check", n=2, ok=(1,), sample_size=8, timeout_s=0.001, module="record",
+    out = ctx.block("java-leak-check", n=2, ok=(1,), sample_size=8, timeout_s=0.001, module="record", **jacoco,
                     **dict(common, fuzz_method="parseLeaky")).stdout
     expect_leak_check_stopped(ctx, out, "gate-leaky-2", timed_out=True)
 
@@ -1380,11 +1381,23 @@ def java_gradle(ctx: Context, task: str, module: str, fuzz_class: str, method: s
 
 
 @scenario("java-gradle", "java-gradle", ["java-gradle-classpath", "java-env", "java-develop", "java-instrumented",
-                                         "java-gradle-junit"])
+                                         "java-gradle-junit", "jacoco-setup", "java-cov-replay", "java-cov-export",
+                                         "java-reach"])
 def java_gradle_multi(ctx: Context) -> None:
     """Two modules: the fuzz test in app, the bug in core, which reaches the classpath as a JAR."""
     java_gradle(ctx, ":app:seclabTestClasspath", "app", "app.ReaderFuzzTest", "read", "app.Reader core.Magic",
                 "-Djazzer.instrument=app.**,core.**")
+    # Coverage of both modules: each module's classes and sources, here in Gradle's layout.
+    ctx.block("jacoco-setup")
+    common = dict(fuzz_class="app.ReaderFuzzTest", fuzz_method="read", memory_mb=512, input_timeout_s=10)
+    jacoco = dict(classfiles="--classfiles app/build/classes/java/main --classfiles core/build/classes/java/main",
+                  source_roots="--source-root app/src/main/java --source-root core/src/main/java")
+    ctx.block("java-cov-replay", n=1, timeout_s=300, **common)
+    ctx.block("java-cov-export", n=1, round=1, **jacoco)
+    ctx.expect_covered("$F/coverage/$H/r1.lcov", "core/src/main/java/core/Magic.java")
+    out = ctx.block("java-reach", file="core/src/main/java/core/Magic.java", line=6, timeout_s=300, **jacoco,
+                    **common).stdout
+    ctx.expect("reached: " in out, "reach.py finds an input that reaches a line in the other module")
 
 
 @scenario("java-gradle-single", "java-gradle-single", ["java-gradle-classpath", "java-env", "java-develop", "java-instrumented",

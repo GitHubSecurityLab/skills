@@ -47,19 +47,19 @@ build files and no coverage build variant.
      file stays empty. The `timeout-` file names the input; the timeout is
      a blocking bug (`fuzz-triage`). Replay a copy of the corpus without
      that input, and mark the snapshot partial.
-4. **Export** the `.exec` file to lcov (reads files only). `--classfiles`
-   decides what the report covers. List the modules and library JARs in
-   scope, with one `--classfiles` and one `--source-root` for each.
-   Classes not listed don't appear in the lcov file.
+4. **Export** the `.exec` file to lcov (reads files only). The report
+   covers only the classes in `<classfiles>`: one `--classfiles` for each
+   module in scope (its `target/classes`) and each library JAR in scope.
+   `<source_roots>` has one `--source-root` for each of those modules
+   (its `src/main/java`):
    <!-- ci: java-cov-export -->
    ```sh
    C="$F/coverage/$H"; mkdir -p "$C"
    cp "$F/runs/cov-$H-<n>/jacoco.exec" "$C/r<round>.exec"
-   "$JAVA_HOME/bin/java" -jar "$F/build/jacoco/jacococli.jar" report "$C/r<round>.exec" --classfiles <module>/target/classes \
+   "$JAVA_HOME/bin/java" -jar "$F/build/jacoco/jacococli.jar" report "$C/r<round>.exec" <classfiles> \
      --xml "$C/r<round>.xml" 2>&1 | tee "$C/r<round>.report.log" &&
      ! grep -q 'not match' "$C/r<round>.report.log" &&
-     python3 "$F/bin/coverage.py" from-jacoco "$C/r<round>.xml" --source-root <module>/src/main/java \
-       -o "$C/r<round>.lcov" &&
+     python3 "$F/bin/coverage.py" from-jacoco "$C/r<round>.xml" <source_roots> -o "$C/r<round>.lcov" &&
      rm "$C/r<round>.xml" "$C/r<round>.report.log"
    ```
    - **"does not match" is an error.** If the class files differ from
@@ -72,8 +72,8 @@ build files and no coverage build variant.
    - The lcov file has line and branch records per source file. Each path
      is a source root joined with the file's package path, e.g.
      `record/src/main/java/toy/Record.java`. So give the source roots
-     relative to the repository root, as the block does; then
-     `coverage.py --root .` matches the paths against the scope files.
+     relative to the repository root; then `coverage.py --root .` matches
+     the paths against the scope files.
    - JaCoCo counts branches at `if` and `switch` only, not exception
      edges. A `catch` block shows only as lines, so a branch plateau can
      hide uncovered error handling. Check the lines too.
@@ -115,28 +115,31 @@ done
 [ $ok = 1 ] && {
   "$JAVA_HOME/bin/java" -jar "$J/jacococli.jar" merge "$G/one.exec" "$G/fresh.exec" --destfile "$G/union.exec" > /dev/null
   for p in one fresh union; do
-    "$JAVA_HOME/bin/java" -jar "$J/jacococli.jar" report "$G/$p.exec" --classfiles <module>/target/classes \
+    "$JAVA_HOME/bin/java" -jar "$J/jacococli.jar" report "$G/$p.exec" <classfiles> \
       --classfiles <module>/target/test-classes --xml "$G/$p.xml" > /dev/null
-    python3 "$F/bin/coverage.py" from-jacoco "$G/$p.xml" --source-root <module>/src/main/java \
+    python3 "$F/bin/coverage.py" from-jacoco "$G/$p.xml" <source_roots> \
       --source-root <module>/src/test/java -o "$C/gate-$p.lcov"
   done
   python3 "$F/bin/coverage.py" overlap "$C/gate-one.lcov" "$C/gate-fresh.lcov" --union "$C/gate-union.lcov" --root .
 }
 ```
 
-- The test classes are included: state often leaks in the harness.
+- `<classfiles>` and `<source_roots>` are as in step 4. The test classes
+  of `<module>`, the harness's module, are added: state often leaks in
+  the harness.
 
 **Inputs that reach a line**: `reach.py` finds them, for targeted inputs
 (`fuzz-coverage`'s corpus.md). It splits the `--replay` and `--export`
 strings into arguments as a shell would, so the block single-quotes each
-path in them. `$JOPTS` stays unquoted, to split into its flags:
+path in them. `$JOPTS`, `<classfiles>` and `<source_roots>` stay
+unquoted, to split into their flags; the last two are as in step 4:
 
 <!-- ci: java-reach -->
 ```sh
 python3 "$F/bin/reach.py" --harness $H --corpus "$F/corpus/$H" --file <file> --line <line> \
   --env PATH="$RUN_PATH" --env JAVA_HOME="$JAVA_HOME" --timeout <timeout_s> \
   --replay "'$JAVA_HOME/bin/java' $JOPTS '-javaagent:$F/build/jacoco/jacocoagent.jar=destfile={out}/jacoco.exec' -cp '$CP' com.code_intelligence.jazzer.Jazzer --target_class=<fuzz_class> --target_method=<fuzz_method> --keep_going=0 -runs=0 -timeout=<input_timeout_s> -rss_limit_mb=0 {files}" \
-  --export "sh -c '\"\$0\" -jar \"\$1\" report \"\$2/jacoco.exec\" --classfiles \"\$3\" --xml \"\$2/r.xml\" > /dev/null && python3 \"\$4\" from-jacoco \"\$2/r.xml\" --source-root \"\$5\" -o \"\$6\"' '$JAVA_HOME/bin/java' '$F/build/jacoco/jacococli.jar' {out} '<module>/target/classes' '$F/bin/coverage.py' '<module>/src/main/java' {lcov}"
+  --export "sh -c '\"\$0\" -jar \"\$1\" report \"\$2/jacoco.exec\" <classfiles> --xml \"\$2/r.xml\" > /dev/null && python3 \"\$3\" from-jacoco \"\$2/r.xml\" <source_roots> -o \"\$4\"' '$JAVA_HOME/bin/java' '$F/build/jacoco/jacococli.jar' {out} '$F/bin/coverage.py' {lcov}"
 ```
 
 ## Combining Java coverage
