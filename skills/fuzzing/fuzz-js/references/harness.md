@@ -204,9 +204,20 @@ excludes win. `includes` defaults to `["*"]`, and `excludes` to
 - Setting only `excludes` empties `includes`, so nothing is
   instrumented.
 
-To fuzz a dependency too, list it with absolute paths (`"src/"` alone
-also matches every package's `src/`), and don't exclude `node_modules`.
+To fuzz a dependency too, add it to `includes`, and don't exclude
+`node_modules`:
+- List the project's files with absolute paths: `"src/"` alone also
+  matches every package's `src/`. That includes another package of the
+  workspace: list its directory, since Node loads it from there, not
+  from its link in `node_modules`.
+- List the dependency as `/node_modules/<dep>/`, or
+  `/node_modules/@<scope>/<dep>/` for a scoped one. That matches it
+  wherever the package manager put it: in an npm workspace, usually the
+  root's `node_modules`; with pnpm, under `node_modules/.pnpm/`.
+
 Pass both settings to every run of the harness, as launcher options:
-`--env JAZZER_INCLUDES="[\"$P/src/\",\"$P/node_modules/<dep>/\"]"`
+`--env JAZZER_INCLUDES="[\"$P/src/\",\"/node_modules/<dep>/\"]"`
 and `--env JAZZER_EXCLUDES='[]'`. Instrumenting all of `node_modules`
-slows fuzzing a lot. Environment values are JSON.
+slows fuzzing a lot. Environment values are JSON. Check that the gate's
+lcov has `SF:` lines for the dependency's files too (`build.md`,
+"Instrumentation checks").
