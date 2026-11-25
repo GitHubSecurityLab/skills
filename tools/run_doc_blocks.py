@@ -1876,6 +1876,17 @@ def c_fuzztest(ctx: Context) -> None:
     ctx.block("fuzztest-develop", round=1, run_s=10, **leaks)
     ctx.expect("LeakSanitizer: detected memory leaks" in ctx.log("r1-leaking") and not ctx.findings("r1-leaking"),
                "the run's log ends in a leak report, with no finding")
+    # Symbolizing the leak report can take a while: here 20 s. The deadline, 60 s past the run's time,
+    # waits for it; a stop would kill the symbolizer, and the run would end finished.
+    slow = os.path.join(ctx.repo, "slow-symbolizer", "llvm-symbolizer")
+    os.makedirs(os.path.dirname(slow))
+    with open(slow, "w") as handle:
+        handle.write('#!/bin/sh\nsleep 20\nexec "%s" "$@"\n' % os.path.join(llvm_bin(), "llvm-symbolizer"))
+    os.chmod(slow, 0o755)
+    ctx.block("fuzztest-develop", round=2, run_s=10, replace=(('ASAN_OPTIONS="$ASAN_OPTIONS"',
+              'ASAN_OPTIONS="$ASAN_OPTIONS:external_symbolizer_path=%s"' % slow),), **leaks)
+    ctx.expect_state("r2-leaking", "failed")
+    ctx.expect("in CopyPrefix" in ctx.log("r2-leaking"), "the deadline lets the slowly symbolized leak report finish")
     ctx.block("fuzztest-leak-replay", n=1, timeout_s=300, corpus="$F/corpus/$H", **leaks)
     ctx.expect_state("leaks-leaking-1", "finished")
     named = re.findall(r"^failed: (\S+)$", ctx.log("leaks-leaking-1"), re.M)

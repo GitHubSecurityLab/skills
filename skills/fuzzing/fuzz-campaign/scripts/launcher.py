@@ -49,8 +49,10 @@ from datetime import datetime, timezone
 
 POLL_SECONDS = 0.5
 STOP_GRACE_SECONDS = 10.0  # TERM, then KILL after this long
-DEADLINE_GRACE_SECONDS = 5.0  # a timed copy's deadline is --time plus at least this
-JVM_GRACE_SECONDS = 15.0  # both graces for a JVM, which starts and stops slowly
+# A timed copy's deadline is --time plus this: a backstop, since engines stop at their own limit. It
+# lets the work at exit finish: LeakSanitizer symbolizes its whole report before it prints a line.
+DEADLINE_GRACE_SECONDS = 60.0
+JVM_GRACE_SECONDS = 15.0  # the stop grace for a JVM, which stops slowly
 PROGRESS_SECONDS = 300.0  # progress sample and foreground progress line
 LOG_CHECK_SECONDS = 5.0
 LOG_MAX_BYTES = 64 * 1024 * 1024  # trim a copy's log above this size ...
@@ -1053,13 +1055,11 @@ class Supervisor:
         self.sample()
         limit = self.spec.get("time")
         timeout = self.spec.get("timeout")
-        # How long each copy may run, from its own start: under load, starting
-        # the copies can take longer than the grace.
+        # How long each copy may run, from its own start: starting the copies
+        # one after another takes time.
         allowed = None
         if limit is not None:
-            jvm = runs_jvm([c["command"] for c in self.spec["copies"]])
-            grace = JVM_GRACE_SECONDS if jvm else DEADLINE_GRACE_SECONDS
-            allowed = limit + max(grace, min(60.0, 0.05 * limit))
+            allowed = limit + DEADLINE_GRACE_SECONDS
         elif timeout is not None:
             allowed = timeout
         stop_marker = os.path.join(self.rdir, "stop")
@@ -1746,16 +1746,17 @@ launcher creates the run directory, each copy's scratch (copy-<i>/work, with
 home/, tmp/ and an empty out/), and the findings and corpus directories
 (absolute paths); commands create any other output directory.
 
-Timed runs (--time) fuzz: each copy's deadline is --time plus a short grace.
+Timed runs (--time) fuzz: each copy's deadline is 60 s past --time, a
+backstop for an engine that doesn't stop at its own limit (60 s lets
+LeakSanitizer's report at exit finish).
 Self-ending runs (--timeout) replay, merge or reproduce: --timeout is each
 copy's kill limit. Both are measured from the copy's start, in time awake,
 not time the machine sleeps (elapsed times shown are by the wall clock).
 Foreground runs print a progress line every 5 minutes and the result at the
 end; INT, TERM and HUP stop the copies (TERM, then KILL after 10 s; 15 s for
-a JVM, whose timed runs also get at least 15 s past --time), unless the
-caller ignores INT or HUP (nohup). Stopping, and the end of a copy, signal
-the copy's process group: a process that leaves it (setsid, a daemon) isn't
-stopped.
+a JVM), unless the caller ignores INT or HUP (nohup). Stopping, and the end
+of a copy, signal the copy's process group: a process that leaves it
+(setsid, a daemon) isn't stopped.
 Run ids are never reused: a retry takes the next number.
 
 exit status:
