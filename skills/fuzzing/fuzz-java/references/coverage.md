@@ -82,6 +82,8 @@ build files and no coverage build variant.
 the inputs in `{files}`, use step 2's command with `{files}` instead of
 the corpus directories. A directory replay would also run the test's
 inputs directory and `.cifuzz-corpus`.
+- For inputs given as files, Jazzer writes no finding file for an input
+  that throws and still exits 0: look for `== Java Exception` in the log.
 - If the fuzz test has JUnit argument sources (`@MethodSource`,
   `@ValueSource`): they run first in every JVM. They hide state that leaks
   from the first input, and add their own coverage. Give such a harness
@@ -132,14 +134,10 @@ path in them. `$JOPTS` stays unquoted, to split into its flags:
 <!-- ci: java-reach -->
 ```sh
 python3 "$F/bin/reach.py" --harness $H --corpus "$F/corpus/$H" --file <file> --line <line> \
-  --env PATH="$RUN_PATH" --env JAVA_HOME="$JAVA_HOME" --timeout <timeout_s> --ok-exit 0,77 \
-  --replay "'$JAVA_HOME/bin/java' $JOPTS '-javaagent:$F/build/jacoco/jacocoagent.jar=destfile={out}/jacoco.exec' -cp '$CP' com.code_intelligence.jazzer.Jazzer --target_class=<fuzz_class> --target_method=<fuzz_method> --keep_going=1 -runs=0 -timeout=<input_timeout_s> -rss_limit_mb=0 {files}" \
+  --env PATH="$RUN_PATH" --env JAVA_HOME="$JAVA_HOME" --timeout <timeout_s> \
+  --replay "'$JAVA_HOME/bin/java' $JOPTS '-javaagent:$F/build/jacoco/jacocoagent.jar=destfile={out}/jacoco.exec' -cp '$CP' com.code_intelligence.jazzer.Jazzer --target_class=<fuzz_class> --target_method=<fuzz_method> --keep_going=0 -runs=0 -timeout=<input_timeout_s> -rss_limit_mb=0 {files}" \
   --export "sh -c '\"\$0\" -jar \"\$1\" report \"\$2/jacoco.exec\" --classfiles \"\$3\" --xml \"\$2/r.xml\" > /dev/null && python3 \"\$4\" from-jacoco \"\$2/r.xml\" --source-root \"\$5\" -o \"\$6\"' '$JAVA_HOME/bin/java' '$F/build/jacoco/jacococli.jar' {out} '<module>/target/classes' '$F/bin/coverage.py' '<module>/src/main/java' {lcov}"
 ```
-
-Jazzer writes no finding file for inputs given as files. With
-`--keep_going=1` it still runs them all, then exits 77 if one threw, which
-`reach.py` reports.
 
 ## Combining Java coverage
 

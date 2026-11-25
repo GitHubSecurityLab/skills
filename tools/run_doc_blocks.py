@@ -1220,12 +1220,18 @@ def java(ctx: Context) -> None:
     ctx.block("java-merge", n=1, timeout_s=300, long_run="record-long1", **common)
     ctx.expect(len(ctx.findings("merge-record-1")) >= 1, "the first merge reports the crashing input")
 
-    # reach.py with the crashing input in the corpus: Jazzer writes no finding file for inputs given
-    # as files, and the replay's exit status shows it.
-    out = ctx.block("java-reach", file="record/src/main/java/toy/Record.java", line=14, timeout_s=300,
-                    module="record", **common).stdout
+    # reach.py with the crashing input in the corpus.
+    reach = dict(file="record/src/main/java/toy/Record.java", line=14, timeout_s=300, module="record")
+    out = ctx.block("java-reach", **reach, **common).stdout
     ctx.expect("reached: " in out, "reach.py finds an input that reaches Record.java:14")
-    ctx.expect("exited 77" in out, "reach.py reports the input that throws in its replays")
+    # A classic target too, where the only input that reaches the line comes after one that throws.
+    ctx.set(H="classic")
+    ctx.sh('mkdir -p "$F/corpus/$H" && printf "REC1\\377" > "$F/corpus/$H/throws" && cp seeds/ok "$F/corpus/$H/"')
+    out = ctx.block("java-reach", replace=((" --target_method=<fuzz_method>", ""),), **reach,
+                    **dict(common, fuzz_class="toy.RecordFuzzer")).stdout
+    ctx.expect(re.search(r"reached: \S*/classic/ok ", out),
+               "reach.py on a classic target runs the inputs after one that throws")
+    ctx.set(H="record")
 
     # JUnit regression mode through the launcher replays the inputs directory (run.md), here with the crash file.
     # It runs offline: fetch Surefire's JUnit provider first.

@@ -101,7 +101,7 @@ LONG_FILES = {
     "skills/fuzzing/fuzz-java/references/harness.md": (226, "parameter styles, seeds, the bug-detector table and the hook API"),
     "skills/fuzzing/fuzz-java/references/run.md": (259, "standalone runs and JUnit runs"),
     "skills/fuzzing/fuzz-java/references/triage.md": (167, "reproduction, minimization, the typed-input decoder"),
-    "skills/fuzzing/fuzz-java/references/coverage.md": (169, "JaCoCo setup, replay, export and combining"),
+    "skills/fuzzing/fuzz-java/references/coverage.md": (167, "JaCoCo setup, replay, export and combining"),
     "skills/fuzzing/fuzz-js/references/harness.md": (213, "ES modules, HTTP-handler and object targets, the bug-detector table and the hook API"),
     "skills/fuzzing/fuzz-js/references/jest.md": (384, "the whole Jest path, read only when the Jest probe passes"),
 }
