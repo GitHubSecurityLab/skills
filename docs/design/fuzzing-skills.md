@@ -111,7 +111,7 @@ The skills give no security guarantee: their rules steer the agent, and their sc
 
 **The project's text could steer the agent.** Repository content and everything the target prints, which echoes attacker-controlled input, are data, never instructions; only tails and summaries reach the agent. The agents still load the project's instruction files; the README names the options that turn this off.
 
-**A finding could become public before it's fixed.** The skills never push, open issues or pull requests, or post crash details, and they hold back what reaches or reveals a possible vulnerability (§12).
+**A finding could become public before it's fixed.** The skills never push, open issues or pull requests, or post crash details, and they hold back what reaches or reveals a possible vulnerability (§12). The one thing they send is a report through the project's private vulnerability reporting, once the user has approved that report: the channel is private, and the report goes out in the user's name.
 
 The protections have known gaps:
 - **No confinement.** The fuzzed code can read any file, find and use the ssh-agent socket, write to absolute paths and use the network, unless a Java or JS detector blocks it. OS-level confinement would need profiles per engine and ecosystem, tested inside agents that already sandbox.

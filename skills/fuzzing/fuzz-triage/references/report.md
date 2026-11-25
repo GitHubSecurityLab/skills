@@ -2,9 +2,10 @@
 
 A report is useful when a maintainer can confirm the bug in minutes, see
 why it matters, and apply a tested fix. It must not be stale (already
-fixed), already known, or sent to the wrong project. This skill never
-sends anything: the user sends the report; for a vulnerability, through
-the project's private channel.
+fixed), already known, or sent to the wrong project. The user sends the
+report; for a vulnerability, through the project's private channel. The
+one exception is step 10: a report the user approved goes out through the
+project's private vulnerability reporting.
 
 ## Reads
 
@@ -145,6 +146,8 @@ unless they start with `.seclab/`:
 
      Follow GitHub Security Lab's coordinated disclosure policy
      (https://securitylab.github.com/advisories/#policy) as a reference.
+     If the channel is private vulnerability reporting, offer to submit
+     the report (step 10).
 
    For a bug sent in public: the user files its draft as an issue or pull
    request, following the project's rules. Each fix of ours goes upstream
@@ -156,6 +159,35 @@ unless they start with `.seclab/`:
    published, the release notes name it, or the maintainers agree that it
    can be discussed openly. A fix in the public repository alone doesn't
    make it public.
+10. **Submit through private vulnerability reporting,** in interactive
+    mode only, when step 9's channel is the project's private
+    vulnerability reporting and the user wants the agent to send it. The
+    user approves each report after seeing what is sent and where;
+    approval for the campaign or for several reports doesn't count. Don't
+    submit if step 4 found a rule against AI-assisted reports, or one
+    asking for the reporter's own words, or if the repository isn't the
+    bug's own project (step 3).
+    - Write the request body to `.seclab/fuzz/reports/<id>.json`, from
+      the draft:
+      - `summary`: the draft's title, at most 1024 characters;
+      - `description`: the rest of the draft in Markdown, at most 65535
+        characters. A report takes no attachments: put the reproducer and
+        the crashing input (as hex or base64) inline, or, if they don't
+        fit, say they're available on request;
+      - `vulnerabilities`: one entry per affected package, e.g.
+        `{"package": {"ecosystem": "npm", "name": "<package>"}, "vulnerable_version_range": "<= 1.4.2", "patched_versions": null}`.
+        The ecosystem is one of GitHub's (`npm`, `maven`, `pip`, ...), or
+        `other`, as for a C/C++ library. `patched_versions` is `null`
+        while no release has the fix;
+      - `cvss_vector_string`: the draft's CVSS vector, if it has one;
+      - `cwe_ids`: the draft's CWEs, e.g. `["CWE-787"]`.
+    - Show the user the body and the repository, and submit only on their
+      yes. The command prints the report's URL:
+      `gh api --method POST repos/<owner>/<repo>/security-advisories/reports --input .seclab/fuzz/reports/<id>.json --jq .html_url`.
+    - Record the bug's Disclosure as `reported <date, private
+      vulnerability reporting>`, with that URL.
+    - Leave out `start_private_fork`: pushing our fix to the advisory's
+      private fork is the user's step, once the maintainers invite them.
 
 ## Done when
 
@@ -171,7 +203,8 @@ unless they start with `.seclab/`:
 - Skipping the freshness check.
 - Inflating severity. Justify each CVSS metric from the threat model.
 - Long, generic text.
-- Sending, posting or filing anything. The user does that.
+- Sending, posting or filing anything, apart from step 10's approved
+  report. The user does that.
 - Putting a held-back bug's regression test or fix (`fuzz-campaign`,
   safety rules) into a public pull request before the bug is public and
   fixed upstream.
@@ -180,6 +213,7 @@ unless they start with `.seclab/`:
 
 What the steps in this file write or change. Paths are relative to
 `.seclab/fuzz/` unless they start with `.seclab/`:
-- `reports/<id>.md`, the reproducer package in `crashes/<bucket>/`.
+- `reports/<id>.md`, the reproducer package in `crashes/<bucket>/`;
+  with step 10, `reports/<id>.json` and the report on GitHub.
 - `crashes/<bucket>.md`: Report, Disclosure. `CAMPAIGN.md`: Open crashes
   (Report `drafted`).
