@@ -51,9 +51,8 @@
    analyze.md, "Merge and minimize". Mark those runs' analysis `done` in
    the archived ledger.
 
-   Then update the threat model (`security-threat-model`, incremental
-   mode), and rank changed code first. For each old target with scope
-   files:
+   Then update the threat model (`security-threat-model`), and rank
+   changed code first. For each old target with scope files:
    - update the scope files for files the release moved, removed or
      added;
    - write the target's sinks again (targets.md, "Sinks"): their files

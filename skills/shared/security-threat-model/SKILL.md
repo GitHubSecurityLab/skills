@@ -39,19 +39,38 @@ deciding whether a single finding is real (that's `fuzz-triage`).
 - `.seclab/threat-model.md`, if it exists. Update it in place, and never
   discard entries the user wrote.
 
-## Three modes
+## Modes
 
-- **Full:** only when no threat model exists, or when the user asks. It
-  covers the whole repository: follow all steps.
-- **Incremental:** when the threat model was written against an older
-  commit (its `Base commit`):
-  - re-verify every entry's `path:line` on the new base;
+A threat model's `Base commit`, in its header, is the commit it was
+written against.
+
+- **Full:** covers the whole repository: follow all steps, and keep
+  every `[user]` entry of an existing model. Use it when the user asks,
+  or when there's no complete threat model:
+  - none exists;
+  - it lacks one of the template's Context, Sources, Sinks or Paths
+    sections, as a model written only in focused mode does;
+  - git doesn't know its `Base commit` (`git cat-file -e <sha>^{commit}`
+    fails, as for a model from another clone).
+- **Current:** when a complete model's `Base commit` is HEAD. Keep the
+  model. Only look for advisories and CVEs newer than its `Updated`
+  date, record them as step 1 says, and set `Updated` to today.
+- **Incremental:** when a complete model's `Base commit` is another
+  commit, older or newer:
+  - re-verify every entry's `path:line` at HEAD. If the code moved,
+    find it by name and update the line. If it's gone, remove the
+    entry, but keep a `[user]` entry, marked `(not found at <sha>)`
+    with HEAD's sha;
   - review only what changed since the old base, and follow steps 3–7
     for it:
     - new or changed entry points and files
       (`git diff --stat <old base>..HEAD`);
     - new CVEs and security fixes since the old base, from step 1's
       sources (record new advisories and CVEs as step 1 says);
+  - update the context (step 2) only where the changes affect it, such
+    as a new kind of entry point or changed docs on how the project is
+    used. In interactive use, review (step 8) only new and changed
+    entries;
   - keep the other entries and every `[user]` entry, and update `Base
     commit`.
 - **Focused:** when another skill needs a quick answer on one entry point.

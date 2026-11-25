@@ -167,9 +167,8 @@ unless they start with `.seclab/`:
    while the replays run; the baseline has no time cap.
    - If runs stay in the foreground, as in Codex or after a refused
      `--detach` (`fuzz-harness`'s runs.md): do the replays first.
-3. **Threat model.** Invoke `security-threat-model` while the replays run:
-   in incremental mode if `.seclab/threat-model.md` exists from an earlier
-   campaign, else full.
+3. **Threat model.** Invoke `security-threat-model` while the replays run.
+   It picks its mode from the existing threat model, if any.
 4. **Recon and ranking.** Wait for the replays with `launcher.py wait`,
    and show their progress with `launcher.py status`. Then merge their
    snapshots into the next `coverage/merged/<n>.lcov`, which the rest of
