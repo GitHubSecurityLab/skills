@@ -37,6 +37,7 @@ import platform
 import re
 import shlex
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -48,7 +49,7 @@ TOYS = os.path.join(ROOT, "tests", "toys")
 SCRIPTS = os.path.join(SKILLS, "fuzzing", "fuzz-campaign", "scripts")
 
 MARKER = re.compile(r"^\s*<!-- ci: ([a-z0-9][a-z0-9-]*) -->\s*$")
-FENCE = re.compile(r"^(\s*)```(sh|json|javascript|java|cpp)\s*$")
+FENCE = re.compile(r"^(\s*)```(sh|json|javascript|java|c|cpp)\s*$")
 SKIP_MARKER = re.compile(r"^\s*<!-- ci-skip:(.*?)-->\s*$")
 LANGUAGE_SKILLS = ("fuzz-c-cpp", "fuzz-java", "fuzz-js")
 PLACEHOLDER = re.compile(r"<([a-z][a-z0-9_]*)>")
@@ -88,7 +89,8 @@ def extract_blocks(paths: list) -> dict:
             where = "%s:%d" % (os.path.relpath(path, ROOT), index + 1)
             fence = FENCE.match(lines[index + 1]) if index + 1 < len(lines) else None
             if not fence:
-                raise DocError("%s: marker %r isn't followed by a ```sh, ```json, ```javascript, ```java or ```cpp block" % (where, name))
+                raise DocError("%s: marker %r isn't followed by a ```sh, ```json, ```javascript, ```java, ```c or "
+                               "```cpp block" % (where, name))
             end = index + 2
             while end < len(lines) and lines[end].strip() != "```":
                 end += 1
@@ -392,7 +394,8 @@ def build_c_toy(ctx: Context, variants=("libfuzzer", "coverage"), harness="fuzz_
 @scenario(
     "c-libfuzzer",
     "c",
-    ["c-env", "c-ub", "c-develop", "c-repro", "c-minimize", "triage-rebucket", "c-reproducer", "c-long", "c-cov-replay", "c-cov-export",
+    ["c-env", "c-ub", "c-develop", "c-replay-driver", "c-repro", "c-minimize", "triage-rebucket", "c-reproducer",
+     "c-long", "c-cov-replay", "c-cov-export",
      "upstreaming-held-back", "c-merge", "held-back-branch", "build-record", "build-stale", "c-leak-check", "c-reach",
      "fresh-worktrees", "dict-literals", "base-worktree", "release-rebase", "gate-tree-before", "gate-tree-after",
      "gate-progress", "c-call-sequence", "upstreaming-workspace"],
@@ -480,6 +483,17 @@ def c_libfuzzer(ctx: Context) -> None:
     ctx.expect_state("r1-record", "found-crash")
     ctx.expect("-max_len is not provided" not in ctx.log("r1-record"), "the develop run takes the harness's input cap")
     finding = ctx.findings("r1-record")[0]
+
+    # The seed replay's driver (regression.md), built outside the repository: with no files it fails, a seed
+    # passes, and the planted bug's assertion aborts.
+    driver = ctx.write_block("c-replay-driver", os.path.join(os.path.dirname(ctx.repo), "replay", "replay_main.c"))
+    replay = os.path.join(os.path.dirname(driver), "replay")
+    ctx.sh('"%s" -g fuzz/fuzz_record.c src/record.c "%s" -o "%s"' % (os.path.join(llvm_bin(), "clang"), driver, replay))
+    runs = [ctx.sh('"%s" %s' % (replay, args), check=False) for args in ("", "seeds/ok", '"%s"' % finding)]
+    ctx.expect([r.returncode for r in runs[:2]] == [1, 0] and "no input files" in runs[0].stderr
+               and runs[2].returncode in (134, -signal.SIGABRT) and "Assertion" in runs[2].stderr,
+               "the replay driver fails with no files, passes a seed and aborts on the bug (%s)"
+               % [r.returncode for r in runs])
 
     # Triage: reproduce, bucket, minimize.
     # ASan exits 1 on Linux; on macOS abort_on_error defaults to 1 (SIGABRT, 134).

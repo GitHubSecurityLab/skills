@@ -7,6 +7,7 @@ harness without a fuzzing engine, with any compiler. Many projects already
 have one (look for a `main` next to the harnesses). Otherwise add this, in
 the project's style:
 
+<!-- ci: c-replay-driver -->
 ```c
 /* Runs LLVMFuzzerTestOneInput once on each file named on the command line,
    so the harness can run as a test without a fuzzing engine. */
@@ -17,6 +18,7 @@ the project's style:
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size);
 
 int main(int argc, char **argv) {
+  if (argc < 2) { fprintf(stderr, "%s: no input files\n", argv[0]); return 1; }
   for (int i = 1; i < argc; i++) {
     FILE *f = fopen(argv[i], "rb");
     if (!f || fseek(f, 0, SEEK_END) != 0) { perror(argv[i]); return 1; }
@@ -39,11 +41,21 @@ first. Register the test, e.g. with CMake:
 add_executable(parse_fuzzer_replay parse_fuzzer.c replay_main.c)
 target_link_libraries(parse_fuzzer_replay PRIVATE <project-library>)
 file(GLOB PARSE_FUZZER_INPUTS ${CMAKE_CURRENT_SOURCE_DIR}/regression/parse_fuzzer/*)
+if(NOT PARSE_FUZZER_INPUTS)
+  message(FATAL_ERROR "no seeds in regression/parse_fuzzer/")
+endif()
 add_test(NAME parse_fuzzer_regression COMMAND parse_fuzzer_replay ${PARSE_FUZZER_INPUTS})
 ```
 
+If `file(GLOB ...)` matches nothing, e.g. because the seed directory is
+misnamed or wasn't committed, the `if` stops CMake instead of letting the
+test pass on no inputs. The driver exits 1 with no files, for build
+systems without such a check. A project's own driver may pass then: add
+the check where the test is registered.
+
 In a libFuzzer build, the fuzz binary itself replays files the same way
-(`<binary> <files>`), which suits a sanitizer CI job.
+(`<binary> <files>`), which suits a sanitizer CI job. With no files,
+though, it fuzzes until stopped: check the list there too.
 
 ## The bug's reproducer (`fuzz-triage`)
 
