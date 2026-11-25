@@ -25,9 +25,8 @@ class, `if (e?.constructor !== Error) throw e;`. A filter on
 `instanceof Error` also catches `TypeError` and `RangeError`, stack
 overflows included, and those are the bugs worth finding.
 
-**ES modules:** ESM targets use `export function fuzz(data)` and need
-Node 20.6+ (20.11+ for hooks and detectors). In ES modules, named imports
-of Node's built-ins, such as
+**ES modules:** ESM targets use `export function fuzz(data)`. In ES
+modules, named imports of Node's built-ins, such as
 `import { execSync } from "node:child_process"`, bypass the detectors and
 hooks, and the real call runs. To prevent that, the harness calls
 `syncBuiltinESMExports()` first and then loads the target with

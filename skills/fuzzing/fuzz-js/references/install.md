@@ -14,8 +14,10 @@ repository, Yarn runs the release that `.yarnrc` or `.yarnrc.yml` names
 (cd / && yarn --version)     # or pnpm: the package manager of the project's lockfile
 ```
 
-- Node.js 24 LTS (20.11 at least: ESM hooks and detectors need it).
-  Node 26 deprecates `module.register()`, which Jazzer.js uses to
+- Node.js 24 LTS; 20.11 at least, also for CommonJS targets, since they
+  can load ES modules. Before 20.11, Jazzer.js's bug detectors and hooks
+  don't apply to ES modules; before 20.6, it doesn't instrument them at
+  all. Node 26 deprecates `module.register()`, which Jazzer.js uses to
   instrument ES modules, so pin 24 even after 26 becomes LTS. Check the
   project's `engines` field too.
 - The project's package manager (`npm`, `pnpm`, `yarn`), from its
