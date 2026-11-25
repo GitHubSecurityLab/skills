@@ -20,7 +20,8 @@ JUnit 5 test class `<repro_class>`, with no package, in
 concrete values the harness derived from the input, not through the harness
 and not as a crash file. It also has a `main` that runs the test method, so
 the reproducer runs without the build tool. Take the values from the harness;
-for typed parameters, decode the crash file (`triage.md`).
+for typed parameters, decode the crash file (`triage.md`). A stack
+overflow's reproducer scales up the finding's input (`triage.md`).
 
 - **It includes the check that caught the bug,** so it fails before the
   fix: the exception itself, the harness's property check written out, or

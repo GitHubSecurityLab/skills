@@ -54,12 +54,20 @@ $L start --id repro-$H-<n> --harness $H --timeout <timeout_s> --env PATH="$RUN_P
 - **`OutOfMemoryError`** under `-Xmx<memory_mb>m`: check whether an
   allocation size comes from the input.
 - **`Stack overflow (use '-Xss<n>k' to reproduce)`** is a
-  `FuzzerSecurityIssueLow`: recursion driven by the input's nesting. It's
-  a DoS when the input is small. The reproducer and every command that
-  runs the finding (replays, `-runs=100`, minimizing) need that `-Xss`:
-  after `env.sh`, set `JOPTS="$JOPTS -Xss<n>k"`. Without it, an input
-  nested just deep enough to overflow often doesn't overflow again in a
-  fresh JVM.
+  `FuzzerSecurityIssueLow`: recursion the input drives too deep, through
+  its nesting, its length (e.g. `(a|b)*` in `java.util.regex` on a long
+  string) or a cycle. It's a DoS when the input is small.
+  - Every command that runs the finding (replays, `-runs=100`,
+    minimizing) needs that `-Xss`: after `env.sh`, set
+    `JOPTS="$JOPTS -Xss<n>k"`. Without it, an input that only just
+    overflows often doesn't overflow again in a fresh JVM.
+  - The reproducer (`regression.md`) builds its input in code, with ten
+    times the nesting or length that drives the recursion, so it
+    overflows at the default stack size: the fix moves it into the
+    project's tests, which run without `-Xss`. Without Jazzer's
+    instrumentation, the finding's own input may not overflow, even at
+    that `-Xss`. For a cycle, use the finding's input as it is: it
+    recurses without end.
 - **Other exceptions** are `unexpected_exception` unless the API documents
   them for invalid input (then the harness should catch them:
   `harness_bug`).
