@@ -184,9 +184,9 @@ class TimedRunTests(LauncherTestCase):
         # libFuzzer's exit hook saves the input in flight when a JVM is stopped: "fuzz target exited".
         # The stand-in saves its file in a TERM handler. Not an sh trap: when the TERM to the group also
         # kills sh's child, sh's `wait` can return first, and sh exits 0 without running the trap.
-        # Under load, the TERM can come before the handler is set (the deadline counts from before the
-        # start), and the KILL before the handler has run. So the stand-in inherits TERM blocked from this
-        # process, where the launcher runs, and unblocks it once the handler is set; the KILL waits 30 s.
+        # Under load, the TERM can come before the handler is set, and the KILL before the handler has
+        # run. So the stand-in inherits TERM blocked from this process, where the launcher runs, and
+        # unblocks it once the handler is set; the KILL waits 30 s.
         script = (
             "import signal, sys, time\n"
             "def stop(*_):\n"
@@ -227,6 +227,29 @@ class TimedRunTests(LauncherTestCase):
                 copy = {"started": 1000.0, "returncode": code}
                 state = lc.copy_state(copy, {"time": 100}, 1099.0, findings, "exit", ran)
                 self.assertEqual(state, expected, (code, findings, ran))
+
+
+class LateCopyTests(LauncherTestCase):
+    def test_each_copy_gets_its_time_from_its_own_start(self):
+        # Starting the copies can take longer than the grace: a copy that starts late still gets its time.
+        real = lc.Supervisor.spawn
+
+        def slow(supervisor, index, entry):
+            if index:
+                time.sleep(1.5)
+            real(supervisor, index, entry)
+
+        lc.Supervisor.spawn = slow
+        try:
+            for run_id, kind, seconds, state in (("r9-h", "--time", "0.5", "finished"),
+                                                 ("repro-h-9", "--timeout", "1", "timed out")):
+                self.run_main("start", "--id", run_id, "--harness", "h", kind, seconds, "--copies", "2",
+                              "--skip-cpu-check", "--", "sleep", "30")
+                copies = self.meta(run_id)["copies"]
+                self.assertEqual([c["state"] for c in copies], [state, state], run_id)
+                self.assertGreaterEqual(copies[1]["ended"] - copies[1]["started"], 0.9, run_id)
+        finally:
+            lc.Supervisor.spawn = real
 
 
 class CopyEnvironmentTests(LauncherTestCase):
