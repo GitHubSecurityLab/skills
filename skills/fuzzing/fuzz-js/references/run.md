@@ -38,7 +38,8 @@ below). Call the project's binary directly
   too.
 - If the package is in an npm workspace: the binary is usually in the
   root's `node_modules/.bin` instead.
-  `npm exec -w <pkg> -c 'command -v jazzer'` prints the path to use.
+  `(cd "$P" && npm exec -c 'command -v jazzer')` prints the path to use.
+  For a long run, run it in `<tree_package>` instead ("Long runs", below).
 
 ## CLI target
 
