@@ -126,6 +126,9 @@ Never change, rebuild or remove a launch worktree:
 - before phase 1 of every run that used it (`analyze.md`).
 
 The findings of those runs must reproduce on the builds that found them.
+Reproducing a Jest finding is the one exception: it copies the finding
+into the fuzz test's regression directory, and removes the copies right
+after (`fuzz-js`'s jest.md, "Triage").
 
 ## Cleanup
 

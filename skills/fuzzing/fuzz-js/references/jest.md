@@ -323,7 +323,8 @@ for each name.
 ## Triage
 
 For a long run's finding, set `P` to `<tree_package>`
-(`run.md`, "CLI target").
+(`run.md`, "CLI target"). Reproduce's copies are then the one change
+allowed in the launch worktree (`fuzz-campaign`'s long-runs.md).
 
 **Reproduce:** regression mode never reads `{run}/artifacts/`, so
 reproduce through a copy:
