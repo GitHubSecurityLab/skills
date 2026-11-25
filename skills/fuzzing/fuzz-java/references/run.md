@@ -2,7 +2,8 @@
 
 Every run goes through `launcher.py` (`fuzz-harness`'s runs.md explains `F`,
 `L` and placeholders like `{run}`), and every command starts with
-`. .seclab/fuzz/env.sh; H=<harness>;`. Fuzzing runs, replays and
+`. .seclab/fuzz/env.sh; H=<harness>;`. A harness in another module also
+sets `CP` there ("Environment", below). Fuzzing runs, replays and
 reproductions use the standalone driver; JUnit runs (below) use the build
 tool.
 
@@ -38,6 +39,12 @@ CP=$(cat "$F/build/jazzer/<module>.classpath" 2>/dev/null)
 
 - `<java_home>`: a JDK Jazzer supports (`build.md`, "JDK"), e.g. macOS's
   `/usr/libexec/java_home -v 21`.
+- `CP`: the test classpath of `<module>`, the first harness's module,
+  from its classpath file (`build.md`, "Classpath for standalone runs").
+  A command for a harness in another module sets `CP` from that module's
+  file, right after `H=<harness>;`:
+  `CP=$(cat "$F/build/jazzer/<module>.classpath");`. The target file's
+  Harness block names each harness's module.
 - `JOPTS`: the JVM flags of every command. They set the heap, turn off
   the agent warning, and keep stack traces even for hot exceptions.
   Without `-XX:-OmitStackTraceInFastThrow`, a continuous run reported a

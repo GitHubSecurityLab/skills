@@ -99,7 +99,7 @@ LONG_FILES = {
     "skills/fuzzing/fuzz-c-cpp/references/fuzztest.md": (386, "FuzzTest's whole path, coverage and triage included, read only for FuzzTest projects"),
     "skills/fuzzing/fuzz-java/references/build.md": (190, "Maven, and Gradle with one module or several"),
     "skills/fuzzing/fuzz-java/references/harness.md": (226, "parameter styles, seeds, the bug-detector table and the hook API"),
-    "skills/fuzzing/fuzz-java/references/run.md": (252, "standalone runs and JUnit runs"),
+    "skills/fuzzing/fuzz-java/references/run.md": (259, "standalone runs and JUnit runs"),
     "skills/fuzzing/fuzz-java/references/triage.md": (167, "reproduction, minimization, the typed-input decoder"),
     "skills/fuzzing/fuzz-java/references/coverage.md": (190, "JaCoCo setup, replay, export and combining"),
     "skills/fuzzing/fuzz-js/references/harness.md": (213, "ES modules, HTTP-handler and object targets, the bug-detector table and the hook API"),
