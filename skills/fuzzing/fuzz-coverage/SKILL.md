@@ -247,9 +247,10 @@ only reads the gaps' code.
      stops here: propose the action, don't apply it.
 
    Otherwise, apply the action:
-   - seeds, dictionary or targeted inputs for a blocked branch or a sink
-     reached but not triggered →
-     [references/corpus.md](references/corpus.md);
+   - seeds or dictionary entries → `fuzz-harness`'s seeds.md,
+     "Write seeds in the harness's input layout" and "Dictionary";
+   - targeted inputs for a blocked branch or a sink reached but not
+     triggered → [references/corpus.md](references/corpus.md);
    - structure-aware escalation → `fuzz-harness`;
    - harness change for a variant it never selects, a stateful sequence,
      speed or determinism → `fuzz-harness`, then rebuild and gate; the
