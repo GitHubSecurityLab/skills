@@ -79,10 +79,12 @@ unless they start with `.seclab/`:
      own `.seclab/fuzz/build/` (`<tree_build>`). The checkout's builds stay
      as they are. Start each build command with this line instead of
      `. .seclab/fuzz/env.sh;`, and in JS also set `P` to the package
-     directory in that worktree:
+     directory in that worktree. The line also writes the worktree's
+     `.seclab/.gitignore`, which keeps its `.seclab/` out of git, as
+     `init.py` does in the checkout:
      <!-- ci: worktree-build -->
      ```sh
-     . .seclab/fuzz/env.sh; cd "<tree>" && F="$PWD/.seclab/fuzz" && mkdir -p "$F/build";
+     . .seclab/fuzz/env.sh; cd "<tree>" && F="$PWD/.seclab/fuzz" && mkdir -p "$F/build" && printf '*\n' > .seclab/.gitignore;
      ```
      If the project builds only in-tree: `fuzz-c-cpp`'s build.md, "In-tree
      builds".

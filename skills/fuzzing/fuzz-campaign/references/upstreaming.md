@@ -108,11 +108,14 @@ unless they start with `.seclab/`:
    the worktree's runs and snapshots stay apart from the campaign's. The
    workspace's `env.sh` points `F`, and JS's `P`, into the worktree. `P`
    is resolved through symlinks, since `init.py` and the agent may spell
-   the checkout's path differently:
+   the checkout's path differently. The block also writes the workspace's
+   `.seclab/.gitignore`, which keeps it out of git, as `init.py` does in
+   the checkout:
    <!-- ci: upstreaming-workspace -->
    ```sh
    W="<checkout>/../<repo>.seclab-worktrees/upstream-<topic>"; t=$(cd "$W" && pwd); T="$t/.seclab/fuzz"
-   mkdir -p "$T/build" && for d in bin targets dict leaks corpus build/jacoco; do [ ! -d "$F/$d" ] || cp -R "$F/$d" "$T/$(dirname "$d")/"; done
+   mkdir -p "$T/build" && printf '*\n' > "$t/.seclab/.gitignore" &&
+     for d in bin targets dict leaks corpus build/jacoco; do [ ! -d "$F/$d" ] || cp -R "$F/$d" "$T/$(dirname "$d")/"; done
    p=$([ -z "${P-}" ] || { r=$(cd "$P" && pwd -P); echo "${r#"$(pwd -P)"}"; })
    sed -e "s|^F=.*|F=\"$T\"|" -e "s|^P=.*|P=\"$t$p\"|" "$F/env.sh" > "$T/env.sh"
    ```

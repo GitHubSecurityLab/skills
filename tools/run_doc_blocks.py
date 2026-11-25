@@ -788,6 +788,12 @@ def ci_template(heading: str) -> tuple:
                           "build-record", "build-stale", "worktree-build", "upstreaming-workspace",
                           "worktree-cleanup"])
 def c_cmake(ctx: Context) -> None:
+    # A repository whose .gitignore un-ignores .seclab/, which beats git's exclude file: each tree's .seclab/ stays
+    # out of git through its own .gitignore (init.py's in the checkout, then a launch's and an upstreaming worktree's).
+    ctx.sh("printf '!.seclab/\\n' > .gitignore && git add .gitignore && "
+           "git -c user.name=ci -c user.email=ci@example.com commit -qm unignore")
+    ctx.expect(ctx.sh("git status --porcelain --untracked-files=all").stdout == "",
+               "the checkout's workspace stays out of git")
     llvm = llvm_bin()
     cflags, ldflags = c_flags(ctx, "libfuzzer")
     ctx.block("c-cmake-build", variant="libfuzzer", llvm_bin=llvm, compile_flags=cflags, link_flags=ldflags,
@@ -886,6 +892,8 @@ def c_cmake(ctx: Context) -> None:
     upstream = os.path.join(trees, "upstream-intree")
     ctx.sh('git worktree add -q -b seclab/upstream-intree "%s" HEAD' % upstream)
     ctx.block("upstreaming-workspace", checkout=ctx.repo, repo=os.path.basename(ctx.repo), topic="intree")
+    ctx.expect(ctx.sh('git -C "%s" status --porcelain --untracked-files=all' % upstream).stdout == "",
+               "the upstreaming worktree's workspace stays out of git")
     develop = ctx.sh('git -C "%s" rev-parse HEAD' % worktree).stdout
     swap = (("seclab-worktrees/build/<variant>", "seclab-worktrees/upstream-intree-build/<variant>"),)
     saved = (ctx.repo, ctx.F, dict(ctx.env))

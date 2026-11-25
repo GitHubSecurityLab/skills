@@ -15,13 +15,15 @@ It is idempotent. Each run:
   - refuses a repository that tracks files under .seclab/, in any case
     (macOS's file system ignores it): their ledger, threat model and Next
     actions would come from the repository, not from the user; and refuses
-    a .seclab/ that is a symbolic link, or whose fuzz/, env.sh, ledger or
-    threat model is;
+    a .seclab/ that is a symbolic link, or whose fuzz/, env.sh, ledger,
+    threat model or .gitignore is;
   - creates .seclab/fuzz/ and its directories (bin, build, targets, sinks,
     corpus, dict, coverage, crashes, reports: an agent's file tools may not
-    create parents), and adds .seclab/ and .cifuzz-corpus/ to git's exclude
-    file (never to .gitignore); a read-only .git is an error that asks for
-    the user's approval;
+    create parents); writes .seclab/.gitignore, which ignores everything in
+    .seclab/ even where the repository's .gitignore un-ignores it (a rule
+    such as !.seclab/ or !.*); and adds .seclab/ and .cifuzz-corpus/ to
+    git's exclude file (never to the repository's .gitignore). A read-only
+    .git is an error that asks for the user's approval;
   - writes .seclab/fuzz/env.sh, which every command sources (an agent's
     commands don't keep shell variables), with a line that makes zsh split
     unquoted variables like bash, F and L kept current, and the language
@@ -73,7 +75,11 @@ EXCLUDES = (".seclab/", ".cifuzz-corpus/")
 SUBDIRS = ("bin", "build", "targets", "sinks", "corpus", "dict", "coverage", "crashes", "reports")
 LEDGER = os.path.join(".seclab", "fuzz", "CAMPAIGN.md")
 ENV_FILE = os.path.join(".seclab", "fuzz", "env.sh")
-WORKSPACE_LINKS = (".seclab", os.path.join(".seclab", "fuzz"), ENV_FILE, LEDGER, os.path.join(".seclab", "threat-model.md"))
+SELF_IGNORE = os.path.join(".seclab", ".gitignore")
+WORKSPACE_LINKS = (
+    ".seclab", os.path.join(".seclab", "fuzz"), ENV_FILE, LEDGER, os.path.join(".seclab", "threat-model.md"),
+    SELF_IGNORE,
+)
 ENV_HEADER = """\
 # Every command starts with `. .seclab/fuzz/env.sh;`: an agent's commands
 # don't keep shell variables. init.py keeps F and L up to date; the language
@@ -142,6 +148,10 @@ def plugin_version() -> str:
 
 
 def ensure_excludes() -> None:
+    # A rule such as !.seclab/ or !.* in the repository's .gitignore beats git's exclude file; a .gitignore
+    # inside .seclab/ beats both.
+    with open(SELF_IGNORE, "w", encoding="utf-8") as handle:
+        handle.write("*\n")
     path = git("rev-parse", "--git-path", "info/exclude")
     try:
         os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)

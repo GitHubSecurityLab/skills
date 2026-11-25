@@ -157,9 +157,10 @@ sections by name.
 ## Writes
 
 - `.seclab/threat-model.md`.
-- Add `.seclab/` to git's exclude file if it isn't there:
-  `git check-ignore -q .seclab/ || printf '.seclab/\n' >> "$(git rev-parse --git-path info/exclude)"`.
-  Never edit `.gitignore`.
+- `.seclab/.gitignore`, written first, which keeps `.seclab/` out of git
+  even where the repository's `.gitignore` un-ignores it (a rule such as
+  `!.seclab/` or `!.*`): `mkdir -p .seclab && printf '*\n' > .seclab/.gitignore`.
+  Never edit the repository's `.gitignore`.
 
 ## Next
 
