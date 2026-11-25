@@ -65,7 +65,7 @@ unless they start with `.seclab/`:
    - the fix sites in the threat model's Past advisories and CVEs: the
      fixed function and its siblings;
    - gaps of existing harnesses;
-   - sinks.
+   - sinks the threat model doesn't mark unreachable.
 
    For each candidate, fill in the Entry point line and the Candidate
    section of `targets/<id>.md` (template in ledger.md next to this file):
@@ -86,10 +86,10 @@ unless they start with `.seclab/`:
    2. Uncovered attack-surface code the candidate would reach. Estimate it
       roughly from the module or files the candidate obviously calls, and
       from their coverage in the baseline when there is one.
-   3. Bug likelihood: sinks and hotspots, complexity, bug history, never
-      fuzzed before, changed since the last release (`git diff --stat
-      <latest tag>..HEAD`). A new campaign on a new release ranks changed
-      code first.
+   3. Bug likelihood: reachable sinks and hotspots, complexity, bug
+      history, never fuzzed before, changed since the last release
+      (`git diff --stat <latest tag>..HEAD`). A new campaign on a new
+      release ranks changed code first.
    4. Cost: setup and state the harness must build, external
       dependencies, build difficulty. Among similar candidates, the
       cheaper one goes first.
@@ -120,9 +120,10 @@ unless they start with `.seclab/`:
    If you measured scope coverage, its uncovered branches may reorder the
    top candidates. The scope's branch coverage (0% without data) is the
    first value of the target's Scope branches in the index.
-6. **Sinks** for the same top candidates: at most `sink_groups` groups
-   (Settings) per target in every language, those on the threat model's
-   paths first.
+6. **Sinks** for the same top candidates, leaving out the sinks and
+   hotspots the threat model marks unreachable: at most `sink_groups`
+   groups (Settings) per target in every language, those on the threat
+   model's paths first.
    - Java/JS: the threat model's sinks that fall into the scope files,
      one group per sink kind and function. Record whether the engine's
      detector sees each group: yes, partly or no.
