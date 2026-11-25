@@ -84,7 +84,7 @@ unless they start with `.seclab/`:
      `init.py` does in the checkout:
      <!-- ci: worktree-build -->
      ```sh
-     . .seclab/fuzz/env.sh; cd "<tree>" && F="$PWD/.seclab/fuzz" && mkdir -p "$F/build" && printf '*\n' > .seclab/.gitignore;
+     . .seclab/fuzz/env.sh && cd "<tree>" && F="$PWD/.seclab/fuzz" && mkdir -p "$F/build" && printf '*\n' > .seclab/.gitignore || exit 1;
      ```
      If the project builds only in-tree: `fuzz-c-cpp`'s build.md, "In-tree
      builds".
