@@ -1,9 +1,10 @@
 # C/C++ sink catalog
 
 Two kinds of sinks:
-- **Memory safety** (the sections up to Hotspots): a statement whose
-  **size, index, offset or count comes from attacker data**. Not every
-  `memcpy` is a sink.
+- **Memory safety** (the sections before Hotspots; Hotspots says how to
+  report them): a statement whose **size, index, offset, count or format
+  string comes from attacker data**, or a **free on an error path** that
+  input can reach. Not every `memcpy` is a sink.
 - **Files, processes, network and output** (the sections after Hotspots):
   no sanitizer sees these. A check in the harness finds what it can
   compare, such as a path or an escaped string the API returns. A call
@@ -84,6 +85,8 @@ after free.
 For the threat model, report hotspots, not single statements:
 - the files and functions with the most size, index or offset arithmetic
   fed by input field reads;
+- functions with a format string from input, or with a free on an error
+  path that can cause a double free or a use after free;
 - files with past security fixes (`git log --oneline -- <file>`);
 - functions that recurse once per nesting level of the input without a
   depth limit (a stack overflow from deep nesting).
