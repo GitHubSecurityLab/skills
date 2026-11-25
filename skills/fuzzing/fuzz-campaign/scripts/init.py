@@ -467,7 +467,7 @@ def run(args: argparse.Namespace) -> int:
         raise InitError("run init.py from the repository to fuzz, not from the plugin")
     refuse_foreign_workspace()
     print("repository: %s" % root)
-    bad = SHELL_UNSAFE.search(root)
+    bad = re.search(r"\s", root) or SHELL_UNSAFE.search(root)
     if bad and bad.group(0).isspace():
         raise InitError(
             "the repository path contains whitespace (%r): every launcher command ($L) splits there, so no "
