@@ -216,7 +216,8 @@ installed, use
 `mvn -f "<root>/pom.xml" -pl <module> -am ... -Dsurefire.failIfNoSpecifiedTests=false`.
 From the module's own POM, uninstalled siblings don't resolve.
 
-Gradle finds its caches through `GRADLE_USER_HOME`. In the block,
+Gradle finds its caches through `GRADLE_USER_HOME`, and the
+`mavenLocal()` repository through `maven.repo.local`. In the block,
 `<module_dir>` is the fuzz test's project directory, which is the root in
 a single-project build:
 
@@ -224,7 +225,8 @@ a single-project build:
 ```sh
 $L start --id <run_id> --harness $H --timeout <timeout_s> --env PATH="$JAVA_HOME/bin:$PATH" --env JAVA_HOME="$JAVA_HOME" \
   --env JAVA_TOOL_OPTIONS="$JOPTS" --env GRADLE_USER_HOME="<home>/.gradle" -- \
-  gradle -p "<module_dir>" --no-daemon --offline test --rerun --tests '<fuzz_class>.<fuzz_method>'
+  gradle -p "<module_dir>" --no-daemon --offline -Dmaven.repo.local="<home>/.m2/repository" \
+    test --rerun --tests '<fuzz_class>.<fuzz_method>'
 ```
 
 - `--rerun`: without it, an unchanged test task is skipped as up to date.
