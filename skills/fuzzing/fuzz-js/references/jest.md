@@ -64,7 +64,8 @@ on Jest 29.7 and 30.3, and fails on 30.4 and later.
    - `<tests_dir>` keeps `testMatch` out of `.seclab/`: Jest searches dot
      directories too.
    - The key is `testRunner`, not `runner` (changed in Jazzer.js 2).
-   - **TypeScript** (ran with `ts-jest` 29): add `ts-jest`, and set
+   - **TypeScript** (ran with `ts-jest` 29): if the project has no
+     `ts-jest`, add `ts-jest@29` with `--save-exact`. Set
      `preset: "ts-jest"` and `testEnvironment: "node"`. Use `*.fuzz.[jt]s`
      in `testMatch`. Import `"@jazzer.js/jest-runner"` once for the
      `it.fuzz` types, e.g. in a `globals.d.ts`. Enable

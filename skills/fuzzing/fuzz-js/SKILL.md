@@ -87,10 +87,16 @@ unless they start with `.seclab/`:
 | Jest | 29.7 and 30.3 | ran; 30.4 and later fail with `@jazzer.js/jest-runner` 4.0.0 (`Cannot read properties of undefined (reading '_buildTransformResult')`). The probe (`jest.md`) checks the project's |
 | TypeScript through `ts-jest` | 29 | ran |
 
-Pin these versions exactly (`--save-exact`), all `@jazzer.js/*` packages
-alike, and record the installed versions. If the project already pins
-Jazzer.js, keep its version and say so. Pin a newer release only when the
-user asks. Jazzer.js is Apache-2.0.
+Pin exactly (`--save-exact`) what the skill adds:
+- the `@jazzer.js/*` packages, all at one version: the one in this
+  table, or the project's if it already has Jazzer.js;
+- `ts-jest` for TypeScript Jest fuzz tests, unless the project has it:
+  `ts-jest@29`, whose latest release accepts Jest 29 and 30.
+
+Say so when you keep the project's version. Pin a newer release only when
+the user asks. Node comes from `install.md`, and Jest from the project;
+the probe checks it (`jest.md`, "Setup"). Record the installed versions,
+and say so when they differ from this table. Jazzer.js is Apache-2.0.
 
 ## Engine output locations in the project tree
 
