@@ -4,9 +4,13 @@ import com.code_intelligence.jazzer.api.BugDetectors;
 import com.code_intelligence.jazzer.api.SilentCloseable;
 import com.code_intelligence.jazzer.junit.FuzzTest;
 import java.io.IOException;
+import java.lang.reflect.Proxy;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import javax.naming.NameNotFoundException;
+import javax.naming.directory.DirContext;
+import javax.naming.directory.InvalidSearchFilterException;
 
 // The java scenario copies this into record/ for its detector-gap step.
 class ToolsFuzzTest {
@@ -35,5 +39,27 @@ class ToolsFuzzTest {
     } catch (IOException e) {
       // a missing file
     }
+  }
+
+  // A directory server stand-in whose search fails: on the filter, or because the base doesn't exist.
+  private static DirContext directory(boolean badFilter) {
+    return (DirContext) Proxy.newProxyInstance(ToolsFuzzTest.class.getClassLoader(), new Class<?>[] {DirContext.class},
+        (proxy, method, args) -> {
+          if (method.getName().equals("search")) {
+            throw badFilter ? new InvalidSearchFilterException("bad filter")
+                            : new NameNotFoundException("no such base");
+          }
+          return null;
+        });
+  }
+
+  @FuzzTest
+  void ldapFilter(byte[] data) throws Exception {
+    Tools.findUser(directory(true), "ou=people", new String(data, StandardCharsets.UTF_8));
+  }
+
+  @FuzzTest
+  void ldapBase(byte[] data) throws Exception {
+    Tools.findUser(directory(false), "ou=" + new String(data, StandardCharsets.UTF_8), "a");
   }
 }

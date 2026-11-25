@@ -1319,6 +1319,16 @@ def java(ctx: Context) -> None:
               **dict(tools, fuzz_method="readDataChecked"))
     ctx.expect_state("repro-tools-4", "finished")
     ctx.say("   ok: the allow predicate passes a path inside the base directory")
+    # The LDAP detector names the RFC only: replayed with the detector disabled (triage.md), the real exception shows.
+    for n, method, rfc in ((5, "ldapFilter", "RFC 4515"), (6, "ldapBase", "RFC 2253")):
+        ctx.block("java-repro", n=n, timeout_s=120, finding=os.path.join(ctx.repo, "name-input"), ok=(77,),
+                  **dict(tools, fuzz_method=method))
+        ctx.expect(rfc in ctx.log("repro-tools-%d" % n), "the LDAP finding of %s cites %s" % (method, rfc))
+    disabled = documented("fuzz-java", "triage.md", r"`(--disabled_hooks=\S+LdapInjection)`")
+    ctx.block("java-repro", n=7, timeout_s=120, finding=os.path.join(ctx.repo, "name-input"), ok=(77,),
+              add=('"<finding>"', disabled + " "), **dict(tools, fuzz_method="ldapBase"))
+    ctx.expect("javax.naming.NameNotFoundException" in ctx.log("repro-tools-7"),
+               "with the LDAP detector disabled, the replay shows the real exception")
 
 
 @scenario("js-ts", "js-ts", ["js-env", "js-ts-build", "js-cli-develop"])

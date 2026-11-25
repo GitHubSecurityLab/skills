@@ -124,7 +124,7 @@ checks, as of Jazzer 0.30.0:
 | Reflection, expression languages (EL, SpEL, OGNL, JEXL 2, Bean Validation messages) | code constructs the honeypot class `jaz.Zer` or calls one of its methods (expressions are steered to call `jaz.Zer.el()`), or loads the native library `jazzer_honeypot` | a class name from the input that is only loaded, never constructed or called; `Method.invoke` and `getMethod` on existing classes; other expression languages |
 | Script engines: `ScriptEngine.eval` | the script contains `"jaz"+"zer"` | scripts run another way, e.g. `GroovyShell` |
 | Deserialization: `ObjectInputStream` | a gadget chain reaches the honeypot | other deserializers (Jackson, XStream, Kryo, YAML), unless they construct or call the honeypot (below) |
-| LDAP injection: `DirContext.search` | `search` throws any `NamingException`: invalid syntax, but also a search base that doesn't exist or a lost connection. The finding doesn't say which | injections that stay valid syntax |
+| LDAP injection: `DirContext.search` | `search` throws any `NamingException`: invalid syntax, but also a search base that doesn't exist or a lost connection. The finding cites RFC 4515 for an invalid filter, RFC 2253 for any other (`triage.md`) | injections that stay valid syntax |
 | XPath injection: `XPath.compile`, `XPath.evaluate*` | the expression is invalid syntax | injections that stay valid syntax |
 | JNDI lookups: `Context.lookup` | the name starts with `ldap://g.co/` or `rmi://g.co/` | |
 | SSRF: sockets, `SocketChannel` | any connection not allowed (`allowNetworkConnections`) | |

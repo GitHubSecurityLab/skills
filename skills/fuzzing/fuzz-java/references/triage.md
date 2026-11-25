@@ -158,6 +158,12 @@ $L start --id decode-$H-<n> --harness $H --timeout <timeout_s> --env PATH="$RUN_
 - **Injection detectors** (command, SQL, LDAP, XPath, expression
   language): check that the input reaches the sink as syntax, not only as
   data, on a real entry point.
+- **LDAP injection:** a finding that cites RFC 4515 is an invalid search
+  filter. One that cites RFC 2253 is any other `NamingException`, a
+  search base that doesn't exist or a lost connection included. Reproduce
+  it (above) with
+  `--disabled_hooks=com.code_intelligence.jazzer.sanitizers.LdapInjection`
+  before the finding to see the real exception.
 - **Deserialization and reflection** (`jaz.Zer`): show which class the
   attacker can name, and which gadgets the classpath offers. For the
   gadgets, ysoserial's payload list names the libraries. The honeypot
