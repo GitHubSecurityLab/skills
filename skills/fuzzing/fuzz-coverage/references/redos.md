@@ -73,9 +73,9 @@ same text in more than one way:
    input, e.g. through Java `String` parameters and fields,
    `consumeString(maxLength)` or a size check. Such a bound stops the
    attack before it reaches the regex. If the harness has one, raise it
-   first (`fuzz-harness`), to four times `repro`'s size in bytes for the
-   doubling below. Then put `repro` into the harness's input format (as
-   is, if the harness passes its bytes on as text). Replay it as a
+   first (`fuzz-harness`) to fit `repro`, and raise it again before each
+   doubled replay if needed. Then put `repro` into the harness's input
+   format (as is, if the harness passes its bytes on as text). Replay it as a
    reproduction (`fuzz-triage`, "Reproduce"), with the command in the
    language skill's triage.md, "Reproduce".
    - If this replay, or a doubled one below, times out: triage it like an
