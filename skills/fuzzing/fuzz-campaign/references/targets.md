@@ -141,9 +141,9 @@ unless they start with `.seclab/`:
      `coverage.py sites` finds the line again by its `code`, if no other
      line in the file has the same text.
 7. **Present.** Interactive mode shows the ranked list, with checks and
-   scope, at the targets checkpoint (`fuzz-campaign`), and proposes a
-   stopping rule. Autonomous mode takes the candidates its stopping rule
-   selects, top first.
+   scope, at the targets checkpoint (`fuzz-campaign`), and proposes
+   develop's budget. Develop takes candidates from the top of the ranking
+   until the budget is used up or none is left.
 
 **Refresh** when develop picks the next target:
 - re-rank with the current merged coverage;

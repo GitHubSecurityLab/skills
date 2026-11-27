@@ -21,9 +21,8 @@ credentials, nothing can be pushed.
 - Take the top candidate at every choice and log it in `decisions.md`.
 - The stopping rule comes from the request: "autonomously, 3 targets"
   means the top 3, and "for 4 hours" means 4 hours of develop. If the
-  request gives no stopping rule, use the 10% cut-off (`SKILL.md`, targets
-  checkpoint) with at most 8 hours of develop. Record the rule in Settings
-  (`stop_rule`).
+  request gives none, develop gets the default 8 hours (`SKILL.md`, the
+  stopping rule). Record the rule in Settings (`stop_rule`).
 - At the start, the first-build notice becomes a warning that also
   states the stopping rule.
 - Before stopping, check every picked target against the Done when

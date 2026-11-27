@@ -183,20 +183,22 @@ unless they start with `.seclab/`:
    follow [references/targets.md](references/targets.md), "Gaps existing
    fuzzing hides", and the steps after it.
 5. **Targets checkpoint.** Show the threat model summary and the ranked
-   targets with their checks and scope. Propose where develop stops:
-   - at the candidates whose uncovered attack surface, as the ranking
-     estimates it, is at least about 10% of all candidates' together;
-   - or else at the top N, or after a time box.
+   targets with their checks and scope. Agree with the user on:
+   - the ranking, which they can change by dropping or reordering
+     candidates;
+   - develop's budget (the stopping rule, under Develop);
+   - an optional coverage goal, shown at every analysis but never a
+     stop condition.
 
-   Agree on the targets, the stopping rule and an optional coverage goal.
-   The goal is shown at every analysis; it isn't a stop condition. Record
-   the answers in Settings (`stop_rule`) and in `decisions.md`.
+   Record the answers in Settings (`stop_rule`, `coverage_goal`) and in
+   `decisions.md`.
 6. Set status `running`.
 
 ## Develop
 
-Repeat over the chosen targets. Start each iteration by re-reading the
-index (Long sessions, above).
+Repeat until the stopping rule (below) ends develop, or step 1 has
+nothing left to pick. Start each iteration by re-reading the index (Long
+sessions, above).
 
 1. **Pick the next target.** The first is the ranking's top
    ([references/targets.md](references/targets.md), "Rank all
@@ -223,15 +225,21 @@ index (Long sessions, above).
    the combined scope coverage in the index: `coverage.py summary` with
    every target's `--scope`.
 
-**The stopping rule** (Settings, `stop_rule`) ends develop's first pass,
-in both modes:
-- No target beyond those chosen at the targets checkpoint. Later
-  re-ranking doesn't add any.
-- No target at all once a time box is used up. The current harness
-  still finishes its gate.
-
-When an analysis sends work back to develop, every ranked candidate
-competes again.
+**The stopping rule** (Settings, `stop_rule`) is develop's budget in
+both modes. It's 8 hours of develop unless the user sets another, such
+as "3 targets" or "4 hours". Each develop pass gets the full budget. The
+first pass starts when Setup ends. A later pass starts when an analysis
+sends work back to develop, and every ranked candidate competes again.
+- **A time box** ends at a recorded UTC time. When a pass starts, read
+  the time with `date -u +'%Y-%m-%d %H:%M'`, add the box's hours, and
+  record the end in `stop_rule`, such as "8 h of develop per pass (this
+  pass ends 2026-11-26 21:30 UTC)". Before each pick, run the same
+  command and compare.
+- **A number of targets** caps how many targets develop works on in a
+  pass.
+- **When the budget is used up,** step 1 picks no other target, only
+  the current harness's remaining actions. Develop ends when none is
+  left.
 
 A harness that finishes develop is ready for a long run. Offer the
 long-run commands (below) for the harnesses that are ready, whenever it

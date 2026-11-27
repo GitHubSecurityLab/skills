@@ -67,7 +67,7 @@ Next action; each reads `skill: step — target or detail`.
 |---|---|
 | autonomy | interactive |
 | report_format | advisory |
-| stop_rule | candidates with at least 10% of the attack surface each |
+| stop_rule | 8 h of develop per pass |
 | coverage_goal | <percent of branches in combined scope, or none> |
 | gate_seconds | 60 |
 | min_exec_per_sec | 100 |
