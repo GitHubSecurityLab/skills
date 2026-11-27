@@ -6,8 +6,9 @@ effects stay real while the machine stays clean.
 ## Feed the input the cheapest way that still reaches the real code
 
 Take the first option that fits. Prefer the buffer API only when the file
-handling isn't part of what the attacker reaches; when it is, fuzz it as
-deployments run it (below, "When the I/O itself is attack surface").
+handling isn't part of what the attacker reaches. When it is, fuzz the
+file handling as deployments run it (below, "When the I/O itself is
+attack surface").
 
 1. **A buffer API**, when one exists. Fastest and deterministic.
 
@@ -34,16 +35,20 @@ deployments run it (below, "When the I/O itself is attack surface").
    `$TMPDIR`), rewritten for each input, never created and deleted per
    input. Each copy of a run has its own scratch.
 
-If the code can notice a RAM-backed file (no file extension on
-`/proc/self/fd/<n>`, Jimfs paths aren't `java.io.File`s, different file
-metadata) and that matters: prefer option 3.
+The code may notice a RAM-backed file: `/proc/self/fd/<n>` has no file
+extension, Jimfs paths aren't `java.io.File`s, and the file metadata
+differs. If that matters, prefer option 3.
 
 ## When the I/O itself is attack surface
 
-When the file handling is part of what the attacker reaches (extraction
-and writes with input-derived paths, external fetches such as XML external
-entities, URL resolvers and includes, processes and deletes driven by
-input), fuzz it as deployments run it:
+When the file handling is part of what the attacker reaches, fuzz it as
+deployments run it. Such file handling includes:
+- extraction and writes with input-derived paths;
+- external fetches, such as XML external entities, URL resolvers and
+  includes;
+- processes and deletes driven by input.
+
+Rules for such file handling:
 
 - **Don't switch it off** when deployments have it on by default: that
   hides the bug. Switch a feature off only when the threat model rules it

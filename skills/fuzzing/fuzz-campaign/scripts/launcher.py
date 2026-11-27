@@ -49,8 +49,10 @@ from datetime import datetime, timezone
 
 POLL_SECONDS = 0.5
 STOP_GRACE_SECONDS = 10.0  # TERM, then KILL after this long
-DEADLINE_GRACE_SECONDS = 5.0  # a timed run's deadline is --time plus at least this
-JVM_GRACE_SECONDS = 15.0  # both graces for a JVM, which starts and stops slowly
+# A timed copy's deadline is --time plus this: a backstop, since engines stop at their own limit. It
+# lets the work at exit finish: LeakSanitizer symbolizes its whole report before it prints a line.
+DEADLINE_GRACE_SECONDS = 60.0
+JVM_GRACE_SECONDS = 15.0  # the stop grace for a JVM, which stops slowly
 PROGRESS_SECONDS = 300.0  # progress sample and foreground progress line
 LOG_CHECK_SECONDS = 5.0
 LOG_MAX_BYTES = 64 * 1024 * 1024  # trim a copy's log above this size ...
@@ -1053,13 +1055,13 @@ class Supervisor:
         self.sample()
         limit = self.spec.get("time")
         timeout = self.spec.get("timeout")
-        deadline = None
+        # How long each copy may run, from its own start: starting the copies
+        # one after another takes time.
+        allowed = None
         if limit is not None:
-            jvm = runs_jvm([c["command"] for c in self.spec["copies"]])
-            grace = JVM_GRACE_SECONDS if jvm else DEADLINE_GRACE_SECONDS
-            deadline = clock + limit + max(grace, min(60.0, 0.05 * limit))
+            allowed = limit + DEADLINE_GRACE_SECONDS
         elif timeout is not None:
-            deadline = clock + timeout
+            allowed = timeout
         stop_marker = os.path.join(self.rdir, "stop")
         next_progress = clock + PROGRESS_SECONDS
         next_log_check = clock + LOG_CHECK_SECONDS
@@ -1068,9 +1070,10 @@ class Supervisor:
             if self.stop_requested or os.path.exists(stop_marker):
                 for index in list(self.procs):
                     self.request_stop(index, "stopped")
-            elif deadline is not None and awake() >= deadline:
+            elif allowed is not None:
                 for index in list(self.procs):
-                    self.request_stop(index, "timeout" if timeout is not None else "deadline")
+                    if awake() >= self.awake_at[index] + allowed:
+                        self.request_stop(index, "timeout" if timeout is not None else "deadline")
             self.reap()
             if awake() >= next_log_check:
                 for copy in self.meta["copies"]:
@@ -1743,15 +1746,17 @@ launcher creates the run directory, each copy's scratch (copy-<i>/work, with
 home/, tmp/ and an empty out/), and the findings and corpus directories
 (absolute paths); commands create any other output directory.
 
-Timed runs (--time) fuzz: the deadline is --time plus a short grace.
-Self-ending runs (--timeout) replay, merge or reproduce: --timeout is a kill
-limit. Both count time awake, not time the machine sleeps (elapsed times
-shown are by the wall clock). Foreground runs print a progress line every
-5 minutes and the result at the end; INT, TERM and HUP stop the copies
-(TERM, then KILL after 10 s; 15 s for a JVM, whose timed runs also get at
-least 15 s past --time), unless the caller ignores INT or HUP (nohup).
-Stopping, and the end of a copy, signal the copy's process group: a process
-that leaves it (setsid, a daemon) isn't stopped.
+Timed runs (--time) fuzz: each copy's deadline is 60 s past --time, a
+backstop for an engine that doesn't stop at its own limit (60 s lets
+LeakSanitizer's report at exit finish).
+Self-ending runs (--timeout) replay, merge or reproduce: --timeout is each
+copy's kill limit. Both are measured from the copy's start, in time awake,
+not time the machine sleeps (elapsed times shown are by the wall clock).
+Foreground runs print a progress line every 5 minutes and the result at the
+end; INT, TERM and HUP stop the copies (TERM, then KILL after 10 s; 15 s for
+a JVM), unless the caller ignores INT or HUP (nohup). Stopping, and the end
+of a copy, signal the copy's process group: a process that leaves it
+(setsid, a daemon) isn't stopped.
 Run ids are never reused: a retry takes the next number.
 
 exit status:

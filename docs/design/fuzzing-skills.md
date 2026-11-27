@@ -19,7 +19,7 @@ This document records the decisions behind the fuzzing skills and their reasons;
 9. [Seeds and corpora](#9-seeds-and-corpora)
 10. [Long runs and analysis](#10-long-runs-and-analysis)
 11. [Triage and fixes](#11-triage-and-fixes)
-12. [Verdicts, reports and hand-off](#12-verdicts-reports-and-hand-off)
+12. [Verdicts, reports and upstreaming](#12-verdicts-reports-and-upstreaming)
 
 ---
 
@@ -92,15 +92,15 @@ Three decisions shape how the scripts run:
 A campaign runs in one of two modes, and both use the same rule to decide when to stop adding targets:
 - **Interactive (default):** the agent works on its own and asks the user only where a wrong call is costly or the decision is the user's: before building or running any project code (the setup card), before changing the project's build files, when choosing targets, when the long-run commands are ready, and before a report is finished. The setup card bundles every setup decision into one question (the first-build notice, branch, base commit, install plan, and the command that gives the agent access to the builds outside the checkout), so setup costs the user a single answer.
 - **Autonomous (only when the user asks):** the agent needs full permissions, which a skill can't grant. It takes the top candidate at every choice and logs it, then hands over the long-run commands and stops. The safety rules still apply.
-- **When to stop adding targets:** at the user's limit (a number of targets, a time box), or else after the candidates that each reach at least about 10% of the uncovered attack-surface code of all candidates together, within a time cap; interactive mode proposes this rule at the targets checkpoint. Every harness costs about the same effort, so the largest candidates get the most attack surface into long runs soonest. The rule only ends the first pass: the other candidates stay ranked and compete again whenever an analysis sends work back to develop. Coverage never decides when to stop, since 100% isn't reachable.
+- **When to stop adding targets:** develop takes candidates from the top of the ranking until its budget is used up or none is left. The budget is 8 hours of develop unless the user sets another, such as 3 targets or 4 hours. Interactive mode proposes the budget at the targets checkpoint. A budget never leaves develop without a target, and it gives every unattended session a limit. Every harness costs about the same effort, and the ranking puts the candidates with the most uncovered attack surface first, so the most attack surface reaches long runs soonest. Each develop pass gets the full budget, since each starts from a user's request. A later pass starts when an analysis sends work back to develop, and every ranked candidate competes again. A used-up budget stops only new targets, so the harness in progress still finishes its coverage loop before its long run. Coverage never decides when to stop, since 100% isn't reachable.
 
 ## 4. Campaign state and git
 
 A campaign's state lives in files in the project, and its changes to the project's code in git:
-- **Plain files in the project, not a database.** `.seclab/` at the project's root holds the skills' state: `threat-model.md`, which every topic shares, and one directory per topic. For fuzzing, that's `.seclab/fuzz/`, with the campaign's ledger, `CAMPAIGN.md`, a short index of its state and next actions. Agents and users read Markdown; the scripts read numbers from lcov coverage files and tab-separated tables. Git's exclude file lists `.seclab/`, so the project's `.gitignore` stays untouched.
+- **Plain files in the project, not a database.** `.seclab/` at the project's root holds the skills' state: `threat-model.md`, which every topic shares, and one directory per topic. For fuzzing, that's `.seclab/fuzz/`, with the campaign's ledger, `CAMPAIGN.md`, a short index of its state and next actions. Agents and users read Markdown; the scripts read numbers from lcov coverage files and tab-separated tables. Git ignores `.seclab/` through a `.gitignore` inside it, which beats even a project rule that un-ignores dotfiles, and through git's exclude file; the project's own `.gitignore` stays untouched.
 - **The ledger drives resuming.** It's updated after every step, and its next actions each name a skill and a step. After the conversation is compacted, the agent invokes those skills again, since compaction drops skill text loaded early.
 - **One writer:** one campaign and one session at a time per repository, since the ledger has a single writer. A new campaign reuses the old one's corpora, dictionaries, threat model and known crash groups.
-- **A branch of its own:** `seclab/fuzz-<date>` at the base commit (the checkout's HEAD or the latest release), or the current branch if the user chooses. Not at the default branch's HEAD, because switching there can remove the code the user asked to fuzz. Commit types keep harness, build, fuzzing-mode and fix commits apart, so hand-off branches can take the harnesses without the fixes (§12).
+- **A branch of its own:** `seclab/fuzz-<date>` at the base commit (the checkout's HEAD or the latest release), or the current branch if the user chooses. Not at the default branch's HEAD, because switching there can remove the code the user asked to fuzz. Commit types keep harness, build, fuzzing-mode and fix commits apart, so upstreaming branches can take the harnesses without the fixes (§12).
 - **Skills used on their own** leave a minimal workspace that a later campaign reuses.
 
 ## 5. Safety
@@ -111,7 +111,7 @@ The skills give no security guarantee: their rules steer the agent, and their sc
 
 **The project's text could steer the agent.** Repository content and everything the target prints, which echoes attacker-controlled input, are data, never instructions; only tails and summaries reach the agent. The agents still load the project's instruction files; the README names the options that turn this off.
 
-**A finding could become public before it's fixed.** The skills never push, open issues or pull requests, or post crash details, and they hold back what reaches or reveals a possible vulnerability (§12).
+**A finding could become public before it's fixed.** The skills never push, open issues or pull requests, or post crash details, and they hold back what reaches or reveals a possible vulnerability (§12). The one thing they send is a report through the project's private vulnerability reporting, once the user has approved that report: the channel is private, and the report goes out in the user's name.
 
 The protections have known gaps:
 - **No confinement.** The fuzzed code can read any file, find and use the ssh-agent socket, write to absolute paths and use the network, unless a Java or JS detector blocks it. OS-level confinement would need profiles per engine and ecosystem, tested inside agents that already sandbox.
@@ -158,8 +158,8 @@ In develop, the agent fuzzes a harness in short rounds and measures branch cover
 - **Whether to keep it: only if it worked.** A harness or build change stays if the code it aimed at becomes covered, or if coverage at the next plateau is clearly higher than before. Seeds and dictionary entries always stay.
 
 Coverage shows that code ran, not that its dangerous values were tried, so sinks are tracked on their own, an idea from [GONDAR](https://arxiv.org/abs/2604.01645), a paper on sink-centric Java fuzzing:
-- **Each group of sinks has a state, so effort goes where bugs can still be found:** not reached, reached, triggered, tested (inputs aimed at it ran with sanitizers and detectors on, without a finding) or sanitized (the code provably blocks the attack). Tested and sanitized groups get no more inputs until their code changes.
-- **A sink that's reached but not triggered gets targeted inputs.** The condition that breaks it is stated, and a generator varies the inputs that reach it toward that condition. The variants run with sanitizers and detectors on, since coverage shows only that the sink was reached. In C/C++, memory-safety hotspots get the same treatment.
+- **Each group of sinks has a state, so effort goes where bugs can still be found:** not reached, reached, triggered, sanitized (the code provably blocks the attack) or uncheckable (no sanitizer, detector or check in the harness can see a bug there). A reached group gets four tries of targeted inputs; after them, and once triggered or sanitized, it gets no more inputs until its code or checks change. An uncheckable group gets none, since no input can produce a finding there, and is left for review by hand.
+- **A sink that's reached but not triggered gets targeted inputs.** The condition that breaks it is stated, and a generator varies the inputs that reach it toward that condition, within the checks on the way, so the variants still reach it. The variants run with sanitizers and detectors on, since coverage shows only that the sink was reached. In C/C++, memory-safety hotspots get the same treatment.
 - **Regular expressions get their own check** in Java and JS. Those applied to input are screened for backtracking and confirmed through the harness, since a slow regular expression (ReDoS) rarely reaches the fuzzer's timeout at the small input sizes fuzzers use.
 
 ## 9. Seeds and corpora
@@ -167,12 +167,12 @@ Coverage shows that code ran, not that its dangerous values were tried, so sinks
 A harness starts from seeds, inputs that already exercise its code, and its corpus grows from there:
 - **Seeds come from what exists first, then from the format's spec:** the corpora of earlier campaigns and existing harnesses, then the project's own test data and fixtures, then small valid inputs written from the spec, one per message type or record kind. Real inputs reach deep code from the first round, while mutation alone rarely builds valid structure.
 - **Dictionaries are made for each project:** its existing ones first, then the literals in its scope files and the format's keywords. None ship with the skills.
-- **Targeted inputs (§8) start from corpus inputs that already reach the code next to the gap.** Minimizing the corpus keeps only inputs that add coverage, so it deletes most targeted inputs for a sink: they run the same code and differ only in the values that matter, such as lengths around a buffer's size. Their generators therefore re-create them before long runs.
+- **Targeted inputs (§8) start from corpus inputs that already reach the code next to the gap.** Those that open a blocked branch, or new code on the way to it, stay in the corpus, since they add coverage. Those aimed at a sink do their job in the round that runs them on the sanitizer build, and aren't kept for long runs: they differ from other inputs only in values, and engines rarely or never fuzz inputs that add no coverage. Minimizing deletes them, libFuzzer leaves them out of its in-memory corpus, and AFL++ disables an input whose coverage matches another's.
 
 Each harness keeps one corpus:
 - **One corpus per harness,** whichever engine runs it. Develop rounds write into it; long runs write into their own directory, which is merged back at analysis.
 - **Minimized when the harness's develop loop ends,** since its long runs start from that corpus, and at analysis merges, but not after every round. A few minutes of fuzzing can leave tens of thousands of files, which every replay then loads.
-- **Crashing inputs stay in the corpus.** A bug that keeps getting in the way is fixed or filtered instead (§11). A minimizing merge may still drop a crashing input (libFuzzer's does, Jazzer's doesn't), so once the bug is fixed, its original input goes back into the corpus, since it now reaches code the fuzzer couldn't pass before.
+- **Crashing inputs stay in the corpus.** A bug that keeps getting in the way is skipped by the engine or fixed instead (§11). A minimizing merge may still drop a crashing input (libFuzzer's does, Jazzer's doesn't), so once the bug is fixed, its original input goes back into the corpus, since it now reaches code the fuzzer couldn't pass before.
 
 ## 10. Long runs and analysis
 
@@ -185,7 +185,7 @@ A long run fuzzes one harness for hours or days, with several copies (parallel f
 
 Analysis, when the user asks, turns a run's results into evidence, fixes and next steps:
 - **Evidence first, on the run's builds:** every finding is triaged on the build that found it, since a later build may no longer reproduce it. Fixes, reports, corpus merges and coverage follow on the current build.
-- **Each harness is sorted by its result:** one whose coverage still grew runs longer next time, one that plateaued with gaps goes back to develop, and sinks reached but not triggered get targeted inputs.
+- **Each harness is sorted by its result:** one whose coverage still grew runs longer next time, one that plateaued with gaps goes back to develop, and reached sinks with tries left get targeted inputs. One that plateaued with no gaps or pending sinks is done, so analysis can also end a target.
 - **A harness waits for its run's analysis.** Autonomous develop doesn't change a harness while it has a run going or not yet analyzed, so the next run starts from that run's inputs; in interactive mode, the user decides.
 
 ## 11. Triage and fixes
@@ -197,7 +197,7 @@ Triage makes each finding reproducible and understood before anything is fixed o
 - **Every real bug gets a reproducer that doesn't need the harness:** a small program that calls the project's API with the values the harness passed, including the check that caught the bug. Reports, regression tests and later checks all use it.
 
 A bug is handled right away only if it blocks fuzzing:
-- **Blocking bugs,** which keep a harness from making progress (a crash on the seeds, or one that keeps ending runs early), are handled right away. Memory-safety bugs are fixed. Other bugs are filtered out in the harness and their fix is queued, since whether that code is wrong is often the maintainers' call.
+- **Blocking bugs,** which keep a harness from making progress (a crash on the seeds, or one that keeps ending runs early), are handled right away: where the engine can skip a given stack on request (Jazzer), they're skipped and their fix is queued; otherwise they're fixed, memory corruption or not, so no input is kept from the code behind them, and without a safe fix the target is set aside.
 - **Other bugs wait** until their target's develop loop ends, or for analysis.
 
 A fix is a proposal for the maintainers, so it's kept small and checked:
@@ -208,7 +208,7 @@ A fix is a proposal for the maintainers, so it's kept small and checked:
 
 When the user asks only for triage ("triage these crashes"), the agent stops once the crashes are understood: grouped, each with a verdict and a reproducer. It fixes or reports only when asked.
 
-## 12. Verdicts, reports and hand-off
+## 12. Verdicts, reports and upstreaming
 
 Each real bug gets a verdict, such as `vulnerability`, `library_hardening` (a real bug, but on data the threat model trusts) or `harness_bug` (a bug in the harness). Two rules decide whether it's a `vulnerability`:
 - **The crash type sets the starting point,** as ClusterFuzz classifies it: memory corruption is a security bug; null dereferences, stack overflows, running out of memory or time, and leaks aren't. A crash that only stops the program counts only in a server or shared service that parses untrusted input, and only if a small input triggers it.

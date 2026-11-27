@@ -6,58 +6,85 @@ from it.
 
 ## Steps
 
-1. **Targeted inputs** for a gap: a blocked branch
-   from `gaps`, or a sink that's reached but not triggered (reach, then
-   trigger). Inputs that already reach the gap are the starting points; a
-   generator varies them toward what the guard or the sink needs.
-   1. Find inputs that already reach it: `reach.py` (the language skill's
-      `coverage.md`), the starting points. If it's a sink behind a
-      condition on its own line: confirm that the call ran (`reach.py`
-      reads line coverage, like `sites`).
-   2. For a sink, state the condition that breaks it: the value at the
-      sink that overruns the buffer, wraps the size, leaves the base
-      directory or names a class from input.
-   3. Write a generator under `generators/` that varies the starting
-      inputs toward the guard or that condition (the value it compares, a
-      consistent length, the field that feeds the sink).
-   4. Replay its variants right away (the language skill's coverage.md)
-      and check whether the gap became covered. If it's a sink: its
-      trigger shows only on the sanitizer or detector build; put the
-      variants into the corpus and run a round
-      (`fuzz-coverage`, "Run a round"), which runs them first.
-   5. Iterate 2–4 times; for C/C++, value profiling or CmpLog can also help
-      the fuzzer climb toward the value.
-   6. Keep the near-misses in the corpus. A minimizing merge drops those
-      that add no coverage; corpus upkeep re-creates them before long runs.
+1. **Targeted inputs** do one of two jobs: cover a blocked branch from
+   `gaps`, to reach the code behind it, or trigger a sink that's reached
+   but not yet triggered. Both start from inputs that already reach the
+   branch's guard or the sink; a generator varies them toward what the
+   guard or the sink needs.
 
    Typical inputs:
-   - a check on a magic value or keyword: a seed with the expected value;
+   - a check on a magic value or keyword: an input with the expected value;
    - a length that must be consistent: compute it in the generator (a
      checksum needs a fuzzing-only patch: diagnosis.md next to this file);
-   - a sink group that is reached but not triggered: boundary values in the
-     field that feeds it: 0, 1, the buffer size and ±1, the type's maximum,
-     values whose arithmetic wraps (`0x7fffffff`, `0x80000000`,
-     `0xffffffff`, and for 16 bits `0x7fff`, `0x8000`, `0xffff`).
+   - a sink group that is reached but not triggered: boundary values in
+     the field that feeds it: 0, 1, the buffer size and the buffer size
+     ±1, the type's maximum, values whose arithmetic wraps (`0x7fffffff`,
+     `0x80000000`, `0xffffffff`, and for 16 bits `0x7fff`, `0x8000`,
+     `0xffff`).
+
+   1. Find the starting points: inputs that already reach the guard or
+      the sink, with `reach.py` (the language skill's `coverage.md`):
+      - if the corpus reaches the guard or the sink along more than one
+        path, e.g. its function is called from several places that have
+        hits in `show`, read how each path handles the input from the
+        harness to the guard or the sink: what it checks, clamps or
+        transforms, e.g. one path rejects a length over 255 and another
+        adds a header size to it. For each different handling, run
+        `reach.py`, with `--max 1`, on a line only that path runs, such as
+        its call line: one path may let through what another rejects;
+      - for a sink whose condition is on the same line, e.g.
+        `if (x == 42) sink();`, confirm that the call ran: `reach.py`
+        reads line coverage, like `sites`.
+   2. State what the variants need:
+      - for a sink, the condition that breaks it: the value at the sink
+        that triggers the bug, e.g. one that overruns the buffer, wraps
+        the size, leaves the base directory or names a class from input;
+      - how each path checks and transforms the input on its way to the
+        guard or the sink: the variants must pass the checks, and the
+        transforms decide which input gives the value needed there.
+   3. Write a generator under `generators/` that varies the starting
+      inputs toward the guard or that condition (e.g. the value it
+      compares, a consistent length, the field that feeds the sink),
+      within those checks. Keep it, to rerun when the code changes.
+   4. Replay the variants alone right away (the language skill's
+      coverage.md, "Exact subset"), and `show` the function of the guard
+      or the sink:
+      - if the guard or the sink has no hits, a check on the way rejects
+        the variants: find it by following the call path back to the
+        deepest line they reach, with `show`, and fix the generator;
+      - for a branch, add the variants to the corpus: those that cover
+        the branch, or new code on the way to it, stay;
+      - for a sink they reach, put the variants into the corpus and run a
+        round (`fuzz-coverage`, "Run a round"), which runs them first: a
+        sink's trigger shows only on the sanitizer or detector build.
+   5. Repeat from step 2 until the branch is covered or the sink is
+      triggered. Stop after four tries; for a sink, count them in its
+      group's Note (`fuzz-coverage`, "Check the sinks"). For C/C++, value
+      profiling or CmpLog can also help the fuzzer climb toward the value.
+
 2. **Corpus upkeep:** one corpus per harness, whichever engine runs it.
    Develop rounds write into it; long runs write into their own run
    directory.
-   - A long run's corpus is merged back when the run is analyzed
-     (`fuzz-campaign`), with the current build and the language skill's
-     run.md, "Merging a run's corpus back" (for AFL++ queues too: the
-     libFuzzer ASan+UBSan build).
-     The merge also minimizes.
-   - Minimize the persistent corpus alone with the same command (without a
-     run's corpus) when the develop loop ends, before the long-run
-     commands; when it passes about 10,000 files (every replay, `reach.py`
-     and a long run's start load all of them); after importing a large
-     external corpus; and when the user asks. Jest fuzz tests: only on
-     request (the language skill).
-   - After the minimizing before the long runs, rerun the generators of
-     sinks still reached but not triggered into the corpus, a few hundred
-     inputs at most and none that crash: the merge dropped their
-     near-misses.
-   - Swap a merge's result in only after it `finished`, with no new
-     findings and a non-empty corpus: a killed merge leaves its corpus
-     empty (`fuzz-campaign`'s analyze.md).
+   - When a long run is analyzed (`fuzz-campaign`), its corpus is merged
+     back on the current build, with the commands in the language skill's
+     run.md, "Merging a run's corpus back". An AFL++ queue is merged the
+     same way, with the libFuzzer ASan+UBSan build. Either merge also
+     minimizes.
+   - Minimize the persistent corpus alone, with the same command but
+     without a run's corpus. For Jest fuzz tests, minimize only when the
+     user asks (the language skill); for other harnesses, minimize:
+     - when the develop loop ends, before the long-run commands;
+     - when it passes about 10,000 files, including right after an
+       import: every replay, `reach.py` and a long run's start load all of
+       them;
+     - when the user asks.
+   - Swap a merge's result in for the persistent corpus only if all three
+     hold:
+     - the merge's run state is `finished`;
+     - the merge reported no new findings;
+     - its output corpus isn't empty.
+
+     A killed merge leaves its output corpus empty (`fuzz-campaign`'s
+     analyze.md).
    - If a harness change consumes input differently: keep the old corpus
      as seeds, but expect it to be worth less.

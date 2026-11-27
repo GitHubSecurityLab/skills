@@ -2,7 +2,7 @@
 
 ## `LLVMFuzzerTestOneInput`
 
-The entry point libFuzzer and AFL++ both call, once per input:
+libFuzzer and AFL++ both call this entry point, once per input:
 
 ```c
 #include <stddef.h>
@@ -19,13 +19,11 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   values are reserved.
 - Handle every input, including empty ones. Never `exit()`; join any
   threads you start.
-- C++: like `catch (...)` (`fuzz-harness`, "Design the harness"), never
-  catch `std::out_of_range` from `.at()`: it's an out-of-bounds index the
-  check stopped. An uncaught exception is a `deadly signal` with the
-  throw's stack.
+- C++: never `catch (...)` (`fuzz-harness`, "Design the harness"). An
+  uncaught exception is a `deadly signal` with the throw's stack.
 - `data` is read-only and exactly `size` bytes long. If the API needs a
-  NUL-terminated or writable buffer, copy into an exact-size heap buffer so
-  ASan still catches over-reads:
+  NUL-terminated or writable buffer, copy the input into an exact-size
+  heap buffer, so that ASan still catches over-reads:
   ```c
   char *s = malloc(size + 1);
   if (!s) return 0;
@@ -36,41 +34,41 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   ```
 - One-time setup: `int LLVMFuzzerInitialize(int *argc, char ***argv)`, or a
   static flag in the harness. Don't read configuration from `argv`.
-- Limit size to what the format needs (`if (size > MAX) return 0;`), and
-  record `MAX` as the harness's input cap in the target file: every
+- Limit the size to what the format needs (`if (size > MAX) return 0;`).
+  Record `MAX` as the harness's input cap in the target file: every
   libFuzzer command passes it as `-max_len` (`run.md`).
 - Docs: https://llvm.org/docs/LibFuzzer.html#fuzz-target
 
 ## Splitting the input
 
-C++: `FuzzedDataProvider` splits one input into options and a document
-(header ships with clang, no `-I` needed):
+C++: `FuzzedDataProvider` splits one input into as many typed values as
+the harness needs. Its header ships with clang, so no `-I` is needed. For
+example, the following harness parses a document and takes two options,
+so the options come from a prefix:
 
 ```cpp
 #include <fuzzer/FuzzedDataProvider.h>
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
-  FuzzedDataProvider fdp(data, size);
-  int mode = fdp.ConsumeIntegralInRange<int>(0, 2);  // a choice deployments make
-  bool strict = fdp.ConsumeBool();
-  std::vector<uint8_t> doc = fdp.ConsumeRemainingBytes<uint8_t>();
+  if (size < 8) return 0;  // shorter than the options prefix
+  FuzzedDataProvider options(data, 8);  // the options' bytes, plus spare
+  int mode = options.ConsumeIntegralInRange<int>(0, 2);  // a choice deployments make
+  bool strict = options.ConsumeBool();
+  std::vector<uint8_t> doc(data + 8, data + size);  // the rest
   parse(doc.data(), doc.size(), mode, strict);
   return 0;
 }
 ```
 
-- Integers, booleans and enums are taken from the **end** of the input;
-  bytes and strings from the front. A raw format file used as a seed loses
-  its last bytes to the options, which breaks formats whose end matters
-  (JSON, XML, ZIP's end record, PNG's `IEND`). For such formats, take the
-  options from a fixed-size prefix or from bytes after the document, or
-  write the seeds in the harness's layout (`fuzz-harness`, seeds.md).
-- Copies from `ConsumeBytes`/`ConsumeRemainingBytes` are exact-size, so
-  over-reads still trip ASan.
+- Where `FuzzedDataProvider`'s values come from in the input, and why a
+  document's options come from a prefix: `fuzz-harness`, "Design the
+  harness".
+- `doc` is an exact-size copy, so reads past either end still trip ASan.
 - Header reference:
   https://github.com/llvm/llvm-project/blob/main/compiler-rt/include/fuzzer/FuzzedDataProvider.h
 
-If the harness is C: take option bytes the same way, then pass the rest.
+If the harness is C: the same, but read the options from the prefix's
+bytes directly.
 
 ## Call sequences
 
@@ -124,21 +122,24 @@ parse_path(path);  /* an API taking the fd itself: lseek(fd, 0, SEEK_SET) first 
 ## Where harnesses live
 
 Common places: `fuzz/`, `tests/fuzz/`, `test/fuzzing/`, `oss-fuzz/`, or a
-separate repository (`curl/curl-fuzzer`); file names are often
-`<thing>_fuzzer.c`. Register targets in the build as the neighbours are.
-If the project is in OSS-Fuzz: its `build.sh`
-(`google/oss-fuzz/projects/<name>/`) shows which files are harnesses and
+separate repository (`curl/curl-fuzzer`). File names are often
+`<thing>_fuzzer.c`. Register targets in the build the way their
+neighbours are registered. If the project is in OSS-Fuzz, its `build.sh`
+(`google/oss-fuzz/projects/<name>/`) shows which files are harnesses, and
 where seed corpora and dictionaries come from.
 
 ## Other formats
 
 - **FuzzTest** (`FUZZ_TEST`): see `fuzztest.md` next to this file.
 - **Native AFL++** harnesses: `aflpp.md` next to this file.
-- **Custom mutators** (`LLVMFuzzerCustomMutator`: decode, mutate the
-  structure, re-encode; structure-aware escalation in `fuzz-coverage`)
-  keep compressed, checksummed or grammar-bound input valid
+- **Custom mutators** (`LLVMFuzzerCustomMutator`) keep compressed,
+  checksummed or grammar-bound input valid: they decode the input, mutate
+  its structure and re-encode it
   (https://github.com/google/fuzzing/blob/master/docs/structure-aware-fuzzing.md).
-  A FuzzTest domain can replace one; a `FuzzedDataProvider` split can't.
-  AFL++'s custom-mutator API differs, so such a harness's long runs use
-  libFuzzer, as do libprotobuf-mutator's `DEFINE_PROTO_FUZZER` harnesses,
-  kept as they are.
+  Structure-aware escalation: `fuzz-coverage`.
+  - A FuzzTest domain can replace a custom mutator; a `FuzzedDataProvider`
+    split can't.
+  - AFL++'s custom-mutator API differs, so the long runs of a harness
+    with an `LLVMFuzzerCustomMutator` use libFuzzer.
+  - libprotobuf-mutator's `DEFINE_PROTO_FUZZER` harnesses are kept as they
+    are, and their long runs use libFuzzer too.

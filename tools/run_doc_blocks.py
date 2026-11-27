@@ -37,6 +37,7 @@ import platform
 import re
 import shlex
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -48,7 +49,7 @@ TOYS = os.path.join(ROOT, "tests", "toys")
 SCRIPTS = os.path.join(SKILLS, "fuzzing", "fuzz-campaign", "scripts")
 
 MARKER = re.compile(r"^\s*<!-- ci: ([a-z0-9][a-z0-9-]*) -->\s*$")
-FENCE = re.compile(r"^(\s*)```(sh|json|javascript|java|cpp)\s*$")
+FENCE = re.compile(r"^(\s*)```(sh|json|javascript|java|c|cpp)\s*$")
 SKIP_MARKER = re.compile(r"^\s*<!-- ci-skip:(.*?)-->\s*$")
 LANGUAGE_SKILLS = ("fuzz-c-cpp", "fuzz-java", "fuzz-js")
 PLACEHOLDER = re.compile(r"<([a-z][a-z0-9_]*)>")
@@ -88,7 +89,8 @@ def extract_blocks(paths: list) -> dict:
             where = "%s:%d" % (os.path.relpath(path, ROOT), index + 1)
             fence = FENCE.match(lines[index + 1]) if index + 1 < len(lines) else None
             if not fence:
-                raise DocError("%s: marker %r isn't followed by a ```sh, ```json, ```javascript, ```java or ```cpp block" % (where, name))
+                raise DocError("%s: marker %r isn't followed by a ```sh, ```json, ```javascript, ```java, ```c or "
+                               "```cpp block" % (where, name))
             end = index + 2
             while end < len(lines) and lines[end].strip() != "```":
                 end += 1
@@ -392,10 +394,11 @@ def build_c_toy(ctx: Context, variants=("libfuzzer", "coverage"), harness="fuzz_
 @scenario(
     "c-libfuzzer",
     "c",
-    ["c-env", "c-ub", "c-develop", "c-repro", "c-minimize", "triage-rebucket", "c-reproducer", "c-long", "c-cov-replay", "c-cov-export",
-     "handoff-held-back", "c-merge", "held-back-branch", "build-record", "build-stale", "c-leak-check", "c-reach",
+    ["c-env", "c-ub", "c-develop", "c-replay-driver", "c-repro", "c-minimize", "triage-rebucket", "c-reproducer",
+     "c-long", "c-cov-replay", "c-cov-export",
+     "upstreaming-held-back", "c-merge", "held-back-branch", "build-record", "build-stale", "c-leak-check", "c-reach",
      "fresh-worktrees", "dict-literals", "base-worktree", "release-rebase", "gate-tree-before", "gate-tree-after",
-     "gate-progress", "c-call-sequence"],
+     "gate-progress", "c-call-sequence", "upstreaming-workspace"],
 )
 def c_libfuzzer(ctx: Context) -> None:
     ctx.set(H="record")
@@ -418,7 +421,7 @@ def c_libfuzzer(ctx: Context) -> None:
             if os.path.exists(os.path.join(ctx.F, "runs", "gate-record-%d" % n, name))]
     ctx.expect(not left, "the stray-file check deletes its snapshot's objects and index (left: %s)" % left)
     ctx.sh("git checkout -q -- src/record.h && rm notes.txt fuzz/new.txt")
-    # Freshness (fuzz-triage's report.md): a later report moves the same worktrees to the new commits.
+    # Freshness (fuzz-triage's fix.md): a later check moves the same worktrees to the new commits.
     # The clone is a fork's: origin is the fork, which doesn't follow the project (upstream).
     up = os.path.join(os.path.dirname(ctx.repo), "upstream")
     fork = os.path.join(os.path.dirname(ctx.repo), "fork")
@@ -433,13 +436,27 @@ def c_libfuzzer(ctx: Context) -> None:
     upstream = ctx.sh('git -C "%s" rev-parse HEAD' % up).stdout.strip()
     ctx.expect(all(ctx.sh('git -C "%s/%s" rev-parse HEAD' % (trees, t)).stdout.strip() == upstream
                    for t in ("fresh-head", "fresh-release")),
-               "a second report moves the freshness worktrees to upstream's new HEAD and release")
+               "a second check moves the freshness worktrees to upstream's new HEAD and release")
     ctx.env_block("c-env", detect_leaks=1 if system() == "Linux" else 0, llvm_bin=llvm_bin())
     ctx.env_block("c-ub")
     build_c_toy(ctx)
     for variant in ("libfuzzer", "coverage"):
         ctx.block("build-record", variant=variant)
     ctx.expect("stale" not in ctx.block("build-stale").stdout, "fresh builds aren't stale")
+    # A build of an edit that is then reverted stays stale, and so does a directory without built-from;
+    # bin/ and jacoco/ hold tools, not builds.
+    ctx.sh("echo '/* tried */' >> src/record.c")
+    build_c_toy(ctx, ("libfuzzer",))
+    ctx.block("build-record", variant="libfuzzer")
+    ctx.sh('git checkout -q -- src/record.c && mkdir "$F/build/unrecorded" "$F/build/bin" "$F/build/jacoco"')
+    stale = ctx.block("build-stale").stdout
+    ctx.expect("build/libfuzzer/" in stale and "build/unrecorded/" in stale
+               and not any(d in stale for d in ("build/coverage/", "build/bin/", "build/jacoco/")),
+               "a build of a reverted edit and an unrecorded build are stale, tools aren't (%s)" % stale.strip())
+    ctx.sh('rmdir "$F/build/unrecorded" "$F/build/bin" "$F/build/jacoco"')
+    build_c_toy(ctx, ("libfuzzer",))
+    ctx.block("build-record", variant="libfuzzer")
+    ctx.expect("stale" not in ctx.block("build-stale").stdout, "the rebuilt variant is current again")
     ctx.sh('cp seeds/ok "$F/corpus/$H/" 2>/dev/null || { mkdir -p "$F/corpus/$H" && cp seeds/ok "$F/corpus/$H/"; }')
     # The dictionary from the scope's literals, in every quote style; the develop round's -dict parses it.
     fixture = os.path.join(os.path.dirname(ctx.repo), "dict-fixture.js")
@@ -456,16 +473,27 @@ def c_libfuzzer(ctx: Context) -> None:
                "messages, format strings, non-ASCII or escapes libFuzzer rejects (%s)" % " ".join(entries))
     ctx.block("dict-literals", harness="none", scope_files="src/record.h")
     ctx.say("   ok: scope files without literals add none, and the pipeline succeeds")
-    common = dict(binary="fuzz_record", memory_mb=2048, input_timeout_s=10, max_len=4096)
-    # The gate's seeds-only snapshot (gate.md, step 0), which check 2 compares after fuzzing.
+    common = dict(binary="fuzz_record", memory_mb=2048, input_timeout_s=10, max_len=4096, build="$F/build")
+    # The gate's seeds-only snapshot (gate.md, "Prepare"), which "Fuzzing gets past the seeds" compares after fuzzing.
     ctx.block("c-cov-replay", n=0, timeout_s=120, **common)
-    ctx.block("c-cov-export", n=0, round=0, binary="fuzz_record")
+    ctx.block("c-cov-export", n=0, round=0, binary="fuzz_record", objects="")
 
     # Develop round: finds the planted overflow.
     ctx.block("c-develop", round=1, run_s=120, **common)
     ctx.expect_state("r1-record", "found-crash")
     ctx.expect("-max_len is not provided" not in ctx.log("r1-record"), "the develop run takes the harness's input cap")
     finding = ctx.findings("r1-record")[0]
+
+    # The seed replay's driver (regression.md), built outside the repository: with no files it fails, a seed
+    # passes, and the planted bug's assertion aborts.
+    driver = ctx.write_block("c-replay-driver", os.path.join(os.path.dirname(ctx.repo), "replay", "replay_main.c"))
+    replay = os.path.join(os.path.dirname(driver), "replay")
+    ctx.sh('"%s" -g fuzz/fuzz_record.c src/record.c "%s" -o "%s"' % (os.path.join(llvm_bin(), "clang"), driver, replay))
+    runs = [ctx.sh('"%s" %s' % (replay, args), check=False) for args in ("", "seeds/ok", '"%s"' % finding)]
+    ctx.expect([r.returncode for r in runs[:2]] == [1, 0] and "no input files" in runs[0].stderr
+               and runs[2].returncode in (134, -signal.SIGABRT) and "Assertion" in runs[2].stderr,
+               "the replay driver fails with no files, passes a seed and aborts on the bug (%s)"
+               % [r.returncode for r in runs])
 
     # Triage: reproduce, bucket, minimize.
     # ASan exits 1 on Linux; on macOS abort_on_error defaults to 1 (SIGABRT, 134).
@@ -530,7 +558,7 @@ def c_libfuzzer(ctx: Context) -> None:
     ctx.block("c-cov-replay", n=1, timeout_s=120, **common)
     ctx.expect_state("cov-record-1", "finished")
     ctx.expect(len(ctx.findings("cov-record-1")) == 1, "the replay records the crashing input as a finding")
-    ctx.block("c-cov-export", n=1, round=1, binary="fuzz_record")
+    ctx.block("c-cov-export", n=1, round=1, binary="fuzz_record", objects="")
     ctx.expect_covered("$F/coverage/$H/r1.lcov", "src/record.c")
     # The gate's progress check: fuzzing covers scope branches the seeds didn't; no growth shows as +0.
     ctx.sh('mkdir -p "$F/targets" && echo src/record.c > "$F/targets/record.scope"')
@@ -540,10 +568,10 @@ def c_libfuzzer(ctx: Context) -> None:
                % (grown(out).group(0) if grown(out) else "no Branches line"))
     out = ctx.block("gate-progress", h="record", id="record", round=0, next=0).stdout
     ctx.expect(grown(out) and grown(out).group(1) == "+0", "a snapshot without growth shows +0 covered")
-    # Hand-off: a harness whose last lcov reaches a held-back bug's root-cause line is held back.
-    ctx.sh('mkdir -p "$F/handoff" && printf "id\\tfile\\tline\\noverflow\\tsrc/record.c\\t16\\n" > "$F/handoff/held-back.tsv"')
-    out = ctx.block("handoff-held-back", h="record", last="r1").stdout
-    ctx.expect("| overflow | - | src/record.c:16 | reached |" in out, "the hand-off check finds the harness reaching the held-back line")
+    # Upstreaming: a harness whose last lcov reaches a held-back bug's root-cause line is held back.
+    ctx.sh('mkdir -p "$F/upstreaming" && printf "id\\tfile\\tline\\noverflow\\tsrc/record.c\\t16\\n" > "$F/upstreaming/held-back.tsv"')
+    out = ctx.block("upstreaming-held-back", h="record", last="r1").stdout
+    ctx.expect("| overflow | - | src/record.c:16 | reached |" in out, "the upstreaming check finds the harness reaching the held-back line")
 
     # W1: the merge finds the bug, so nothing is swapped; after the fix, the
     # same merge from the untouched inputs finds nothing, and its result is swapped in.
@@ -563,6 +591,27 @@ def c_libfuzzer(ctx: Context) -> None:
     ctx.block("build-record", variant="libfuzzer")
     stale = ctx.block("build-stale").stdout
     ctx.expect("build/libfuzzer/" not in stale and "build/coverage/" in stale, "a rebuilt variant is no longer stale")
+    # Upstreaming (upstreaming.md): the upstreaming branch's worktree, here the toy before the fix, gets a workspace
+    # of its own. Its gate run fuzzes its own build and finds the bug the checkout's build no longer has.
+    upstream = os.path.join(trees, "upstream-gate")
+    ctx.sh('git worktree add -q -b seclab/upstream-gate "%s" %s'
+           % (upstream, ctx.sh("git rev-list --max-parents=0 HEAD").stdout.strip()))
+    ctx.block("upstreaming-workspace", checkout=ctx.repo, repo=os.path.basename(ctx.repo), topic="gate")
+    checkout_runs = sorted(os.listdir(os.path.join(ctx.F, "runs")))
+    saved = (ctx.repo, ctx.F, dict(ctx.env))
+    try:
+        ctx.repo = upstream  # every command for the worktree: cd "<worktree>" && . .seclab/fuzz/env.sh
+        ctx.F = ctx.sh('. .seclab/fuzz/env.sh && echo "$F"').stdout.strip()
+        ctx.set(F=ctx.F)
+        build_c_toy(ctx, ("libfuzzer",))
+        ctx.block("c-develop", round=1, run_s=60, **common)
+        meta = ctx.meta("r1-record")
+    finally:
+        ctx.repo, ctx.F, ctx.env = saved
+    ctx.expect([c["state"] for c in meta["copies"]] == ["found-crash"]
+               and [os.path.realpath(t["path"]) for t in meta["trees"]] == [os.path.realpath(upstream)]
+               and sorted(os.listdir(os.path.join(ctx.F, "runs"))) == checkout_runs,
+               "the upstreaming gate run fuzzes the worktree's build, without the fix, and stays in its workspace")
     ctx.block("c-reproducer", n=2, **reproducer)
     ctx.expect_state("poc-record-2", "finished")
     ctx.block("c-merge", n=2, timeout_s=120, long_run="record-long1", **common)
@@ -575,7 +624,7 @@ def c_libfuzzer(ctx: Context) -> None:
     # reach.py: the smallest inputs that reach the copy in parse_record. The coverage build is
     # from before the fix: the kept input crashes in the replays, which go on and exit 0.
     out = ctx.block("c-reach", file="src/record.c", line=16, timeout_s=120, input_timeout_s=10,
-                    binary="fuzz_record", memory_mb=2048).stdout
+                    binary="fuzz_record", memory_mb=2048, objects="").stdout
     ctx.expect("reached: " in out, "reach.py finds an input that reaches src/record.c:16")
     ctx.expect("finding: " in out and ctx.findings("reach-record-1-1"),
                "reach.py keeps and reports the input that crashes in its replays")
@@ -583,13 +632,13 @@ def c_libfuzzer(ctx: Context) -> None:
     # The gate's leak check: clean for this harness, a difference for a leaky one.
     build_c_toy(ctx, ("coverage",))
     out = ctx.block("c-leak-check", n=2, sample_size=8, timeout_s=60, input_timeout_s=10, binary="fuzz_record",
-                    memory_mb=2048).stdout
+                    memory_mb=2048, objects="").stdout
     ctx.expect(clean_leak_check(out), "the leak check finds nothing in a clean harness")
     build_c_toy(ctx, ("coverage",), harness="fuzz_leaky")
     ctx.sh('mkdir -p "$F/corpus/leaky" && cp "$F/corpus/$H"/* "$F/corpus/leaky/"')
     ctx.set(H="leaky")
     out = ctx.block("c-leak-check", n=1, sample_size=8, timeout_s=60, input_timeout_s=10, binary="fuzz_leaky",
-                    memory_mb=2048).stdout
+                    memory_mb=2048, objects="").stdout
     ctx.expect("### Different hit counts" in out and "fuzz_leaky.c" in out, "the leak check points at the leaking harness")
     # State that repeats work leaves the covered sets equal: only the hit counts show it. The corpus has
     # inputs of the same name in a subdirectory: the sample keeps them all.
@@ -598,7 +647,7 @@ def c_libfuzzer(ctx: Context) -> None:
     ctx.set(H="repeat")
     inputs = int(ctx.sh('find "$F/corpus/$H" -type f -size +0c | wc -l').stdout)
     out = ctx.block("c-leak-check", n=1, sample_size=inputs, timeout_s=60, input_timeout_s=10, binary="fuzz_repeat",
-                    memory_mb=2048).stdout
+                    memory_mb=2048, objects="").stdout
     ctx.expect(len(ctx.files(".seclab/fuzz/runs/gate-repeat-1/sample")) == inputs,
                "the sample keeps inputs of the same name from different directories (%d)" % inputs)
     ctx.expect("### Different hit counts" in out and "src/record.c" in out, "the leak check sees work repeated across inputs")
@@ -749,8 +798,16 @@ def ci_template(heading: str) -> tuple:
     return env, steps
 
 
-@scenario("c-cmake", "c", ["c-ub", "c-cmake-build", "c-build-check", "c-hooks-check", "build-worktree", "c-intree-build"])
+@scenario("c-cmake", "c", ["c-ub", "c-cmake-build", "c-build-check", "c-hooks-check", "build-worktree", "c-intree-build",
+                          "build-record", "build-stale", "worktree-build", "upstreaming-workspace",
+                          "worktree-cleanup"])
 def c_cmake(ctx: Context) -> None:
+    # A repository whose .gitignore un-ignores .seclab/, which beats git's exclude file: each tree's .seclab/ stays
+    # out of git through its own .gitignore (init.py's in the checkout, then a launch's and an upstreaming worktree's).
+    ctx.sh("printf '!.seclab/\\n' > .gitignore && git add .gitignore && "
+           "git -c user.name=ci -c user.email=ci@example.com commit -qm unignore")
+    ctx.expect(ctx.sh("git status --porcelain --untracked-files=all").stdout == "",
+               "the checkout's workspace stays out of git")
     llvm = llvm_bin()
     cflags, ldflags = c_flags(ctx, "libfuzzer")
     ctx.block("c-cmake-build", variant="libfuzzer", llvm_bin=llvm, compile_flags=cflags, link_flags=ldflags,
@@ -766,6 +823,22 @@ def c_cmake(ctx: Context) -> None:
     counts = {k: int(v) for k, v in re.findall(r"(\w+) (\d+)", out)}
     ctx.expect(counts["sanitizer_cov"] > 0 and counts["__asan_"] > 0 and counts["__profc_"] == 0,
                "the library itself has the libfuzzer variant's hooks (%s)" % out.strip())
+    # Another worktree (a launch): its build goes into its own .seclab/fuzz/build; the checkout's stays.
+    mine = os.path.join(ctx.F, "build", "libfuzzer", "fuzz", "record_fuzzer")
+    with open(mine, "rb") as handle:
+        before = handle.read()
+    trees = os.path.join(os.path.dirname(ctx.repo), os.path.basename(ctx.repo) + ".seclab-worktrees")
+    sha = ctx.sh("git rev-parse HEAD").stdout.strip()
+    launch = os.path.join(trees, sha)
+    ctx.sh('git worktree add -q "%s" %s' % (launch, sha))
+    prefix = fill(ctx.blocks["worktree-build"], dict(tree=launch))
+    ctx.block("c-cmake-build", add=("cmake -S", prefix + "\n"), variant="libfuzzer", llvm_bin=llvm, compile_flags=cflags,
+              link_flags=ldflags, fuzzers_option="RECORD_BUILD_FUZZERS", harness="record_fuzzer")
+    with open(mine, "rb") as handle:
+        unchanged = handle.read() == before
+    built = os.path.exists(os.path.join(launch, ".seclab", "fuzz", "build", "libfuzzer", "fuzz", "record_fuzzer"))
+    ctx.expect(built and unchanged and ctx.sh('git -C "%s" status --porcelain' % launch).stdout == "",
+               "another worktree builds into its own .seclab/fuzz/build; the checkout's binary stays, the worktree stays clean")
 
     # The C/C++ CI template, run step by step with its own environment.
     env, steps = ci_template("C/C++ with libFuzzer")
@@ -786,7 +859,7 @@ def c_cmake(ctx: Context) -> None:
     ctx.expect("Assertion" in fuzz.stdout + fuzz.stderr, "the CI build keeps assertions (no -DNDEBUG)")
 
     # An in-tree build (the toy's Makefile): a worktree synced to the uncommitted working tree without
-    # a git identity, its outputs linked into $F/build/<variant>/, its coverage paths naming the checkout.
+    # a git identity, $F/build/<variant> a link to it, its coverage paths naming the checkout.
     # On macOS the work directory's path goes through a symlink (/var -> /private/var).
     ctx.sh("printf '/* uncommitted */\\n' >> src/record.c")
     head = ctx.sh("git rev-parse HEAD").stdout
@@ -804,16 +877,142 @@ def c_cmake(ctx: Context) -> None:
     ctx.expect(synced and ctx.sh("git rev-parse HEAD").stdout == head and "M src/record.c" in ctx.sh("git status --porcelain").stdout,
                "the worktree has the uncommitted change; the checkout's branch and changes stay")
     cflags, ldflags = c_flags(ctx, "coverage")
+    ctx.sh('mkdir -p "$F/build/coverage"')  # a leftover directory the link replaces
     ctx.block("c-intree-build", llvm_bin=llvm, compile_flags=cflags, link_flags=ldflags, targets="fuzz_record",
-              binary="fuzz_record", library="librecord.a", **tree)
+              **tree)
     ctx.sh('LLVM_PROFILE_FILE="$F/coverage/intree.profraw" "$F/build/coverage/fuzz_record" seeds/ok && '
            '"{0}/llvm-profdata" merge -sparse "$F/coverage/intree.profraw" -o "$F/coverage/intree.profdata" && '
            '"{0}/llvm-cov" export -format=lcov -instr-profile="$F/coverage/intree.profdata" "$F/build/coverage/fuzz_record" '
            '> "$F/coverage/intree.lcov"'.format(llvm))
     ctx.expect_covered("$F/coverage/intree.lcov", "src/record.c")
+    ctx.block("build-record", variant="coverage")
+    ctx.expect("build/coverage/" in ctx.block("build-stale").stdout,
+               "the stale check looks through the link (the checkout has an uncommitted change)")
+    # Another tree of an in-tree project (base): a worktree per variant in the tree's directory, built in place,
+    # without the sync or the link.
+    other = os.path.join(trees, "base", "libfuzzer")
+    ctx.sh('git worktree add -q --detach "%s" %s' % (other, sha))
+    link = os.path.realpath(os.path.join(ctx.F, "build", "coverage"))
+    cflags, ldflags = c_flags(ctx, "libfuzzer")
+    ctx.block("c-intree-build", replace=(("seclab-worktrees/build/<variant>", "seclab-worktrees/base/<variant>"),
+                                         ('rm -rf "$F/build/<variant>" && ln -s "$W" "$F/build/<variant>"', "")),
+              llvm_bin=llvm, compile_flags=cflags, link_flags=ldflags, targets="fuzz_record", **dict(tree, variant="libfuzzer"))
+    ctx.expect(all(os.path.exists(os.path.join(other, name)) for name in ("fuzz_record", "librecord.a"))
+               and os.path.realpath(os.path.join(ctx.F, "build", "coverage")) == link
+               and not os.path.islink(os.path.join(ctx.F, "build", "libfuzzer")),
+               "another tree's variant builds in its own worktree; the checkout's builds and links stay")
+    # An upstreaming branch's worktree of an in-tree project: both blocks, run from it with its workspace, with
+    # upstream-<topic>-build/ for build/; its edits are synced, develop's worktrees and the checkout's links stay.
+    upstream = os.path.join(trees, "upstream-intree")
+    ctx.sh('git worktree add -q -b seclab/upstream-intree "%s" HEAD' % upstream)
+    ctx.block("upstreaming-workspace", checkout=ctx.repo, repo=os.path.basename(ctx.repo), topic="intree")
+    ctx.expect(ctx.sh('git -C "%s" status --porcelain --untracked-files=all' % upstream).stdout == "",
+               "the upstreaming worktree's workspace stays out of git")
+    develop = ctx.sh('git -C "%s" rev-parse HEAD' % worktree).stdout
+    swap = (("seclab-worktrees/build/<variant>", "seclab-worktrees/upstream-intree-build/<variant>"),)
+    saved = (ctx.repo, ctx.F, dict(ctx.env))
+    try:
+        ctx.repo = upstream  # every command for the worktree: cd "<worktree>" && . .seclab/fuzz/env.sh
+        ctx.F = ctx.sh('. .seclab/fuzz/env.sh && echo "$F"').stdout.strip()
+        ctx.set(F=ctx.F)
+        ctx.sh("printf '/* upstreaming */\\n' >> src/record.c")
+        ctx.block("build-worktree", replace=swap, **dict(tree, variant="libfuzzer"))
+        ctx.block("c-intree-build", replace=swap, llvm_bin=llvm, compile_flags=cflags, link_flags=ldflags,
+                  targets="fuzz_record", **dict(tree, variant="libfuzzer"))
+        linked = os.path.realpath(os.path.join(ctx.F, "build", "libfuzzer"))
+    finally:
+        ctx.repo, ctx.F, ctx.env = saved
+    variant = os.path.join(trees, "upstream-intree-build", "libfuzzer")
+    with open(os.path.join(variant, "src", "record.c")) as handle:
+        synced = "/* upstreaming */" in handle.read()
+    ctx.expect(linked == os.path.realpath(variant) and synced and os.path.exists(os.path.join(variant, "fuzz_record"))
+               and ctx.sh('git -C "%s" rev-parse HEAD' % worktree).stdout == develop
+               and os.path.realpath(os.path.join(ctx.F, "build", "coverage")) == link,
+               "an upstreaming worktree builds in-tree like the checkout; develop's worktrees and the checkout's links stay")
+    # Cleanup (long-runs.md): an in-tree tree's variant worktree holds untracked build outputs, which a plain
+    # git worktree remove refuses; remove each with --force, then the tree's directory.
+    ctx.block("worktree-cleanup", worktree=other)
+    ctx.sh('rmdir "%s"' % os.path.dirname(other))
+    listed = [os.path.realpath(line[len("worktree "):]) for line in
+              ctx.sh("git worktree list --porcelain").stdout.splitlines() if line.startswith("worktree ")]
+    ctx.expect(not os.path.exists(os.path.dirname(other)) and os.path.realpath(other) not in listed,
+               "an in-tree tree's variant worktrees and directory are removed")
 
 
-@scenario("c-aflpp", "c", ["c-env", "c-ub", "c-toolchain-check", "aflpp-wrappers", "aflpp-spec", "c-check-run",
+@scenario("c-shared", "c", ["c-env", "c-ub", "c-cmake-build", "c-hooks-check", "c-develop", "c-cov-replay",
+                           "c-cov-export", "c-reach", "c-leak-check", "c-reproducer"])
+def c_shared(ctx: Context) -> None:
+    # A project library built only shared (build.md, "Variants"): CMake's build-tree rpath makes each binary load
+    # the build's copy. Each check fails without what the skill adds for shared libraries: the hooks check on the
+    # objects, the library as an -object, %m in continuous mode (Linux), and the reproducer's rpath.
+    ctx.set(H="record")
+    ctx.env_block("c-env", detect_leaks=1 if system() == "Linux" else 0, llvm_bin=llvm_bin())
+    ctx.env_block("c-ub")
+    ctx.sh("sed 's/^add_library(record /add_library(record SHARED /' CMakeLists.txt > shared.txt "
+           "&& mv shared.txt CMakeLists.txt")
+    lib = "librecord.so" if system() == "Linux" else "librecord.dylib"
+    for variant in ("libfuzzer", "coverage"):
+        cflags, ldflags = c_flags(ctx, variant)
+        ctx.block("c-cmake-build", variant=variant, llvm_bin=llvm_bin(), compile_flags=cflags, link_flags=ldflags,
+                  fuzzers_option="RECORD_BUILD_FUZZERS", harness="record_fuzzer")
+
+    def hooks(library: str) -> dict:
+        out = ctx.block("c-hooks-check", library=library).stdout
+        return {k: int(v) for k, v in re.findall(r"(\w+) (\d+)", out)}
+
+    ctx.expect(hooks('"$F/build/coverage/CMakeFiles/record.dir/src/record.c.o"')["__profc_"] > 0
+               and hooks('"$F/build/coverage/%s"' % lib)["__profc_"] == 0,
+               "the shared library's objects have the coverage hooks; the linked library has none")
+
+    ctx.sh('mkdir -p "$F/corpus/$H" && cp seeds/ok "$F/corpus/$H/" && echo \'"REC1"\' > "$F/dict/$H.dict"')
+    common = dict(binary="fuzz/record_fuzzer", memory_mb=2048, input_timeout_s=10, max_len=4096)
+    ctx.block("c-develop", round=1, run_s=120, **common)
+    ctx.expect_state("r1-record", "found-crash")
+    ctx.expect("INFO: Loaded 2 modules" in ctx.log("r1-record"), "the binary loads the build's instrumented library")
+
+    def lcov(name: str) -> str:
+        with open(os.path.join(ctx.F, "coverage", "record", name)) as handle:
+            return handle.read()
+
+    objects = "-object=$F/build/coverage/" + lib
+    ctx.block("c-cov-replay", n=1, timeout_s=120, **common)
+    ctx.block("c-cov-export", n=1, round=1, binary=common["binary"], objects="")
+    ctx.expect("src/record.c" not in lcov("r1.lcov"), "without -object, the export misses the library's files")
+    ctx.block("c-cov-export", n=1, round=1, binary=common["binary"], objects=objects)
+    ctx.expect_covered("$F/coverage/$H/r1.lcov", "src/record.c")
+    if system() == "Linux":
+        ctx.block("c-cov-replay", n=2, timeout_s=120, replace=(("%c%p-%m", "%c%p"),), **common)
+        out = ctx.block("c-cov-export", n=2, round=2, binary=common["binary"], objects=objects, ok=(1,))
+        ctx.expect("no profile can be merged" in out.stderr,
+                   "without %m, the binary and the library write one profile, which is lost")
+
+    reach = dict(file="src/record.c", line=16, timeout_s=120, input_timeout_s=10, binary=common["binary"],
+                 memory_mb=2048)
+    out = ctx.block("c-reach", objects="", ok=(3,), **reach)
+    ctx.expect("no step's report has a record for src/record.c" in out.stderr,
+               "without -object, reach.py finds no record of the library's file")
+    ctx.expect("reached: " in ctx.block("c-reach", objects="-object='$F/build/coverage/%s'" % lib, **reach).stdout,
+               "with the library as an object, reach.py finds an input that reaches src/record.c:16")
+
+    leak = dict(sample_size=8, timeout_s=60, input_timeout_s=10, binary=common["binary"], memory_mb=2048,
+                objects=objects)
+    ctx.expect(clean_leak_check(ctx.block("c-leak-check", n=1, **leak).stdout), "the leak check finds nothing")
+    ctx.expect_covered("$F/coverage/$H/gate-one.lcov", "src/record.c")
+    ctx.expect_covered("$F/coverage/$H/gate-fresh.lcov", "src/record.c")
+    leak_check_crash(ctx, "c-leak-check", "seeds/ok", ctx.findings("r1-record")[0], **leak)
+
+    ctx.sh('mkdir -p "$F/crashes/overflow" && cp repro.c "$F/crashes/overflow/repro.c"')
+    reproducer = dict(bucket="overflow", include_dir=os.path.join(ctx.repo, "src"),
+                      tree_build=os.path.join(ctx.F, "build"), library=lib, timeout_s=120, memory_mb=2048,
+                      repro_leaks=1)
+    ctx.block("c-reproducer", n=1, ok=(1, 127, 134), replace=((' -Wl,-rpath,"${3%/*}"', ""),), **reproducer)
+    ctx.expect(re.search("cannot open shared object file|Library not loaded", ctx.log("poc-record-1")),
+               "without the rpath, the reproducer can't load the library")
+    ctx.block("c-reproducer", n=2, ok=(1, 134), **reproducer)
+    ctx.expect("Assertion" in ctx.log("poc-record-2"), "with the rpath, the reproducer fails with the assertion")
+
+
+@scenario("c-aflpp", "c", ["c-env", "c-ub", "c-toolchain-check", "aflpp-wrappers", "c-hooks-check", "aflpp-spec", "c-check-run",
                           "c-repro", "aflpp-merge", "aflpp-lto-check"],
           systems=("Linux",))
 def c_aflpp(ctx: Context) -> None:
@@ -828,8 +1027,14 @@ def c_aflpp(ctx: Context) -> None:
     ctx.expect(not glob.glob(os.path.join(ctx.F, "build", "toolchain-check*")), "the toolchain check leaves no binary behind")
     build_c_toy(ctx, ("libfuzzer",))
     build_aflpp_toy(ctx)
-    # afl-clang-lto: aflpp-plain's edge count exceeds the harness's alone; equal for a library built
-    # without AFL++, which the objdump count (0 either way) can't tell.
+    # The library's own hooks; under afl-clang-lto its objects are bitcode, read with the LLVM's llvm-nm (aflpp.md).
+    for variant, hook in (("aflpp", "__asan_"), ("cmplog", "__cmplog_ins_hook")):
+        out = ctx.block("c-hooks-check", replace=(("nm -A", '"%s" -A' % os.path.join(llvm_bin(), "llvm-nm")),),
+                        library='"$F/build/%s/record.o"' % variant).stdout
+        counts = {k: int(v) for k, v in re.findall(r"(\w+) (\d+)", out)}
+        ctx.expect(counts[hook] > 0, "the %s variant's library object has %s (%s)" % (variant, hook, out.strip()))
+    # afl-clang-lto: aflpp-plain has no hook; its edge count exceeds the harness's alone, and equals it for a
+    # library built without AFL++.
     path = ctx.env["PATH"]
     ctx.env["PATH"] = aflpp_bin() + os.pathsep + path
     plain = '"$F/build/aflpp-plain/record%s.o"'
@@ -843,7 +1048,7 @@ def c_aflpp(ctx: Context) -> None:
                    "the LTO check tells an instrumented library (%s) from the harness alone: %s" % (binary, out.strip()))
     ctx.env["PATH"] = path
     ctx.sh('mkdir -p "$F/corpus/$H" && cp seeds/ok "$F/corpus/$H/" && cp record.dict "$F/dict/$H.dict"')
-    common = dict(binary="fuzz_record", memory_mb=2048)
+    common = dict(binary="fuzz_record", memory_mb=2048, build="$F/build")
     ctx.write_block(
         "aflpp-spec", ".seclab/fuzz/runs/record-long1/spec.json", harness="record", n=1, tree=ctx.repo, run_s=120,
         aflpp_bin=aflpp_bin(), llvm_bin=llvm_bin(), workspace=ctx.F, input_timeout_ms=10000,
@@ -914,7 +1119,7 @@ def build_java_toy(ctx: Context) -> None:
     "java",
     ["java-toolchain-check", "java-env", "jacoco-setup", "java-develop", "java-instrumented", "java-repro",
      "java-minimize", "java-reproducer", "java-long", "java-cov-replay", "java-cov-export", "java-merge",
-     "java-junit", "java-reach", "java-leak-check", "java-check-run", "handoff-held-back",
+     "java-junit", "java-reach", "java-leak-check", "java-check-run", "upstreaming-held-back",
      "java-maven-classpath", "java-decode"],
 )
 def java(ctx: Context) -> None:
@@ -939,6 +1144,7 @@ def java(ctx: Context) -> None:
     ctx.block("jacoco-setup")
     ctx.sh('mkdir -p "$F/corpus/$H" && cp seeds/ok "$F/corpus/$H/" && cp record.dict "$F/dict/$H.dict"')
     common = dict(fuzz_class="toy.RecordFuzzTest", fuzz_method="parse", memory_mb=512, input_timeout_s=10)
+    jacoco = dict(classfiles="--classfiles record/target/classes", source_roots="--source-root record/src/main/java")
 
     ctx.block("java-develop", round=1, run_s=120, **common)
     ctx.expect_state("r1-record", "found-crash")
@@ -1024,25 +1230,31 @@ def java(ctx: Context) -> None:
     ctx.block("java-cov-replay", n=1, timeout_s=300, **common)
     ctx.expect_state("cov-record-1", "finished")
     ctx.expect(len(ctx.findings("cov-record-1")) == 1, "the replay continues past the crashing input and records it")
-    ctx.block("java-cov-export", n=1, round=1, module="record")
+    ctx.block("java-cov-export", n=1, round=1, **jacoco)
     ctx.expect_covered("$F/coverage/$H/r1.lcov", "record/src/main/java/toy/Record.java")
-    # Hand-off on a JaCoCo-derived lcov: a harness reaching a held-back bug's line is held back.
-    ctx.sh('mkdir -p "$F/handoff" && printf "id\\tfile\\tline\\nsioobe\\trecord/src/main/java/toy/Record.java\\t14\\n" '
-           '> "$F/handoff/held-back.tsv"')
-    out = ctx.block("handoff-held-back", h="record", last="r1").stdout
+    # Upstreaming on a JaCoCo-derived lcov: a harness reaching a held-back bug's line is held back.
+    ctx.sh('mkdir -p "$F/upstreaming" && printf "id\\tfile\\tline\\nsioobe\\trecord/src/main/java/toy/Record.java\\t14\\n" '
+           '> "$F/upstreaming/held-back.tsv"')
+    out = ctx.block("upstreaming-held-back", h="record", last="r1").stdout
     ctx.expect("| sioobe | - | record/src/main/java/toy/Record.java:14 | reached |" in out,
-               "the hand-off check finds the harness reaching the held-back line in JaCoCo's lcov")
+               "the upstreaming check finds the harness reaching the held-back line in JaCoCo's lcov")
 
     # W1, as for C/C++: the merge's replay finds the bug; after the fix, nothing.
     ctx.block("java-merge", n=1, timeout_s=300, long_run="record-long1", **common)
     ctx.expect(len(ctx.findings("merge-record-1")) >= 1, "the first merge reports the crashing input")
 
-    # reach.py with the crashing input in the corpus: Jazzer writes no finding file for inputs given
-    # as files, and the replay's exit status shows it.
-    out = ctx.block("java-reach", file="record/src/main/java/toy/Record.java", line=14, timeout_s=300,
-                    module="record", **common).stdout
+    # reach.py with the crashing input in the corpus.
+    reach = dict(file="record/src/main/java/toy/Record.java", line=14, timeout_s=300, **jacoco)
+    out = ctx.block("java-reach", **reach, **common).stdout
     ctx.expect("reached: " in out, "reach.py finds an input that reaches Record.java:14")
-    ctx.expect("exited 77" in out, "reach.py reports the input that throws in its replays")
+    # A classic target too, where the only input that reaches the line comes after one that throws.
+    ctx.set(H="classic")
+    ctx.sh('mkdir -p "$F/corpus/$H" && printf "REC1\\377" > "$F/corpus/$H/throws" && cp seeds/ok "$F/corpus/$H/"')
+    out = ctx.block("java-reach", replace=((" --target_method=<fuzz_method>", ""),), **reach,
+                    **dict(common, fuzz_class="toy.RecordFuzzer")).stdout
+    ctx.expect(re.search(r"reached: \S*/classic/ok ", out),
+               "reach.py on a classic target runs the inputs after one that throws")
+    ctx.set(H="record")
 
     # JUnit regression mode through the launcher replays the inputs directory (run.md), here with the crash file.
     # It runs offline: fetch Surefire's JUnit provider first.
@@ -1084,24 +1296,53 @@ def java(ctx: Context) -> None:
     ctx.sh('rm -rf "$F/corpus/$H" && mv "$F/runs/merge-$H-2/corpus" "$F/corpus/$H"')
 
     # The gate's leak check: clean for this harness, a difference for a leaky one.
-    out = ctx.block("java-leak-check", n=1, sample_size=8, timeout_s=300, module="record", **common).stdout
+    out = ctx.block("java-leak-check", n=1, sample_size=8, timeout_s=300, module="record", **jacoco, **common).stdout
     ctx.expect("cover exactly the same" in out, "the leak check finds nothing in a clean harness")
     ctx.sh('mkdir -p "$F/corpus/leaky" && cp "$F/corpus/$H"/* "$F/corpus/leaky/"')
     ctx.set(H="leaky")
-    out = ctx.block("java-leak-check", n=1, sample_size=8, timeout_s=300, module="record",
+    out = ctx.block("java-leak-check", n=1, sample_size=8, timeout_s=300, module="record", **jacoco,
                     **dict(common, fuzz_method="parseLeaky")).stdout
     ctx.expect("### Only A" in out and "RecordFuzzTest.java" in out, "the leak check points at the leaking harness")
+    # A side that doesn't finish makes the check inconclusive. A throwing input doesn't end a side (--keep_going=0),
+    # the kill limit does: here during the JVM's startup.
+    out = ctx.block("java-leak-check", n=2, ok=(1,), sample_size=8, timeout_s=0.001, module="record", **jacoco,
+                    **dict(common, fuzz_method="parseLeaky")).stdout
+    expect_leak_check_stopped(ctx, out, "gate-leaky-2", timed_out=True)
 
-    # Detector gaps (harness.md's table): the built-in detector misses a command run through a shell.
+    # Detector gaps (harness.md's table): the built-in detectors miss a command run through a shell, and a path
+    # resolved against a base directory, unless the harness sets an allow predicate.
     shutil.copy(os.path.join(ctx.repo, "ToolsFuzzTest.java.in"),
                 os.path.join(ctx.repo, "record", "src", "test", "java", "toy", "ToolsFuzzTest.java"))
     build_java_toy(ctx)
     ctx.set(H="tools")
-    ctx.sh('printf "x;jazze" > cmd-input')
+    ctx.sh('printf "x;jazze" > cmd-input && printf "../secret" > path-input && printf "ok" > name-input')
+    tools = dict(common, fuzz_class="toy.ToolsFuzzTest")
     ctx.block("java-repro", n=1, timeout_s=120, finding=os.path.join(ctx.repo, "cmd-input"),
-              **dict(common, fuzz_class="toy.ToolsFuzzTest", fuzz_method="greet"))
+              **dict(tools, fuzz_method="greet"))
     ctx.expect_state("repro-tools-1", "finished")
     ctx.say("   ok: the built-in command detector misses sh -c")
+    ctx.block("java-repro", n=2, timeout_s=120, finding=os.path.join(ctx.repo, "path-input"),
+              **dict(tools, fuzz_method="readData"))
+    ctx.expect_state("repro-tools-2", "finished")
+    ctx.say("   ok: the built-in traversal detector misses a path outside the base directory")
+    ctx.block("java-repro", n=3, timeout_s=120, finding=os.path.join(ctx.repo, "path-input"), ok=(77,),
+              **dict(tools, fuzz_method="readDataChecked"))
+    ctx.expect("Path is not allowed by the user-defined predicate" in ctx.log("repro-tools-3"),
+               "the allow predicate reports the path outside the base directory")
+    ctx.block("java-repro", n=4, timeout_s=120, finding=os.path.join(ctx.repo, "name-input"),
+              **dict(tools, fuzz_method="readDataChecked"))
+    ctx.expect_state("repro-tools-4", "finished")
+    ctx.say("   ok: the allow predicate passes a path inside the base directory")
+    # The LDAP detector names the RFC only: replayed with the detector disabled (triage.md), the real exception shows.
+    for n, method, rfc in ((5, "ldapFilter", "RFC 4515"), (6, "ldapBase", "RFC 2253")):
+        ctx.block("java-repro", n=n, timeout_s=120, finding=os.path.join(ctx.repo, "name-input"), ok=(77,),
+                  **dict(tools, fuzz_method=method))
+        ctx.expect(rfc in ctx.log("repro-tools-%d" % n), "the LDAP finding of %s cites %s" % (method, rfc))
+    disabled = documented("fuzz-java", "triage.md", r"`(--disabled_hooks=\S+LdapInjection)`")
+    ctx.block("java-repro", n=7, timeout_s=120, finding=os.path.join(ctx.repo, "name-input"), ok=(77,),
+              add=('"<finding>"', disabled + " "), **dict(tools, fuzz_method="ldapBase"))
+    ctx.expect("javax.naming.NameNotFoundException" in ctx.log("repro-tools-7"),
+               "with the LDAP detector disabled, the replay shows the real exception")
 
 
 @scenario("js-ts", "js-ts", ["js-env", "js-ts-build", "js-cli-develop"])
@@ -1109,10 +1350,26 @@ def js_ts(ctx: Context) -> None:
     """An ESM package in TypeScript (bundler resolution, extensionless imports): the CLI target fuzzes its build."""
     ctx.sh('PATH="%s:$PATH" npm install --no-audit --no-fund --loglevel=error' % node_bin())
     ctx.env_block("js-env", node_bin=node_bin(), package_dir=ctx.repo)
-    ctx.block("js-ts-build", entry="src/record.ts")
+    ctx.block("js-ts-build", entry="src/record.ts", tsconfig="tsconfig.json")
     ctx.expect(os.path.exists(os.path.join(ctx.F, "build", "ts", "src", "record.js")), "tsc writes the target's .js files")
     built = glob.glob(os.path.join(ctx.F, "build", "ts", "**", "*.js"), recursive=True)
     ctx.expect(not [p for p in built if p.endswith(".test.js")], "the build leaves the project's tests out")
+    # A config name the project doesn't have: the block stops, and leaves no build for the target to load.
+    out = ctx.block("js-ts-build", entry="src/record.ts", tsconfig="tsconfig.build.json", ok=(1,)).stdout
+    ctx.expect("no %s/tsconfig.build.json" % ctx.repo in out and os.listdir(os.path.join(ctx.F, "build", "ts")) == [],
+               "a missing config stops the build (%s)" % out.strip())
+    # A project with noEmitOnError and its own build-info file: a type error still rebuilds the .js files.
+    with open(os.path.join(ctx.repo, "tsconfig.json")) as handle:
+        config = json.load(handle)
+    config["compilerOptions"].update(noEmitOnError=True, incremental=True, tsBuildInfoFile="cache/tsbuildinfo")
+    with open(os.path.join(ctx.repo, "tsconfig.json"), "w") as handle:
+        json.dump(config, handle)
+    ctx.sh("""printf 'export const rebuilt: number = "yes";\\n' >> src/util.ts""")
+    ctx.block("js-ts-build", entry="src/record.ts", tsconfig="tsconfig.json")
+    with open(os.path.join(ctx.F, "build", "ts", "src", "util.js")) as handle:
+        ctx.expect("rebuilt" in handle.read(), "a type error under noEmitOnError still rebuilds the .js files")
+    ctx.expect(not os.path.exists(os.path.join(ctx.repo, "cache")), "the build leaves the project's build info alone")
+    ctx.sh("git checkout -q tsconfig.json src/util.ts")
     ctx.set(H="record-ts")
     ctx.sh('mkdir -p "$F/corpus/$H" && cp seeds/ok "$F/corpus/$H/" && touch "$F/dict/$H.dict"')
     ctx.block("js-cli-develop", round=1, run_s=60, target_file="fuzz/record.fuzz.js", input_timeout_ms=5000, memory_mb=2048)
@@ -1150,15 +1407,51 @@ def java_gradle(ctx: Context, task: str, module: str, fuzz_class: str, method: s
     ctx.expect_state("r1-" + module, "found-crash")
     ctx.block("java-instrumented", run_id="r1-" + module, target_classes=classes)
 
+    # JUnit regression mode through the launcher (run.md), offline after the classpath step resolved the
+    # test runtime classpath: first with the develop run's finding in the inputs directory.
+    module_dir = ctx.repo if task == ":seclabTestClasspath" else os.path.join(ctx.repo, module)
+    package, _, test_class = fuzz_class.rpartition(".")
+    inputs = os.path.join(module_dir, "src", "test", "resources", *package.split("."), test_class + "Inputs")
+    os.makedirs(os.path.join(inputs, method))
+    shutil.copy(ctx.findings("r1-" + module)[0], os.path.join(inputs, method))
+    junit = dict(timeout_s=600, module_dir=module_dir, home=os.path.expanduser("~"), fuzz_class=fuzz_class, fuzz_method=method)
+    ctx.block("java-gradle-junit", run_id="repro-%s-1" % module, ok=(1,), **junit)
+    log = ctx.log("repro-%s-1" % module)
+    ctx.expect("IllegalStateException" in log, "Gradle's JUnit run replays the crash file")
+    # The test JVM's "Picked up" line comes after the test task's header (Gradle's own comes before any);
+    # Gradle 9.8 prints that header without FAILED, 9.9 with it.
+    ctx.expect(re.search(r"^> Task \S*:test\b.*\n(?:.*\n)*?Picked up JAVA_TOOL_OPTIONS: .*-XX:-OmitStackTraceInFastThrow", log, re.M),
+               "the test JVM gets JOPTS")
+    shutil.rmtree(inputs)
+    ctx.block("java-gradle-junit", run_id="repro-%s-2" % module, **junit)
+    ctx.expect_state("repro-%s-2" % module, "finished")
+    # --rerun: nothing changed since the last run, and the test task still runs.
+    ctx.block("java-gradle-junit", run_id="repro-%s-3" % module, **junit)
+    ctx.expect(re.search(r"> Task \S*:test\n", ctx.log("repro-%s-3" % module)), "--rerun runs an unchanged test task again")
 
-@scenario("java-gradle", "java-gradle", ["java-gradle-classpath", "java-env", "java-develop", "java-instrumented"])
+
+@scenario("java-gradle", "java-gradle", ["java-gradle-classpath", "java-env", "java-develop", "java-instrumented",
+                                         "java-gradle-junit", "jacoco-setup", "java-cov-replay", "java-cov-export",
+                                         "java-reach"])
 def java_gradle_multi(ctx: Context) -> None:
     """Two modules: the fuzz test in app, the bug in core, which reaches the classpath as a JAR."""
     java_gradle(ctx, ":app:seclabTestClasspath", "app", "app.ReaderFuzzTest", "read", "app.Reader core.Magic",
                 "-Djazzer.instrument=app.**,core.**")
+    # Coverage of both modules: each module's classes and sources, here in Gradle's layout.
+    ctx.block("jacoco-setup")
+    common = dict(fuzz_class="app.ReaderFuzzTest", fuzz_method="read", memory_mb=512, input_timeout_s=10)
+    jacoco = dict(classfiles="--classfiles app/build/classes/java/main --classfiles core/build/classes/java/main",
+                  source_roots="--source-root app/src/main/java --source-root core/src/main/java")
+    ctx.block("java-cov-replay", n=1, timeout_s=300, **common)
+    ctx.block("java-cov-export", n=1, round=1, **jacoco)
+    ctx.expect_covered("$F/coverage/$H/r1.lcov", "core/src/main/java/core/Magic.java")
+    out = ctx.block("java-reach", file="core/src/main/java/core/Magic.java", line=6, timeout_s=300, **jacoco,
+                    **common).stdout
+    ctx.expect("reached: " in out, "reach.py finds an input that reaches a line in the other module")
 
 
-@scenario("java-gradle-single", "java-gradle-single", ["java-gradle-classpath", "java-env", "java-develop", "java-instrumented"])
+@scenario("java-gradle-single", "java-gradle-single", ["java-gradle-classpath", "java-env", "java-develop", "java-instrumented",
+                                                       "java-gradle-junit"])
 def java_gradle_single(ctx: Context) -> None:
     java_gradle(ctx, ":seclabTestClasspath", "toy", "toy.MagicFuzzTest", "check", "toy.Magic", "")
 
@@ -1167,6 +1460,26 @@ def clean_leak_check(out: str) -> bool:
     """Same hit counts, or differences only in code that runs once per process (JS module loading)."""
     return ("same hit count on every branch and line" in out or "differ only on code that runs once per process" in out) \
         and "### Different hit counts" not in out
+
+
+def expect_leak_check_stopped(ctx: Context, out: str, run: str, timed_out: bool = False) -> None:
+    """The leak check stopped at its one side: it prints only that side's status (124: the kill limit) and log,
+    and starts no fresh side."""
+    status = re.fullmatch(r"inconclusive: the one side didn't finish \(status (\d+), log (.*)\)\n", out)
+    log = os.path.join(ctx.F, "runs", run + "-one", "copy-0", "log")
+    ctx.expect(status and (status.group(1) == "124") == timed_out
+               and os.path.realpath(status.group(2)) == os.path.realpath(log)
+               and not os.path.exists(os.path.join(ctx.F, "runs", run + "-fresh")),
+               "a side that didn't finish makes the leak check inconclusive (%s)" % out.strip())
+
+
+def leak_check_crash(ctx: Context, block: str, valid: str, crash: str, **values) -> None:
+    """The leak check on a valid input and one that crashes the harness: the one side doesn't finish."""
+    h = ctx.env["H"]
+    ctx.set(H="crashy")
+    ctx.sh('mkdir -p "$F/corpus/$H" && cp "%s" "$F/corpus/$H/valid" && cp "%s" "$F/corpus/$H/crash"' % (valid, crash))
+    expect_leak_check_stopped(ctx, ctx.block(block, n=1, ok=(1,), **values).stdout, "gate-crashy-1")
+    ctx.set(H=h)
 
 
 def node_bin() -> str:
@@ -1184,7 +1497,7 @@ def node_bin() -> str:
     ["js-toolchain-check", "js-env", "jest-fuzz-config", "jest-probe", "jest-own-run", "jest-develop", "jest-repro", "jest-cov-replay", "js-cov-export", "jest-reach",
      "js-cli-develop", "js-cli-repro", "js-cli-minimize", "js-reproducer", "js-cli-cov-replay", "js-cli-long", "js-cli-merge",
      "js-cli-reach", "js-cli-leak-check", "js-check-run", "redos-check", "js-hang-profile",
-     "js-pp-tripwire", "js-http", "js-feedback-check", "js-object-input", "js-shadowing"],
+     "js-pp-tripwire", "js-http", "js-feedback-check", "js-object-input", "js-shadowing", "upstreaming-workspace"],
 )
 def js(ctx: Context) -> None:
     # The toolchain check runs before the first-build notice: Yarn must not run the release a .yarnrc names.
@@ -1207,6 +1520,15 @@ def js(ctx: Context) -> None:
     ctx.sh("rm yarn-canary.js .yarnrc .yarnrc.yml")
     ctx.sh('PATH="%s:$PATH" npm install --no-audit --no-fund --loglevel=error' % node_bin())
     ctx.env_block("js-env", node_bin=node_bin(), package_dir=ctx.repo)
+    # An upstreaming branch's workspace (upstreaming.md): its env.sh points F and P into the worktree, also when
+    # init.py wrote F through a symlink and P was written without (macOS: /private/var and /var).
+    upstream = os.path.join(os.path.dirname(ctx.repo), os.path.basename(ctx.repo) + ".seclab-worktrees", "upstream-ci")
+    ctx.sh('git worktree add -q -b seclab/upstream-ci "%s" HEAD' % upstream)
+    ctx.block("upstreaming-workspace", checkout=ctx.repo, repo=os.path.basename(ctx.repo), topic="ci")
+    f, p = ctx.sh('cd "%s" && . .seclab/fuzz/env.sh && printf "%%s\\n%%s\\n" "$F" "$P"' % upstream).stdout.splitlines()
+    real = os.path.realpath
+    ctx.expect(real(f) == real(os.path.join(upstream, ".seclab", "fuzz")) and real(p) == real(upstream),
+               "the upstreaming workspace's env.sh points F and P into its worktree (F=%s, P=%s)" % (f, p))
     jest = dict(jest_config="jest.fuzz.config.js", test_file="src/record.fuzz.js", test_title="record parse",
                 input_timeout_ms=5000, memory_mb=2048)
     corpus_dir = "record.fuzz/record/parse"
@@ -1240,6 +1562,12 @@ def js(ctx: Context) -> None:
     ctx.expect("TypeError" in ctx.log("repro-record-1"), "the reproduction prints the TypeError")
     buckets = ctx.sh('python3 "$F/bin/crash_buckets.py" "$F"/runs/repro-*/copy-*/log --root .').stdout
     ctx.expect("record.js" in buckets, "crash_buckets.py names the project file")
+    # 100 runs in one process, here 3: the finding's copies run as tests of one process.
+    ctx.sh('for i in 1 2 3; do cp "%s" "%s/repeat-$i"; done' % (finding, regression_dir))
+    ctx.block("jest-repro", n=2, timeout_s=120, input_name="repeat-[0-9]+", ok=(1,), **jest)
+    ctx.sh('rm "%s"/repeat-*' % regression_dir)
+    pids = re.findall(r"==(\d+)== Uncaught Exception", ctx.log("repro-record-2"))
+    ctx.expect(len(pids) == 3 and len(set(pids)) == 1, "the copies of a finding run in one process (%s)" % pids)
     ctx.block("jest-cov-replay", n=1, timeout_s=300, **jest)
     ctx.expect_state("cov-record-1", "finished")
     ctx.block("js-cov-export", n=1, round=1)
@@ -1290,6 +1618,7 @@ def js(ctx: Context) -> None:
     ctx.expect_state("cov-record-cli-1", "finished")
     ctx.block("js-cov-export", n=1, round=1)
     ctx.expect_covered("$F/coverage/$H/r1.lcov", "src/record.js")
+    leak_check_crash(ctx, "js-cli-leak-check", "seeds/ok", finding, sample_size=8, timeout_s=120, **cli)
 
     # The JS CI template before the fix: the blocking replay passes on the seeds, the fuzz step
     # finds the planted bug, and the replay fails once the crashing input is in the corpus.
@@ -1450,19 +1779,19 @@ def build_fuzztest_toy(ctx: Context, variants=("fuzztest", "coverage")) -> None:
     "c-fuzztest",
     "fuzztest",
     ["c-env", "c-ub", "fuzztest-build", "fuzztest-coverage-build", "fuzztest-develop", "fuzztest-repro", "fuzztest-minimize", "triage-rebucket",
-     "fuzztest-cov-replay", "fuzztest-cov-replay-files", "fuzztest-merge",
-     "c-cov-export", "fuzztest-leak-check", "fuzztest-reach"],
+     "fuzztest-cov-replay", "fuzztest-cov-replay-files", "fuzztest-long", "fuzztest-merge",
+     "c-cov-export", "fuzztest-leak-check", "fuzztest-reach", "fuzztest-leak-replay"],
 )
 def c_fuzztest(ctx: Context) -> None:
     ctx.set(H="record")
     linux = system() == "Linux"
-    ctx.env_block("c-env", detect_leaks=1 if linux else 0, llvm_bin=llvm_bin())
+    ctx.env_block("c-env", detect_leaks=1, llvm_bin=llvm_bin())  # FuzzTest has no false leak on macOS (run.md)
     ctx.env_block("c-ub")
     build_fuzztest_toy(ctx)
     ctx.sh('mkdir -p "$F/corpus/$H"')
     # FuzzTest 2026-06-29 reads macOS's peak RSS (bytes) as KiB: no limit there (fuzztest.md).
     common = dict(test_binary="record_fuzz_test", fuzz_test="RecordTest.ParsesWithoutCrashing",
-                  memory_mb=2048 if linux else 0, input_timeout_s=10)
+                  memory_mb=2048 if linux else 0, input_timeout_s=10, build="$F/build")
 
     # A first round without a finding fills the flat corpus; then the planted bug.
     ctx.block("fuzztest-develop", round=1, run_s=120, **common)
@@ -1485,7 +1814,7 @@ def c_fuzztest(ctx: Context) -> None:
     ctx.expect("2 logs in 1 bucket" in out and "no crash detected" not in out,
                "the minimized input stays in the original's bucket")
     # The in-process repeat (fuzz-triage, step 2): a directory of copies as FUZZTEST_REPLAY, replayed in one process.
-    copies = int(documented("fuzz-c-cpp", "triage.md", r"`FUZZTEST_REPLAY` set to a directory of (\d+) copies"))
+    copies = int(documented("fuzz-c-cpp", "fuzztest.md", r"`FUZZTEST_REPLAY` set to a directory of (\d+) copies"))
     repeat = os.path.join(ctx.F, "crashes", "assert", "repeat")
     ctx.sh('mkdir -p "{0}" && for i in $(seq 1 {1}); do cp "$F/corpus/$H/{2}" "{0}/$i"; done'
            .format(repeat, copies, ctx.files(".seclab/fuzz/corpus/record")[0]))
@@ -1504,7 +1833,20 @@ def c_fuzztest(ctx: Context) -> None:
     ctx.expect_state("cov-assert-check-2", "finished")
     ctx.expect("crashed: " in ctx.log("cov-assert-check-2") and ctx.files(".seclab/fuzz/runs/cov-assert-check-2/profraw"),
                "the per-file replay keeps the other inputs' coverage and names the crash")
+    ctx.expect(len(ctx.findings("cov-assert-check-2")) == 1 and "Assertion" in ctx.log("cov-assert-check-2"),
+               "the per-file replay records the crash as a finding, with its report")
     ctx.set(H="record")
+    # A long run: two copies, prepared, then started from the spec. They write new inputs into the run's
+    # corpus, the launcher's default --corpus, and only read the persistent corpus.
+    persistent = ctx.files(".seclab/fuzz/corpus/record")
+    ctx.block("fuzztest-long", n=2, copies=2, run_s=20, tree=ctx.repo, tree_build=os.path.join(ctx.F, "build"), **common)
+    with open(os.path.join(ctx.F, "runs", "record-long2", "spec.json")) as handle:
+        copies = json.load(handle)["copies"]
+    ctx.expect(len(copies) == 2 and all(c["corpus"] == c["env"]["FUZZTEST_TESTSUITE_OUT_DIR"] == "{run}/corpus" for c in copies),
+               "each copy writes into the run's corpus, the launcher's default")
+    ctx.sh('$L start --skip-cpu-check --spec "$F/runs/$H-long2/spec.json"')
+    ctx.expect_state("record-long2", "found-crash", "finished")
+    ctx.expect(ctx.files(".seclab/fuzz/corpus/record") == persistent, "the long run leaves the persistent corpus alone")
     # Merging a long run's corpus: the union, minimized (here a stand-in for the run's corpus).
     ctx.sh('mkdir -p "$F/runs/record-long1/corpus" && cp "$F/corpus/$H"/* "$F/runs/record-long1/corpus/"')
     ctx.block("fuzztest-merge", n=1, timeout_s=300, long_run="record-long1", **common)
@@ -1520,7 +1862,7 @@ def c_fuzztest(ctx: Context) -> None:
     ctx.set(H="record")
     ctx.block("fuzztest-cov-replay", n=1, timeout_s=300, **common)
     ctx.expect_state("cov-record-1", "finished")
-    ctx.block("c-cov-export", n=1, round=1, binary="record_fuzz_test")
+    ctx.block("c-cov-export", n=1, round=1, binary="record_fuzz_test", objects="")
     ctx.expect_covered("$F/coverage/$H/r1.lcov", "src/record.cc")
 
     # The gate's leak check: clean for this fuzz test, a difference for a leaky one.
@@ -1531,12 +1873,40 @@ def c_fuzztest(ctx: Context) -> None:
     ctx.set(H="leaky")
     out = ctx.block("fuzztest-leak-check", n=1, **dict(leak, fuzz_test="RecordTest.ParsesLeaky")).stdout
     ctx.expect("### Different hit counts" in out and "record_fuzz_test.cc" in out, "the leak check points at the leaking fuzz test")
+    leak_check_crash(ctx, "fuzztest-leak-check", "$F/corpus/record/" + ctx.files(".seclab/fuzz/corpus/record")[0],
+                     finding, **dict(leak, fuzz_test="RecordTest.ParsesLeaky"))
 
     # reach.py on FuzzTest: the chosen inputs go in through FUZZTEST_REPLAY={dir}.
     ctx.set(H="record")
     line = next(i for i, text in enumerate(open(os.path.join(ctx.repo, "src", "record.cc")), 1) if "name->assign" in text)
     out = ctx.block("fuzztest-reach", file="src/record.cc", line=line, timeout_s=120, **common).stdout
     ctx.expect("reached: " in out, "reach.py finds an input that reaches src/record.cc:%d" % line)
+
+    # A memory leak: FuzzTest checks for leaks only at exit, so the run records no finding. Replaying its
+    # corpus one file per process names the inputs that leak, those starting with "LK" (the seed is one).
+    ctx.set(H="leaking")
+    ctx.sh('mkdir -p "$F/corpus/$H"')
+    leaks = dict(common, fuzz_test="RecordTest.LeaksMemory")
+    ctx.block("fuzztest-develop", round=1, run_s=10, **leaks)
+    ctx.expect("LeakSanitizer: detected memory leaks" in ctx.log("r1-leaking") and not ctx.findings("r1-leaking"),
+               "the run's log ends in a leak report, with no finding")
+    # Symbolizing the leak report can take a while: here 20 s. The deadline, 60 s past the run's time,
+    # waits for it; a stop would kill the symbolizer, and the run would end finished.
+    slow = os.path.join(ctx.repo, "slow-symbolizer", "llvm-symbolizer")
+    os.makedirs(os.path.dirname(slow))
+    with open(slow, "w") as handle:
+        handle.write('#!/bin/sh\nsleep 20\nexec "%s" "$@"\n' % os.path.join(llvm_bin(), "llvm-symbolizer"))
+    os.chmod(slow, 0o755)
+    ctx.block("fuzztest-develop", round=2, run_s=10, replace=(('ASAN_OPTIONS="$ASAN_OPTIONS"',
+              'ASAN_OPTIONS="$ASAN_OPTIONS:external_symbolizer_path=%s"' % slow),), **leaks)
+    ctx.expect_state("r2-leaking", "failed")
+    ctx.expect("in CopyPrefix" in ctx.log("r2-leaking"), "the deadline lets the slowly symbolized leak report finish")
+    ctx.block("fuzztest-leak-replay", n=1, timeout_s=300, corpus="$F/corpus/$H", **leaks)
+    ctx.expect_state("leaks-leaking-1", "finished")
+    named = re.findall(r"^failed: (\S+)$", ctx.log("leaks-leaking-1"), re.M)
+    inputs = ctx.files(".seclab/fuzz/corpus/leaking")
+    ctx.expect(0 < len(named) < len(inputs) and all(b"LK" in open(f, "rb").read() for f in named),
+               "the replay names only inputs that leak (%d of %d)" % (len(named), len(inputs)))
 
 
 def check(blocks: dict) -> list:

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Find corpus inputs that reach a given source line.
 
-The starting point for directed inputs: replay chosen subsets of a corpus in
+The starting point for targeted inputs: replay chosen subsets of a corpus in
 the coverage build, read the line's hit count from the exported lcov, and
 narrow down to the smallest input that reaches it.
 
@@ -342,9 +342,8 @@ class Searcher:
 
     def report(self, rdir: str, copy: dict, batch: list) -> None:
         """A valid step can have findings too (libFuzzer's -merge=1 goes on
-        past a crashing input), or an allowed failing exit (Jest, and Jazzer
-        with --keep_going=1, after an input throws): say so once, for
-        fuzz-triage."""
+        past a crashing input), or an allowed failing exit (Jest, after an
+        input fails): say so once, for fuzz-triage."""
         for finding in copy.get("new_findings") or []:
             path = os.path.join(rdir, finding["path"])
             try:

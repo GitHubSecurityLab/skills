@@ -74,7 +74,7 @@ The fuzzing skills take an agent through a whole campaign:
   the most valuable fix, such as seeds, a dictionary or a harness change.
 - **Crashes.** It reproduces each crash, finds the root cause, tries to
   fix the bug with a regression test and drafts the report.
-- **Hand-off.** It prepares the harnesses and CI integration as changes
+- **Upstreaming.** It prepares the harnesses and CI integration as changes
   maintainers can merge.
 
 The agent checks with you before key decisions, such as which targets to
@@ -103,9 +103,10 @@ project (kept out of git) and to commits on a local `seclab/fuzz-<date>`
 branch, so a later session can resume it.
 
 To run unattended, ask to "fuzz this project autonomously", optionally
-with a limit ("3 targets", "for 4 hours"; at most 8 hours by default).
-The agent then shows the command to restart it with full permissions:
-do this only in a codespace or VM without push credentials.
+with a limit, such as "3 targets" or "for 4 hours". The agent then
+shows the command to restart it with full permissions: do this only in
+a codespace or VM without push credentials. Without a limit, the agent
+takes on new targets for 8 hours.
 
 How the fuzzing skills work and why: [design document](docs/design/fuzzing-skills.md).
 

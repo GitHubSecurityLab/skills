@@ -1,7 +1,7 @@
 # C/C++ call sequences
 
 A stateful API (create, configure, use, destroy) gets a bounded loop of
-calls the input picks, only on handles the harness holds:
+calls that the input picks. The calls use only handles the harness holds:
 
 <!-- ci: c-call-sequence -->
 ```cpp
@@ -31,9 +31,11 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
 }
 ```
 
-A freed handle leaves the table and every handle is freed at the end, so
-a use-after-free or leak report is the library's.
+A freed handle leaves `docs`, the table of live handles, and every handle
+still in it is freed at the end. So a use-after-free or leak report is
+the library's.
 
-If the harness is a FuzzTest: a `std::vector<std::variant<...>>`
-parameter, one alternative per call with its arguments, replaces the loop
-(`VectorOf(VariantOf(...)).WithMaxSize(16)`).
+If the harness is a FuzzTest, a `std::vector<std::variant<...>>`
+parameter replaces the loop. It has one alternative per call, holding
+that call's arguments; its domain is
+`VectorOf(VariantOf(...)).WithMaxSize(16)`.

@@ -9,17 +9,19 @@ license: MIT
 
 # Fuzzing JavaScript and TypeScript with Jazzer.js
 
-Jazzer.js runs libFuzzer in the Node process and
-instruments the code under test as it loads. Two formats exist:
+Jazzer.js runs libFuzzer in the Node process and instruments the code
+under test as it loads. Two formats exist:
 
 - **CLI fuzz targets** (`module.exports.fuzz = function (data) {...}`, or
-  `export function fuzz` in ESM), run with `npx jazzer`. The default: they
-  work with any test runner, and a plain test in the project's own runner
-  replays their corpus (`regression.md`).
+  `export function fuzz` in ESM), run with `npx jazzer`. They're the
+  default: they work with any test runner, and a plain test in the
+  project's own runner replays their corpus (`regression.md`).
 - **Jest fuzz tests** (`it.fuzz` in `*.fuzz.js` or `*.fuzz.ts` files), run
-  through the `@jazzer.js/jest-runner` test runner, if it passes a probe
-  with the project's Jest. Everything about them is in [references/jest.md](references/jest.md),
-  read only on that path; the other references describe CLI targets.
+  through the `@jazzer.js/jest-runner` test runner if that runner passes a
+  probe with the project's Jest. [references/jest.md](references/jest.md)
+  gives their way of doing each step; read it only on that path. The other
+  references describe CLI targets, and point to jest.md where Jest tests
+  differ.
 
 **Status:** the skills pin Jazzer 0.30.0 and Jazzer.js 4.0.0.
 
@@ -37,14 +39,16 @@ Not for deciding what to do next; that's the workflow skills.
 
 ## Reads
 
+What the steps in this file read. Paths are relative to `.seclab/fuzz/`
+unless they start with `.seclab/`:
 - `targets/<id>.md`: Harness (the target file, or a Jest test's file,
   describe and test name; package directory).
 - `CAMPAIGN.md`: Settings (`memory_mb`, `input_timeout_s`).
 
 ## Steps
 
-1. **Choose the harness format,** first match wins; the format decides
-   the commands of every later step:
+1. **Choose the harness format,** from the first row that matches. The
+   format decides the commands of every later step:
 
    | The project has | Format |
    |---|---|
@@ -54,11 +58,14 @@ Not for deciding what to do next; that's the workflow skills.
 
    - If the project is TypeScript: a CLI target fuzzes the compiled
      JavaScript (`build.md`).
-2. **Check the toolchain** and propose installs for what's missing
-   ([references/install.md](references/install.md)): Node, the package
-   manager; then `@jazzer.js/core` ([references/build.md](references/build.md));
-   for Jest fuzz tests, `@jazzer.js/jest-runner`, whose probe checks the
-   project's own Jest (`jest.md`, "Setup"). Record versions.
+2. **Check the toolchain** and propose installs for what's missing, with
+   [references/install.md](references/install.md). Check in this order:
+   - Node and the package manager;
+   - then `@jazzer.js/core` ([references/build.md](references/build.md));
+   - for Jest fuzz tests, `@jazzer.js/jest-runner`, whose probe checks
+     the project's own Jest (`jest.md`, "Setup").
+
+   Record the versions.
 3. **Look up the command** for the step:
 
    | Step | Reference |
@@ -80,10 +87,16 @@ Not for deciding what to do next; that's the workflow skills.
 | Jest | 29.7 and 30.3 | ran; 30.4 and later fail with `@jazzer.js/jest-runner` 4.0.0 (`Cannot read properties of undefined (reading '_buildTransformResult')`). The probe (`jest.md`) checks the project's |
 | TypeScript through `ts-jest` | 29 | ran |
 
-Pin these versions exactly (`--save-exact`), all `@jazzer.js/*` packages
-alike, and record the installed versions. If the project already pins
-Jazzer.js: keep its version and say so. A newer release only when the
-user asks. Jazzer.js is Apache-2.0.
+Pin exactly (`--save-exact`) what the skill adds:
+- the `@jazzer.js/*` packages, all at one version: the one in this
+  table, or the project's if it already has Jazzer.js;
+- `ts-jest` for TypeScript Jest fuzz tests, unless the project has it:
+  `ts-jest@29`, whose latest release accepts Jest 29 and 30.
+
+Say so when you keep the project's version. Pin a newer release only when
+the user asks. Node comes from `install.md`, and Jest from the project;
+the probe checks it (`jest.md`, "Setup"). Record the installed versions,
+and say so when they differ from this table. Jazzer.js is Apache-2.0.
 
 ## Engine output locations in the project tree
 
@@ -98,17 +111,19 @@ CLI targets write only where their arguments say. Jest fuzz tests:
 ## Pitfalls and shortcuts to reject
 
 - **Detectors run real code:** they throw only when the call carries
-  their trigger value (`jaz_zer`); every other input reaches the real
+  their trigger value (`jaz_zer`). Every other input reaches the real
   `child_process`, `fs` or network call. A fuzzed `execSync` runs random
   shell commands (`fuzz-harness`'s input-and-side-effects.md).
 - **The run stops at the first finding.**
-- `--sync` for synchronous targets, the common case; never for async code
-  (`run.md`).
+- Use `--sync` for synchronous targets, the common case, and never for
+  async code (`run.md`).
 - Committing a crash file into a directory the project's tests replay:
   the project's CI replays it (`regression.md`).
 
 ## Writes
 
+What the steps in this file write or change. Paths are relative to
+`.seclab/fuzz/` unless they start with `.seclab/`:
 - `targets/<id>.md`: tool versions, target or test file, corpus paths
   (through the calling skill).
 

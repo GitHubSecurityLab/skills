@@ -4,8 +4,12 @@
 
 clang, `lld`, the sanitizer and libFuzzer runtimes, `llvm-profdata`,
 `llvm-cov` and `llvm-symbolizer` must all be the same LLVM version, from
-`<llvm_bin>`: `/usr/lib/llvm-20/bin` on Ubuntu, `/opt/homebrew/opt/llvm/bin`
-on macOS. Check their versions, and that a libFuzzer binary links:
+`<llvm_bin>`. That directory is:
+- Ubuntu: `/usr/lib/llvm-20/bin`;
+- macOS: `$(brew --prefix llvm)/bin`, i.e. `/opt/homebrew/opt/llvm/bin`
+  on Apple silicon and `/usr/local/opt/llvm/bin` on Intel Macs.
+
+Check their versions, and check that a libFuzzer binary links:
 
 <!-- ci: c-toolchain-check -->
 ```sh
@@ -18,11 +22,11 @@ afl-fuzz --version         # AFL++, if used
 
 ## Install plan
 
-List only what's missing, for the project's build system. Run **`sudo`**
-only in a disposable environment (`fuzz-harness`'s build.md); otherwise
-print the command for the user. On Ubuntu, run `sudo apt-get update`
-before the first install: fresh images, the devcontainer included, ship
-without package lists.
+List only what's missing, for the project's build system. Who runs each
+command, and when `sudo` is allowed: `fuzz-harness`'s build.md,
+"Toolchain". On Ubuntu, `sudo apt-get update` goes before the first
+`apt-get install`, in the same command: fresh images, including the
+devcontainer, ship without package lists.
 
 | What | When | Ubuntu 24.04 | macOS (Homebrew) | Time |
 |---|---|---|---|---|
@@ -37,9 +41,9 @@ without package lists.
 Times were measured on a clean Ubuntu 24.04 with a fast network; slower
 machines take a few times longer.
 
-- **LLVM 20 on Linux:** FuzzTest needs it (`fuzztest.md`), and libFuzzer,
-  AFL++ 5.03c and the coverage build work with it, so one version serves
-  every engine. Apple's clang has no libFuzzer runtime.
+- **LLVM 20 on Linux:** FuzzTest needs it (`fuzztest.md`). libFuzzer,
+  AFL++ 5.03c and the coverage build work with it too, so one version
+  serves every engine. Apple's clang has no libFuzzer runtime.
 - **AFL++ on Linux:** Ubuntu's `afl++` package is 4.09c, far behind: build
   a release instead.
 

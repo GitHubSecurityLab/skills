@@ -26,103 +26,122 @@ class HeaderParserFuzzTest {
 ```
 
 - Parameter styles:
-  - **typed parameters** (strings, numbers, enums, arrays, `List`, `Map`,
-    records, beans, builders, protobuf messages): the default for new tests
-    of APIs; constrain them with annotations from
+  - **typed parameters**: strings, numbers, enums, arrays, `List`, `Map`,
+    records, beans, builders, protobuf messages. They're the default for
+    new tests of APIs. Constrain them with annotations from
     `com.code_intelligence.jazzer.mutation.annotation`: `@NotNull`,
     `@InRange`, `@WithUtf8Length`, `@WithLength`, `@WithSize`, `@Ascii`,
     `@ElementOf`, `@Positive`, `@Finite`
-    (https://github.com/CodeIntelligenceTesting/jazzer/blob/main/docs/mutation-framework.md);
-  - **one `byte[]` (the fastest) or `@NotNull @WithUtf8Length(max =
-    <above the largest seed>) String` parameter** for a parser of a file
-    format, binary or text: only these take a raw file as the input one to
-    one, so test files, generators and `corpus/<h>/` work as seeds
-    (`(String s)` or `(String s, int mode)` decode a file into other
-    values). Without `@WithUtf8Length`, a `String` is cut to 1,000 UTF-8
-    bytes, silently, seeds included, and invalid UTF-8 is always repaired
-    (`byte[]` keeps it). A parser with options (a dialect, flags, limits)
-    gets a second, typed fuzz test for them from the start, not after a
-    plateau: the options as parameters, the document a `byte[]` with the
-    seed files as `@ValuePool` values;
-  - **a typed structure written by the project's own serializer** (model
-    objects or a builder as parameters, its writer, then its parser) when
+    (https://github.com/CodeIntelligenceTesting/jazzer/blob/main/docs/mutation-framework.md).
+  - **one `byte[]` (the fastest) or
+    `@NotNull @WithUtf8Length(max = <above the largest seed>) String`
+    parameter**, for a parser of a file format, binary or text. Only these
+    take a raw file as the input one to one, so test files, generators and
+    `corpus/<h>/` work as seeds. `(String s)` or `(String s, int mode)`,
+    by contrast, decode a file into other values.
+    - Without `@WithUtf8Length`, a `String` is silently cut to 1,000
+      UTF-8 bytes, seeds included.
+    - In a `String`, invalid UTF-8 is always repaired; a `byte[]` keeps
+      it.
+    - A parser with options (a dialect, flags, limits) gets a second,
+      typed fuzz test for them, from the start, not after a plateau. That
+      test takes the options as parameters, and the document as a
+      `byte[]` with the seed files as `@ValuePool` values.
+  - **a typed structure written by the project's own serializer**, when
     byte mutations keep breaking a format's validity (`fuzz-coverage`'s
-    diagnosis.md): valid syntax by construction. The raw `byte[]` test
-    stays for malformed input;
-  - `FuzzedDataProvider` (`com.code_intelligence.jazzer.api`): `consumeInt`,
-    `consumeString(maxLength)`, `consumeRemainingAsBytes()` and similar;
-    integers come from the end of the input, i.e. a raw seed's last bytes.
-- Catch only exceptions the API documents for invalid input. Everything else
-  is a finding (`unexpected_exception` in triage).
-- Property checks: JUnit assertions (`assertEquals`) or `throw new
-  AssertionError(...)`.
+    diagnosis.md). The test takes model objects or a builder as
+    parameters, and runs the project's writer, then its parser: the
+    parser gets valid syntax by construction. The raw `byte[]` test
+    stays, for malformed input.
+  - `FuzzedDataProvider` (`com.code_intelligence.jazzer.api`):
+    `consumeInt`, `consumeString(maxLength)`, `consumeRemainingAsBytes()`
+    and similar. Its input layout: `fuzz-harness`, "Design the harness".
+- Catch only exceptions the API documents for invalid input. Everything
+  else is a finding (`unexpected_exception` in triage).
+- Property checks: JUnit assertions (`assertEquals`) or
+  `throw new AssertionError(...)`.
 - **Steering** (`com.code_intelligence.jazzer.api.Jazzer`):
-  `Jazzer.maximize(cost, 0, <max>)` rewards inputs that raise a
-  deterministic cost (loop iterations, an allocation size; not wall time),
-  for DoS targets; `Jazzer.exploreState(state)` counts each value of a
-  small state variable (a `byte`) as new coverage, for state machines.
-- `@FuzzTest(maxDuration = "...")` defaults to 5 minutes in fuzzing mode;
-  the campaign overrides it per run (`run.md`).
-- If you change a typed test's parameter types (a record's or bean's
-  fields too): that reinterprets its corpus; replay it for a new baseline
-  (`fuzz-coverage`). Bugs keep their harness-independent reproducers.
+  - For DoS targets, `Jazzer.maximize(cost, 0, <max>)` rewards inputs
+    that raise a deterministic cost, such as loop iterations or an
+    allocation size, but not wall time.
+  - For state machines, `Jazzer.exploreState(state)` counts each value of
+    a small state variable (a `byte`) as new coverage.
+- `@FuzzTest(maxDuration = "...")` defaults to 5 minutes in fuzzing mode.
+  The campaign overrides it per run (`run.md`).
+- If you change a typed test's parameter types, a record's or bean's
+  fields included: the change reinterprets the test's corpus. Replay the
+  corpus for a new baseline (`fuzz-coverage`). Bugs keep their
+  harness-independent reproducers.
 
 ## Seeds and dictionaries
 
-- Seeds for typed parameters: `@ValuePool` values (below). They aren't
-  files, so for the gate's seeds-only replay (`fuzz-harness`'s gate.md,
-  "Reaches the target") a 10-second develop run fills `corpus/<h>/` first.
+- Seeds for typed parameters are `@ValuePool` values (below). They aren't
+  files, so a 10-second develop run first fills `corpus/<h>/` for the
+  gate's seeds-only replay (`fuzz-harness`'s gate.md, "Reaches the
+  target").
 - `@ValuePool` (Jazzer 0.28+) feeds values into the typed mutators while
-  fuzzing (magic strings, boundary numbers, sample files as `byte[]`): the
-  typed form of dictionary entries and trigger values. E.g.
-  `@ValuePool("tokens") @NotNull String s`, with `static Stream<?> tokens()`
-  in the test class; `p` (default 0.1) sets how often. `files` globs
-  resolve against the working directory, scratch under the launcher.
+  fuzzing, such as magic strings, boundary numbers, or sample files as
+  `byte[]`. It's the typed form of dictionary entries and trigger values.
+  - Example: `@ValuePool("tokens") @NotNull String s`, with
+    `static Stream<?> tokens()` in the test class.
+  - `p` (default 0.1) sets how often a value comes from the pool.
+  - `files` globs resolve against the working directory. Under the
+    launcher, that's the scratch directory.
 - Files in `src/test/resources/<package path>/<Class>Inputs/<method>/`
-  (or `<Class>Inputs/` for all methods) seed fuzzing and run in every
-  regression run: commit only regression inputs there; campaign seeds go
+  (or `<Class>Inputs/` for all methods) seed fuzzing, and run in every
+  regression run. Commit only regression inputs there; campaign seeds go
   to `corpus/<h>/`.
 - Dictionaries: `@DictionaryEntries({"<tag", "xmlns"})` or
-  `@DictionaryFile(resourcePath = "header.dict")` on the method, or `-dict`
-  in standalone runs.
-- If the fuzz test has JUnit argument sources (`@MethodSource`, `@ValueSource`):
-  they seed fuzzing too, but run in every replay JVM, which skews the gate's
-  state-leak check and `reach.py`. **`@FuzzTest` must be the last annotation,**
-  after them: otherwise fuzzing fails at start (`FuzzTestConfigurationError`),
-  while regression mode, and so the project's CI, still passes.
+  `@DictionaryFile(resourcePath = "header.dict")` on the method, or
+  `-dict` in standalone runs.
+- If the fuzz test has JUnit argument sources (`@MethodSource`,
+  `@ValueSource`): they seed fuzzing too. But they run in every replay
+  JVM, which skews the gate's state-leak check and `reach.py`.
+  **`@FuzzTest` must be the last annotation,** after the argument
+  sources. Otherwise fuzzing fails at start
+  (`FuzzTestConfigurationError`), while regression mode still passes,
+  and so does the project's CI.
 
 ## Setup and lifecycle
 
 - Expensive one-time setup: a `static` field or `@BeforeAll`.
 - `@FuzzTest(lifecycle = Lifecycle.PER_EXECUTION)` runs `@BeforeEach` and
-  `@AfterEach` around every input (fresh state, slower); the default
-  `PER_TEST` runs them once.
+  `@AfterEach` around every input: fresh state, but slower. The default,
+  `PER_TEST`, runs them once.
 
 ## Bug detectors
 
-On by default. They hook calls in instrumented (project) code. What each
-one checks (Jazzer 0.30.0); a sink it sees only partly needs a custom
-check (`fuzz-coverage`, "Check the sinks"):
+Bug detectors are on by default. They hook calls in instrumented
+(project) code. A sink that a detector sees only partly needs a
+custom check (`fuzz-coverage`, "Check the sinks"). What each detector
+checks, as of Jazzer 0.30.0:
 
 | Detector | Reports when | Doesn't see |
 |---|---|---|
 | OS command injection: `ProcessBuilder.start` | the executable (`argv[0]`) is `jazze` | the arguments: `sh -c <input>`, option injection. **Partly**: any other command runs for real |
 | SQL injection: `Statement.execute*`, JPA native queries | the driver throws a syntax error for the query | queries a mock or a stub driver never parses: test with in-memory H2 or SQLite. A failing `PreparedStatement` shows as an `ArrayIndexOutOfBoundsException` (`triage.md`) |
-| Path traversal: `java.io` streams, readers and writers, `Files`, `FileChannel`, `Scanner` | the normalized path is the target `../jazzer-traversal` | other files outside the directory the API may touch. **Partly** |
-| Reflection, expression languages (EL, SpEL, OGNL, JEXL 2, MVEL, Bean Validation messages), FreeMarker templates, script engines | the honeypot class `jaz.Zer` loads, or the script runs `jaz`+`zer` | `Method.invoke` and `getMethod` on existing classes; other expression and template engines |
+| Path traversal: `java.io` streams, readers and writers, `Files`, `FileChannel`, `Scanner` | the normalized path is the target `../jazzer-traversal`, or one the harness's allow predicate rejects (below) | without that predicate, other files outside the directory the API may touch. **Partly** |
+| Reflection, expression languages (EL, SpEL, OGNL, JEXL 2, Bean Validation messages) | code constructs the honeypot class `jaz.Zer` or calls one of its methods (expressions are steered to call `jaz.Zer.el()`), or loads the native library `jazzer_honeypot` | a class name from the input that is only loaded, never constructed or called; `Method.invoke` and `getMethod` on existing classes; other expression languages |
+| Script engines: `ScriptEngine.eval` | the script contains `"jaz"+"zer"` | scripts run another way, e.g. `GroovyShell` |
 | Deserialization: `ObjectInputStream` | a gadget chain reaches the honeypot | other deserializers (Jackson, XStream, Kryo, YAML), unless they construct or call the honeypot (below) |
-| LDAP, XPath injection | the query or filter is invalid syntax | injections that stay valid syntax |
+| LDAP injection: `DirContext.search` | `search` throws any `NamingException`: invalid syntax, but also a search base that doesn't exist or a lost connection. The finding cites RFC 4515 for an invalid filter, RFC 2253 for any other (`triage.md`) | injections that stay valid syntax |
+| XPath injection: `XPath.compile`, `XPath.evaluate*` | the expression is invalid syntax | injections that stay valid syntax |
 | JNDI lookups: `Context.lookup` | the name starts with `ldap://g.co/` or `rmi://g.co/` | |
 | SSRF: sockets, `SocketChannel` | any connection not allowed (`allowNetworkConnections`) | |
 | Regex injection: `Pattern`, `String.matches` and friends | the *pattern* comes from the input and is invalid or explosive | a fixed pattern on input text (ReDoS: `fuzz-coverage`, "Check the sinks") |
 
-Some entries only guide the fuzzer (towards XML external entities or huge `BigDecimal`
-exponents) and report through another detector or as a timeout.
+Some detectors only guide the fuzzer; another detector or a timeout
+reports the bug. MVEL expressions and FreeMarker templates are steered
+towards running the command `jazze`, which the OS command injection
+detector reports. XML parsers are steered towards external entities,
+which the SSRF detector reports. `BigDecimal` is steered towards huge
+exponents, which show as a timeout.
 
-- Disable one only with a recorded reason:
+- Disable a detector only with a recorded reason:
   `jazzer.disabled_hooks=<detector class>` in `junit-platform.properties`
   (`build.md`), or `--disabled_hooks=` in standalone runs.
-- Scope them at run time with `BugDetectors` (`com.code_intelligence.jazzer.api`):
+- Scope the detectors at run time with `BugDetectors`
+  (`com.code_intelligence.jazzer.api`):
   ```java
   try (SilentCloseable ignored = BugDetectors.allowNetworkConnections(
            (host, port) -> host.equals("localhost") && port == 8080)) {
@@ -131,18 +150,37 @@ exponents) and report through another detector or as a timeout.
   ```
   `setFilePathTraversalTarget(() -> path)` changes the path the traversal
   detector looks for.
-- An in-process fake must keep the oracle: a stub database that never
-  rejects a query hides the SQL injection it stands in for.
-- If a deserializer takes a class name from its input: it reports once it constructs or
-  calls `jaz.Zer`; give the fuzzer that name in the format's type syntax, as dictionary
-  entries or `@ValuePool` values: SnakeYAML `!!jaz.Zer {}`, Fastjson `{"@type":"jaz.Zer"}`,
-  Jackson default typing `["jaz.Zer",{}]`, `XMLDecoder` `<object class="jaz.Zer"/>`.
+- If a file path comes from the input: wrap the call in an allow
+  predicate. The traversal detector then checks every path the target
+  opens with the table's APIs: the check `fuzz-harness`'s properties.md
+  asks for, that the resolved path stays inside the base directory:
+  ```java
+  Path base = Paths.get(dataDir).toAbsolutePath().normalize();
+  try (SilentCloseable ignored = BugDetectors.setFilePathTraversalAllowPath(
+           p -> p.toAbsolutePath().normalize().startsWith(base))) {
+    store.read(name);
+  }
+  ```
+  - The predicate gets the path as the code passed it: make it absolute,
+    as above, or every relative path is rejected.
+  - It also sees the target's own files, such as temporary files: allow
+    them too, or each one is a finding.
+- An in-process fake must keep the oracle: a stub that stands in for the
+  database and never rejects a query hides SQL injection.
+- If a deserializer takes a class name from its input: Jazzer reports
+  once the deserializer constructs or calls `jaz.Zer`. Give the fuzzer
+  that name in the format's type syntax, as dictionary entries or
+  `@ValuePool` values:
+  - SnakeYAML: `!!jaz.Zer {}`
+  - Fastjson: `{"@type":"jaz.Zer"}`
+  - Jackson default typing: `["jaz.Zer",{}]`
+  - `XMLDecoder`: `<object class="jaz.Zer"/>`
 
 ## Hooks
 
 Add a hook only after reading the code, for a known reason: e.g. a random
 or time-dependent value made constant, or a checksum check (`build.md`,
-fuzzing-only changes). A hook for one project method:
+"Fuzzing-only changes"). A hook for one project method:
 
 ```java
 // imports: com.code_intelligence.jazzer.api.{HookType, MethodHook}, java.lang.invoke.MethodHandle
@@ -157,36 +195,47 @@ public class HarnessHooks {
 }
 ```
 
-- Register: `jazzer.custom_hooks=com.example.HarnessHooks` in
-  `junit-platform.properties`, or `--custom_hooks=` in standalone runs.
-- Hook types: `BEFORE` and `AFTER` inspect arguments and results; `REPLACE`
-  skips the original call. `targetMethodDescriptor` picks an overload.
-- **A `REPLACE` hook returns** `void` for a `void` method, otherwise the
-  method's type, its wrapper or `Object`. An `Object` hook on a `void`
-  method can fail open: the calling class stays uninstrumented
-  (`Error retransforming`, `VerifyError` in the log), and the real method
-  runs. With `targetMethodDescriptor`, Jazzer refuses a mismatch at start.
+- Register the hook class: `jazzer.custom_hooks=com.example.HarnessHooks`
+  in `junit-platform.properties`, or `--custom_hooks=` in standalone runs.
+- Hook types: `BEFORE` and `AFTER` inspect arguments and results;
+  `REPLACE` skips the original call. `targetMethodDescriptor` picks an
+  overload.
+- **A `REPLACE` hook returns** `void` for a `void` method. For any other
+  method, it returns the method's type, its wrapper or `Object`.
+  - An `Object` hook on a `void` method can fail open: the calling class
+    stays uninstrumented, and the real method runs. The log then shows
+    `Error retransforming` and a `VerifyError`.
+  - With `targetMethodDescriptor`, Jazzer refuses a mismatch at start.
 - **Hooks act at call sites** in instrumented classes, not in the hooked
   method. A hook on a JDK method fires where project code calls it, not
-  where JDK code does (e.g. `ProcessBuilder.start()` reached through
-  `Runtime.exec`, which then really runs). Hook the project method that
-  performs the effect, as above. A hook that lands in JDK classes
-  (through `additionalClassesToHook`, its own or a detector's) makes every
-  call there throw `NoClassDefFoundError: <hook class>`, which Jazzer
-  reports as a finding: JDK classes can't load it from the class path.
-- Report from hooks with `Jazzer.reportFindingFromHook(...)`; a plain
-  `throw` may be swallowed by the code under test.
-- A `REPLACE` hook on a function a bug detector hooks silences that
+  where JDK code does. For example, a hook on `ProcessBuilder.start()`
+  doesn't fire when the call comes through `Runtime.exec`, and `start()`
+  then really runs. Hook the project method that performs the effect, as
+  above.
+- A hook that lands in JDK classes through its own or a detector's
+  `additionalClassesToHook` makes every call there throw
+  `NoClassDefFoundError: <hook class>`. JDK classes can't load the hook
+  class from the class path. Jazzer reports the error as a finding.
+- Report from hooks with `Jazzer.reportFindingFromHook(...)`: the code
+  under test may swallow a plain `throw`.
+- A `REPLACE` hook on a function that a bug detector hooks silences that
   detector.
 - Docs: https://github.com/CodeIntelligenceTesting/jazzer/blob/main/docs/advanced.md
 
 ## Recognizing other formats
 
-Classic Jazzer targets (common in OSS-Fuzz): a class with
+Classic Jazzer targets, common in OSS-Fuzz, are classes with
 `public static void fuzzerTestOneInput(byte[] data)` or
-`fuzzerTestOneInput(FuzzedDataProvider data)` and optionally
-`fuzzerInitialize()`. Keep their format when extending them, and run them
-with the standalone driver (`--target_class=<class>`). Ones kept in
-`google/oss-fuzz` are for the baseline only: compile copies from
-`.seclab/fuzz/oss-fuzz/` with `javac -cp "$CP" -d "$F/build/jazzer/oss-fuzz"`
-and put that directory in front of `$CP`.
+`fuzzerTestOneInput(FuzzedDataProvider data)`, and optionally
+`fuzzerInitialize()`. Keep their format when extending them, and run
+them with the standalone driver (`--target_class=<class>`).
+
+Classic targets kept in `google/oss-fuzz` only measure existing fuzzing
+(`fuzz-campaign`'s baseline). Compile copies of them from
+`.seclab/fuzz/oss-fuzz/` with the run's JDK:
+<!-- ci-skip: no toy has OSS-Fuzz copies -->
+```sh
+find "$F/oss-fuzz" -name '*.java' -exec "$JAVA_HOME/bin/javac" -cp "$CP" \
+  -d "$F/build/jazzer/oss-fuzz" {} +
+```
+Then put `$F/build/jazzer/oss-fuzz` in front of `$CP`.

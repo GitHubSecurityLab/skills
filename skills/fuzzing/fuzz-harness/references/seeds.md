@@ -1,14 +1,9 @@
 # Seeds and dictionaries
 
-## When to use
-
-- After a new harness passes the build, before the gate and the first runs.
-- "Make seeds and a dictionary for this harness."
-
-Not for harness changes (`SKILL.md`) or running fuzzers (runs.md).
-
 ## Reads
 
+What the steps in this file read. Paths are relative to `.seclab/fuzz/`
+unless they start with `.seclab/`:
 - `targets/<id>.md`: Harness (format, corpus and dictionary paths), Scope
   files, Sinks. `sinks/<id>.tsv` for boundary-value seeds.
 - The language skill for seed and dictionary mechanics of the engine.
@@ -16,15 +11,28 @@ Not for harness changes (`SKILL.md`) or running fuzzers (runs.md).
 ## Steps
 
 1. **Collect seeds,** in this order. Put them in `corpus/<harness>/`
-   (Jest: the package's `.cifuzz-corpus/<file>/<describe>/<test>/`; see the
-   language skill).
+   (Jest: the test's directory in `.cifuzz-corpus/`; see the language
+   skill), each in the harness's input layout (step 2).
    1. The previous campaign's corpus for this harness (`archive/`, or a
       merged corpus carried into a new campaign).
    2. Inputs committed by existing harnesses (seed directories, regression
       inputs, `*_seed_corpus.zip` or what an OSS-Fuzz `build.sh` zips).
    3. ClusterFuzzLite or CI corpus artifacts, when the project has them.
    4. The project's own test data, examples and fixtures (`tests/`,
-      `testdata/`, `examples/`, `fixtures/`, `corpus/`).
+      `testdata/`, `examples/`, `fixtures/`, `corpus/`), and the values its
+      tests pass where the harness takes input (step 2), such as the
+      document, the options the input selects, or, for a call-sequence
+      harness, each test's calls in order. Setup that the harness holds
+      fixed isn't a seed.
+      - Values written inline, such as strings and byte arrays: copy them.
+      - Values the tests build in code: add a line to the entry point (for
+        a call sequence, to each call the harness picks) that writes its
+        arguments to a new numbered file under `.seclab/fuzz/`, and run the
+        tests. Then remove the line, and check with `git status` that no
+        project file is left changed.
+
+      Such values also seed harnesses that take no files, such as typed
+      ones (step 2).
    5. For a project on OSS-Fuzz, its harness's public corpus, for local
       use only (minimize it after the import): `https://storage.googleapis.com/<project>-backup.clusterfuzz-external.appspot.com/corpus/libFuzzer/<fuzzer>/public.zip`,
       where `<fuzzer>` is the harness's name with a `<project>_` prefix
@@ -38,28 +46,39 @@ Not for harness changes (`SKILL.md`) or running fuzzers (runs.md).
       structure, a generator script in
       `.seclab/fuzz/generators/<harness>.py` that writes many well-formed
       variants, deterministically (fixed seed).
+
    Add deliberately broken variants too (truncated, wrong magic, fields out
    of range, deep nesting): error-handling code that still processes
-   attacker data is attack surface. Sources from outside the project (5, 6)
-   stay local and are never proposed upstream.
-   - If the imported corpus is large: minimize it before the gate
-     (`fuzz-coverage`'s corpus.md).
+   attacker data is attack surface. Sources from outside the project (5
+   and 6) stay local and are never proposed upstream.
+   - If the corpus passes about 10,000 files after an import: minimize it
+     before the gate (`fuzz-coverage`'s corpus.md).
    - After an import, list the files above the harness's input cap
-     (`find <dir> -type f -size +<cap>c`): they slow every execution; keep
+     (`find <dir> -type f -size +<cap>c`). They slow every execution: keep
      them only if the format needs that size, and then raise the cap.
 2. **Write seeds in the harness's input layout,** so each one means what
    it says:
    - raw-bytes harnesses (a format parser taking `bytes`, `byte[]`,
      `Buffer`, or one Java `String` with a length above the largest seed)
      take the format's files as they are;
-   - a byte-provider split (`FuzzedDataProvider` in any language) reads
-     integers and booleans from the end of the input, the first call the
-     last bytes: the generator appends them to each file (or prepends
-     them, for a harness that reads its options from a fixed prefix);
+   - a harness designed with an options prefix (`SKILL.md`, "Design the
+     harness"): put the prefix's bytes in front of each format file as it
+     goes into the corpus, valid or broken. Zeros will do; the fuzzer
+     varies them. Inputs this harness saved since it got its prefix go in
+     as they are;
+   - any other project's harness with options, whatever its layout: seed
+     it from its own inputs (sources 1–3 and 5), which are in its layout
+     already. Add a format file only where its layout is simple to write:
+     the bytes its prefix accepts in front (`cjson_read_fuzzer`: four
+     ASCII `0` or `1` characters, and a NUL at the end), or one zero byte
+     appended per option it reads from the end, if each reads one byte
+     (`ConsumeBool`, a range of up to 256 values);
    - typed harnesses (FuzzTest domains, Jazzer typed parameters) don't map
      files to arguments: use the engine's seed mechanism (`.WithSeeds`,
      Jazzer's `@ValuePool`; the language skill).
-   The gate's seeds-only replay (gate.md, "Reaches the target") shows a mismatch.
+
+   The gate's seeds-only replay (gate.md, "Reaches the target") shows a
+   mismatch between the seeds and the layout.
 3. **Dictionary** in `dict/<harness>.dict`, existing ones first:
    - the project's own (`*.dict` next to its fuzzers or in its OSS-Fuzz
      project); for C/C++, the tokens the compiler extracts
@@ -82,6 +101,7 @@ Not for harness changes (`SKILL.md`) or running fuzzers (runs.md).
      its installation) are a reference for tokens. Read them; don't copy
      their files into the workspace (AGPL);
    - keep it focused: dozens to a few hundred entries from this format.
+
    File syntax (libFuzzer, AFL++, Jazzer, Jazzer.js): one entry per line,
    `name="value"` or `"value"`, `#` comments, printable ASCII, escapes
    `\\`, `\"`, `\xAB`; any other line, or an empty file, stops libFuzzer.
@@ -110,5 +130,7 @@ license. Never an input that reaches a held-back bug.
 
 ## Writes
 
+What the steps in this file write or change. Paths are relative to
+`.seclab/fuzz/` unless they start with `.seclab/`:
 - `corpus/<harness>/`, `dict/<harness>.dict`, `generators/`.
 - `targets/<id>.md`: Harness (corpus, dictionary), Notes (seed sources).

@@ -1,33 +1,40 @@
 # C/C++ sink catalog
 
 Two kinds of sinks:
-- **Memory safety** (the sections up to Hotspots): a statement whose
-  **size, index, offset or count comes from attacker data**. Not every
-  `memcpy` is a sink.
+- **Memory safety** (the sections before Hotspots; Hotspots says how to
+  report them): a statement where **attacker data controls which memory
+  is read, written or freed**, not only the bytes read or written. For
+  example: a size, index, offset, count or format string from input; a
+  fixed-size read from an input that may be shorter; a free on an error
+  path that input can reach. Not every `memcpy` is a sink.
 - **Files, processes, network and output** (the sections after Hotspots):
   no sanitizer sees these. A check in the harness finds what it can
-  compare, such as a path or an escaped string the API returns; a call it
-  doesn't see, such as `system()` or a fetch, goes undetected and really
-  runs.
+  compare, such as a path or an escaped string the API returns. A call
+  the check doesn't see, such as `system()` or a fetch, goes undetected
+  and really runs.
 
-Patterns are for ripgrep (`rg -n -e '<pattern>' <files>`) and also work with
-`grep -nE`. Run them over the files in question, then read each hit. Drop hits
-whose operands are constants or `sizeof(...)`.
+Patterns are for ripgrep: `rg -n -e '<pattern>' <files>`. They also work
+with `grep -nE`. Run them over the files in question, then read each hit.
+Drop hits as `SKILL.md`, "Find sinks", says. Also drop a hit whose size
+is a constant or `sizeof(...)`, unless another operand depends on input,
+such as a pointer into it: `memcpy(&hdr, p, sizeof hdr)` reads past the
+end of an input shorter than `hdr`.
 
 ## Input field reads (where attacker numbers come from)
 ```
 ntoh[sl]|be(16|32|64)toh|le(16|32|64)toh|read_u?(8|16|32|64)|get_u?(16|32|64)|<<\s*(8|16|24|32)
 \b(strto(u?ll?|[iu]max)|ato(i|ll?)|sscanf)\s*\(
 ```
-Note which variables receive lengths, counts, offsets and type tags; text
-formats parse them from digits (the second pattern).
+Note which variables receive lengths, counts, offsets and type tags. The
+second pattern finds where text formats parse these values from digits.
+For binary fields, check that enough input is left at each read.
 
 ## Copies with computed length
 ```
 \b(memcpy|memmove|memset|strncpy|strncat|bcopy)\s*\(
 ```
 Is the length derived from an input field? Is the destination size checked
-against it?
+against it? When the source is the input, is that much input left?
 
 ## Unbounded string operations
 ```
@@ -69,22 +76,28 @@ Does every iteration stay inside the buffer?
 \b(fprintf|vfprintf|sprintf|vsprintf|dprintf|asprintf|syslog)\s*\([^,]*,\s*[^" ]
 \b(snprintf|vsnprintf)\s*\([^,]*,[^,]*,\s*[^" ]
 ```
-A format argument that isn't a string literal. A format on the next line
-isn't found.
+The patterns find a format argument that isn't a string literal. They
+miss a format argument written on the next line.
 
 ## Frees on error paths
 ```
 goto\s+(err|error|fail|out|cleanup|bad)
 ```
-Look at `free(...)` calls under those labels: double free, use after free.
+Look at the `free(...)` calls under those labels for double free and use
+after free.
 
 ## Hotspots
 
-For the threat model, report hotspots, not single statements: the files and
-functions with the most size, index or offset arithmetic fed by input field
-reads, plus files with past security fixes (`git log --oneline -- <file>`),
-and functions that recurse once per nesting level of the input without a
-depth limit (a stack overflow from deep nesting).
+For the threat model, report hotspots, not single statements:
+- the files and functions with the most size, index or offset arithmetic
+  fed by input field reads;
+- functions that read fields or structs from input without checking that
+  enough input is left;
+- functions with a format string from input, or with a free on an error
+  path that can cause a double free or a use after free;
+- files with past security fixes (`git log --oneline -- <file>`);
+- functions that recurse once per nesting level of the input without a
+  depth limit (a stack overflow from deep nesting).
 
 ## Files and archive entries
 ```

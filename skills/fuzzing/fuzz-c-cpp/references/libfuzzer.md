@@ -1,7 +1,7 @@
 # libFuzzer tips
 
-Docs: https://llvm.org/docs/LibFuzzer.html. The installed binary lists every
-flag with its default: `<fuzzer> -help=1`.
+Docs: https://llvm.org/docs/LibFuzzer.html. Any built fuzz binary lists
+every flag with its default: `<binary> -help=1`.
 
 ## Flags worth knowing
 
@@ -19,22 +19,20 @@ flag with its default: `<fuzzer> -help=1`.
 | `-set_cover_merge=1` | corpus minimization (`-merge=1` keeps more inputs for the same features); add `-merge_control_file=<f>` to resume an interrupted merge |
 | `-minimize_crash=1 -runs=<n>` | crash minimization |
 
-Parallel runs are N separate copies sharing a corpus directory (`run.md`
-next to this file), not `-fork` or `-jobs`/`-workers`: those share one
-scratch directory, write `fuzz-<n>.log` files, and `-fork`'s exit status
-differs between macOS and Linux.
+Parallel runs are N separate copies sharing a corpus directory, not
+`-fork` or `-jobs`/`-workers` (`run.md`, "Long runs").
 
 ## Reading the output
 
 - `cov:` counts covered edges; `ft:` counts finer features (edge hit
   counts, value profiles). `ft:` growing without `cov:` still means
   progress.
-- `NEW` lines add corpus entries; `REDUCE` replaces an entry with a smaller
-  one; `pulse` lines only show that it's alive. Only `pulse` lines for a
-  long stretch means a plateau.
-- `MS: <n> <mutations>` names the mutations that produced an entry. Mostly
-  `CMP`/`DE`/`PersAutoDict` entries mean the fuzzer is solving
-  comparisons; mostly `CopyPart`/`CrossOver` means it's recombining.
+- `NEW` lines add corpus entries; `REDUCE` replaces an entry with a
+  smaller one; `pulse` lines only show that the fuzzer is alive. A long
+  stretch of only `pulse` lines means a plateau.
+- `MS: <n> <mutations>` names the mutations that produced an entry. When
+  most entries name `CMP`/`DE`/`PersAutoDict`, the fuzzer is solving
+  comparisons; when most name `CopyPart`/`CrossOver`, it's recombining.
 
 ## Tips
 

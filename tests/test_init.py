@@ -367,13 +367,24 @@ class InitTest(unittest.TestCase):
             self.git("rm", "-rq", name)
             self.git("-c", "user.name=t", "-c", "user.email=t@example.com", "commit", "-qm", "removed")
 
+    def test_a_gitignore_that_unignores_seclab_doesnt_expose_the_workspace(self):
+        # A rule such as !.* in the repository's .gitignore beats git's exclude file: without .seclab/.gitignore,
+        # `git add -A` would commit the workspace.
+        with open(os.path.join(self.repo, ".gitignore"), "w") as handle:
+            handle.write(".*\n!.*\n")
+        self.git("add", "-f", ".gitignore")
+        self.git("-c", "user.name=t", "-c", "user.email=t@example.com", "commit", "-qm", "dotfiles")
+        self.assertEqual(self.init("--branch", "current").returncode, 0)
+        self.assertEqual(self.git("status", "--porcelain", "--untracked-files=all"), "")
+
     def test_a_symlinked_workspace_is_refused(self):
         # A workspace that points elsewhere, into the repository's files say, isn't the user's.
         os.makedirs(os.path.join(self.repo, "data", "fuzz"))
         with open(os.path.join(self.repo, "data", "fuzz", "env.sh"), "w") as handle:
             handle.write("echo planted\n")
         for link, target in ((".seclab", "data"), (os.path.join(".seclab", "fuzz"), os.path.join("..", "data", "fuzz")),
-                             (os.path.join(".seclab", "fuzz", "env.sh"), os.path.join("..", "..", "data", "fuzz", "env.sh"))):
+                             (os.path.join(".seclab", "fuzz", "env.sh"), os.path.join("..", "..", "data", "fuzz", "env.sh")),
+                             (os.path.join(".seclab", ".gitignore"), os.path.join("..", "data", "fuzz", "env.sh"))):
             shutil.rmtree(os.path.join(self.repo, ".seclab"), ignore_errors=True)
             if os.path.islink(os.path.join(self.repo, ".seclab")):
                 os.remove(os.path.join(self.repo, ".seclab"))
@@ -532,14 +543,24 @@ class InitTest(unittest.TestCase):
         self.assertIn("- **Disposable environment:** yes (declared)", self.ledger())
 
     def test_runs_from_a_subdirectory_and_warns_about_unsafe_paths(self):
-        unsafe = os.path.join(self.tmp.name, "my repo")
+        unsafe = os.path.join(self.tmp.name, "repo(1)")
         os.rename(self.repo, unsafe)
         self.repo = unsafe
         os.makedirs(os.path.join(unsafe, "sub"))
         result = self.init("--branch", "current", cwd=os.path.join(unsafe, "sub"))
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("warning: the repository path contains ' '", result.stdout)
+        self.assertIn("warning: the repository path contains '('", result.stdout)
         self.assertTrue(os.path.exists(self.path("CAMPAIGN.md")))
+
+    def test_refuses_a_path_with_whitespace(self):
+        # env.sh's L is "python3 $F/bin/launcher.py": every unquoted $L splits at the space.
+        spaced = os.path.join(self.tmp.name, "my repo")
+        os.rename(self.repo, spaced)
+        self.repo = spaced
+        result = self.init("--branch", "current")
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("error: the repository path contains whitespace (' ')", result.stderr)
+        self.assertFalse(os.path.exists(os.path.join(spaced, ".seclab")))
 
 
 if __name__ == "__main__":

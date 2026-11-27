@@ -6,16 +6,17 @@ property produces `harness_bug` verdicts, not findings.
 **A check must be able to fail:** it compares values computed
 independently, and its failure reaches the engine.
 
-**Reuse first:** a property-based test of the project (the threat model
-notes them) states a property its maintainers accept. Run its assertion
-on the harness's decoded value before writing new ones, and add its
-example values to the seeds.
+**Reuse first:** a property-based test of the project states a property
+its maintainers accept. The threat model lists these tests, in the
+Property tests column of Sources (focused mode: in the entry point's
+section). Run a test's assertion on the harness's decoded value before
+writing new ones, and add its example values to the seeds.
 
 How to signal a failure: `abort()` (or `__builtin_trap()`) in C/C++, a
 thrown exception or failed assertion in Java and JS, a failing `EXPECT_*` or
-`ASSERT_*` in FuzzTest. The language skill shows the idiom. Java/JS: raise
-the check's failure outside the `try` that catches the target's documented
-exceptions, or the catch swallows it.
+`ASSERT_*` in FuzzTest. The language skill shows the idiom. In Java and JS,
+raise the check's failure outside the `try` that catches the target's
+documented exceptions; otherwise that catch swallows the failure.
 
 ## Patterns
 
@@ -35,16 +36,22 @@ compress → decompress, escape → unescape.
 
 **Differential.** Two implementations or modes of the same operation must
 agree: streaming vs. one-shot parsing, fast path vs. reference
-implementation, strict vs. lenient mode on inputs both accept, two libraries
-for the same format.
+implementation, strict vs. lenient mode on inputs the strict mode accepts,
+two libraries for the same format.
 
 ```
 a = parse_streaming(input); b = parse_whole(input)
 assert outcome(a) == outcome(b)        # both fail, or both succeed with equal values
 ```
 
-Compare only when both sides consumed the whole input with the same
-options; otherwise a difference is expected and the check reports noise.
+Give both sides the same input and options. One side rejecting what the
+other accepts is what this check finds, so a failure isn't a reason to
+skip the comparison. Skip it only where a difference is expected, or the
+check reports noise:
+- a side succeeded without reading to the end of the input, e.g. a
+  parser that reads only the first value;
+- a side is meant to reject more, e.g. a strict mode against a lenient
+  one: skip only the inputs that side rejects.
 
 **Invariants that hold for all inputs:**
 - idempotence: `normalize(normalize(x)) == normalize(x)`;
@@ -63,18 +70,23 @@ sees them only partly** (from the target's sink list):
 - an integrity check never accepts modified data (flip a byte of a signed
   input and assert verification fails).
 
+A sink group that no sanitizer, engine detector or such check can see is
+uncheckable: record that state in the target's Sinks table, with what goes
+unseen in its Note (`fuzz-coverage`, "Check the sinks").
+
 ## Preconditions and comparators
 
 - **Preconditions:** a property usually holds only for some inputs: a
   complete document without trailing data, unique keys, finite numbers,
-  valid escapes, inputs both sides accept. Check the precondition in the
-  harness and skip only the assertion, never the call. Record each one in
-  the target file, so the user sees what isn't checked.
+  valid escapes, inputs a strict mode accepts. Check the precondition in
+  the harness and skip only the assertion, never the call. Record each
+  one in the target file, so the user sees what isn't checked.
 - **Comparators:** use an equality whose semantics you know for every
   value. A library's own `compare` or `equals` may differ on duplicate
-  keys, NaN or numeric tolerance. With a deterministic serializer,
-  `encode(decode(encode(v))) == encode(v)` compares two independently
-  computed encodings and needs no equality function. Lossy or
+  keys, NaN or numeric tolerance. Where you can't write such an equality
+  and the serializer is deterministic, compare encodings instead:
+  `encode(decode(encode(v))) == encode(v)`. That can't see data `encode`
+  drops every time, such as a field it never writes. Lossy or
   non-canonical formats: start comparisons from the decoded value.
 - **Expect refinements:** a new property usually needs one to three, each
   from a minimized violation: decide whether the property or the code is

@@ -2,6 +2,23 @@
 
 ## Reading an annotated function
 
+**First, rule out a fuzzer that got no feedback.** Suspect one when all
+three hold for the harness's corpus:
+- it's small for how long the harness was fuzzed, e.g. tens of inputs
+  after hours;
+- it covers little beyond what the seeds reach;
+- its gaps sit at many guards at once.
+
+Then the build or options the harness was fuzzed with probably
+instrumented only the harness, not the library:
+- Java: `with custom hooks only`, or narrow `--instrumentation_includes`;
+- JS: `dryRun`, or `includes` that miss the files.
+
+Check the instrumentation of the build the harness was fuzzed with (the
+language skill's build.md, "Instrumentation checks"). Without that build,
+check its build flags and run logs. If the fuzzer was blind, fixing that
+is the action, before any seeds or harness change.
+
 Classify each top gap by the shape its annotation shows. `coverage.py show`
 prints each line with its hit count, `!` for lines never run, and
 `<-- k/m branches not taken`. Typical shapes:
@@ -35,37 +52,43 @@ a probe) before counting it.
 ## Sinks reached but not triggered
 
 Reaching a sink doesn't test it: the coverage build shows only that it
-ran. For each group that `SKILL.md`'s "Check the sinks" finds reached but
-not triggered:
-- Java/JS with a detector that sees the call (what each detector checks:
-  `fuzz-java`'s harness.md, "Bug detectors", or `fuzz-js`'s harness.md,
-  "Bug detectors"): add seeds or dictionary entries with the
-  input that makes it fire, its trigger value (Jazzer typed parameters:
-  `@ValuePool`, `fuzz-java`); if real sanitization blocks it, record the
-  sink as sanitized, with the evidence;
-- Java/JS with a detector that sees it only partly (a command's
-  arguments, a resolved path) or not at all, and C/C++ files, processes,
-  network and output: add a custom check first (`fuzz-harness`, checks
-  beyond crashes); where the harness can't check it, fuzzing doesn't
-  detect it. A detector that can't see the sink proves nothing about
-  sanitization;
-- Java/JS regular expressions applied to input: fuzzing finds only
-  exponential backtracking; check them as in redos.md next to this file;
-- C/C++ hotspots, after the first plateau: group the hotspot's sites
-  (below), read only the top few groups site by site, add boundary values
-  for the field that feeds them, and enable value profiling or CmpLog
-  (`fuzz-c-cpp`). Optionally build the `ubsan-int` variant.
+ran. For each group that `SKILL.md`'s "Check the sinks" finds reached,
+with tries left, by language and sink kind:
+- **Java/JS, with a detector that sees the whole call:** add seeds or
+  dictionary entries with the detector's trigger value, the input that
+  makes the detector fire; Jazzer typed parameters use `@ValuePool`
+  (`fuzz-java`). If real sanitization blocks the attack, record the group
+  as sanitized, with the evidence. Each detector's checks are in
+  `fuzz-java`'s harness.md, "Bug detectors", and `fuzz-js`'s harness.md,
+  "Bug detectors".
+- **Java/JS, with a detector that sees the sink only partly or not at all,
+  and C/C++ sinks on files, processes, network or output:** add a custom
+  check first (`fuzz-harness`, checks beyond crashes). A detector sees a
+  sink only partly when it misses, for example, a command's arguments or a
+  resolved path. Where the harness can't check it, fuzzing doesn't detect
+  it: a group nothing sees is uncheckable (`SKILL.md`, "Check the sinks").
+  A detector that can't see the sink proves nothing about sanitization.
+- **Java/JS regular expressions applied to input:** fuzzing finds only
+  exponential backtracking. Check them as redos.md next to this file says.
+- **C/C++ hotspots, after the first plateau:**
+  - group the hotspot's sites ("C/C++ sink sites", below);
+  - read only the top few groups site by site, and add boundary values for
+    the field that feeds each of them (corpus.md next to this file);
+  - leave the other kept groups to later rounds, like any other sink group;
+  - enable value profiling or CmpLog (`fuzz-c-cpp`), and optionally build
+    the `ubsan-int` variant.
 
 ## C/C++ sink sites
 
-For a hotspot that fuzzing reaches but doesn't trigger, after the first
-plateau (above):
+After the first plateau (above), for a hotspot that fuzzing reaches but
+doesn't trigger:
 
-1. Grep its code with the patterns of `security-threat-model`'s C/C++
-   catalog, and drop sites whose operands are constants or `sizeof`.
-2. Group the sites by the input field that feeds them (e.g. `hdr->len`,
-   `chunk.size`), rank the groups, and keep the target's groups within the
-   cap from Settings (`sink_groups`, default 20). Ranking factors:
+1. Grep its code with the patterns of `security-threat-model`'s
+   c-cpp.md, and drop sites as that catalog says.
+2. Group the sites by the input field that feeds them, e.g. `hdr->len` or
+   `chunk.size`. Rank the groups by the factors below, then keep the
+   target's top groups within the cap from Settings (`sink_groups`,
+   default 20), which counts all of the target's groups. Ranking factors:
    1. arithmetic on the value before it's used as a size;
    2. how many sites the value feeds;
    3. narrowing or sign changes;
@@ -73,46 +96,54 @@ plateau (above):
       off-by-one bugs live in checks);
    5. past security fixes in the file;
    6. low hit counts in coverage.
-3. Add the sites to `sinks/<id>.tsv` (`id file line group kind note`), in
-   place of the hotspot's row.
+3. Add the kept groups' sites to `sinks/<id>.tsv`, in place of the
+   hotspot's row. The TSV's columns are `id file line code group kind
+   note` (`fuzz-campaign`'s targets.md, "Sinks").
 
 ## Choosing the next action
 
-List the candidate actions: one per gap group on the current harness, plus
-the top new targets from `fuzz-campaign`'s target ranking. One rule picks
-among them: **the most security-relevant code unlocked wins; cost only
-breaks ties.**
+List the candidate actions:
+- one for each set of diagnosed gaps that a single action would unlock,
+  such as all blocked branches that compare against the same keyword;
+- one for each reached sink group with tries left;
+- the top new targets from `fuzz-campaign`'s target ranking.
 
-1. **Class** of the code behind the blocker (the untaken branches, plus
-   the code only they lead to), best first: sinks, size or offset
-   arithmetic, error handling that still processes attacker data, code
-   with past bugs; then ordinary parsing and processing; then logging,
-   debug output and version strings. Code outside the threat model or
-   unreachable in production doesn't count. A new target counts the code
-   in its scope files that no current harness reaches.
-2. **Amount:** within a class, the action that unlocks more of it.
-3. **Cost,** only between actions that come out alike: seeds and
-   dictionary entries, then a harness extension, a build patch, a new
-   harness; a rebuild and gate, or a change in how existing input bytes
-   are consumed, makes an action dearer.
+One rule picks among them: **the most security-relevant code unlocked
+wins; cost only breaks ties.**
 
-Apply cheap actions that don't conflict (seeds, dictionary entries, value
-profiling) together. Write the action and its aim into the target file
-before acting: a code, build or harness change for coverage is kept only
-if its aim becomes covered, or scope coverage clearly rises (`SKILL.md`,
-"Measure the action").
+1. **Class:** the class of the code the action would unlock decides
+   first. That code is the untaken branches, plus the code only they lead
+   to. Best first:
+   1. sinks, size or offset arithmetic, error handling that still
+      processes attacker data, code with past bugs;
+   2. ordinary parsing and processing;
+   3. logging, debug output and version strings.
+
+   Code outside the threat model or unreachable in production doesn't
+   count. For a new target, count the code in its scope files, but only
+   the code that no current harness reaches.
+2. **Amount:** within a class, the action that unlocks more of it wins.
+3. **Cost** decides only between actions that come out alike, cheapest
+   first: seeds and dictionary entries, a harness extension, a build
+   patch, a new harness. A rebuild and gate, or a change in how existing
+   input bytes are consumed, makes an action dearer.
+
+When acting, apply cheap actions that don't conflict (seeds, dictionary
+entries, value profiling) together. Whether a code, build or harness
+change stays is decided later (`SKILL.md`, "Measure the action").
 
 ## Structure-aware escalation
 
 For formats whose validity breaks under byte mutation, after seeds,
 dictionaries and targeted inputs didn't open the gap:
-- C/C++: a FuzzTest domain (`fuzz-c-cpp`, `fuzztest.md`), or a libFuzzer
+- C/C++: a FuzzTest domain (`fuzz-c-cpp`'s fuzztest.md), or a libFuzzer
   custom mutator that decodes the input, mutates the structure and
-  re-encodes it (long runs then stay on libFuzzer);
+  re-encodes it. With a custom mutator, long runs stay on libFuzzer;
 - Java: Jazzer typed parameters, written through the project's own
   serializer into its parser (`fuzz-java`, `harness.md`);
 - JS: a `FuzzedDataProvider` split, or a generator-built structure.
 
 Keep some raw byte mutation (e.g. a selector that sometimes passes the
 bytes through), so malformed structure is still tested. Like any harness
-change, it's kept or rolled back by `SKILL.md`'s "Measure the action".
+change, the escalation is kept or rolled back by `SKILL.md`'s "Measure the
+action".

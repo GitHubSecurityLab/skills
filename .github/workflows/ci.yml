@@ -140,6 +140,7 @@ jobs:
           fi
       - run: python3 tools/run_doc_blocks.py run c-libfuzzer
       - run: python3 tools/run_doc_blocks.py run c-cmake
+      - run: python3 tools/run_doc_blocks.py run c-shared
 
   e2e-c-aflpp:
     name: E2E C/C++ AFL++

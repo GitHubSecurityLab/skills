@@ -1,7 +1,7 @@
 # Campaign ledger
 
-All campaign state lives in `.seclab/fuzz/`. `fuzz-campaign` owns these
-templates; other skills read and write only the headings they name.
+All campaign state lives in `.seclab/fuzz/`. `fuzz-campaign` owns the
+templates below; other skills read and write only the headings they name.
 
 Paths in the skills' prose, such as `targets/<id>.md`, are relative to
 `.seclab/fuzz/`. Shell commands run from the repository root and spell out
@@ -29,21 +29,21 @@ Rules:
     crashes/<bucket>.md           one per crash bucket (template below)
     crashes/<bucket>/             inputs/ (at most 10), minimized input, reproducer, regression test, logs
     reports/<id>.md               report drafts
-    build/<variant>/              build directories (in-tree-only builds: worktrees under
+    build/<variant>/              build directories (in-tree-only builds: links to worktrees under
                                   <checkout>/../<repo>.seclab-worktrees/)
     corpus/<harness>/             persistent corpus per harness (Jest: the package's .cifuzz-corpus)
     dict/<harness>.dict           dictionaries
     oss-fuzz/                     copies of harnesses kept in google/oss-fuzz (baseline only)
     leaks/<harness>.supp          LeakSanitizer suppressions of queued leaks (fuzz-triage)
-    coverage/<harness>/r<n>.lcov  snapshots (also r<n>.profdata or r<n>.exec), gate-*.lcov
+    coverage/<harness>/           snapshots r<round>.lcov (also .profdata or .exec), gate-*.lcov
     coverage/merged/<n>.lcov
-    handoff/                      held-back.tsv, PR texts (handoff.md)
-    sinks/<target>.tsv            sink sites (id, file, line, group, kind, note)
+    upstreaming/                  held-back.tsv, PR texts (upstreaming.md)
+    sinks/<target>.tsv            sink sites (id, file, line, code, group, kind, note)
     runs/<id>/                    one per run (launcher.py): spec.json, meta.json, progress.tsv,
                                   artifacts/copy-<i>/ (findings), copy-<i>/log,
                                   copy-<i>/work/ (scratch; deleted after develop runs);
                                   long runs also corpus/ (AFL++: out/<instance>/)
-    generators/                   seed generator scripts
+    generators/                   generator scripts for seeds (fuzz-harness) and targeted inputs (fuzz-coverage)
     archive/<date>/               ledger files of earlier campaigns
 ```
 
@@ -52,8 +52,8 @@ Rules:
 ```markdown
 # Fuzzing campaign: <project>
 
-Resume: invoke `fuzz-campaign` (it runs `init.py`), then the first Next action
-(each is `skill: step — target or detail`).
+Resume: invoke `fuzz-campaign`, which runs `init.py`. Then do the first
+Next action; each reads `skill: step — target or detail`.
 
 - **Status:** standalone | running | finished
 - **Base commit:** <sha> (<branch or tag>), chosen <date>
@@ -67,7 +67,7 @@ Resume: invoke `fuzz-campaign` (it runs `init.py`), then the first Next action
 |---|---|
 | autonomy | interactive |
 | report_format | advisory |
-| stop_rule | candidates with at least 10% of the attack surface each |
+| stop_rule | 8 h of develop per pass |
 | coverage_goal | <percent of branches in combined scope, or none> |
 | gate_seconds | 60 |
 | min_exec_per_sec | 100 |
@@ -104,25 +104,27 @@ scope was set (the baseline; 0% without one) → now.
 
 State: the bucket file's (`fuzz-triage`'s verdicts.md). Progress:
 `triaged` (verdict assigned), `queued` (its fix waits for the batch,
-`fuzz-triage`'s Route), `fixed-locally` (fix.md), `needs-decision` (no
-safe fix). Report: `-`, or `drafted` (report.md). Whether the user
-reported it is the bucket file's Disclosure.
+`fuzz-triage`'s Route), `fixed-locally` (`fuzz-triage`'s fix.md),
+`needs-decision` (no safe fix). Report: `-`, or `drafted` (`fuzz-triage`'s
+report.md). Whether the user reported it is the bucket file's Disclosure.
 
 ## Long runs
 | Run id | Harness | Command | Tree | Cores | Duration | State | Findings | Analysis |
 |---|---|---|---|---|---|---|---|---|
 | png_read-long1 | png_read | `python3 .../launcher.py start --spec ...` | worktree 3f2a9c1 | 14 | 24 h | finished | 2 | phase 1 |
 
-State from `launcher.py status`; analysis: no, phase 1, done (`references/analyze.md`).
+State: from `launcher.py status`. Analysis: `no`, `phase 1` or `done`
+(`fuzz-campaign`'s analyze.md).
 
 ## Next actions
 1. <skill>: <step> — <target or detail>
 ```
 
 `init.py` rewrites the First-build notice and Disposable environment lines
-on every run from what `--notice-shown` and `--disposable` recorded in
-git's directory (`git rev-parse --git-path seclab`): editing the lines
-changes nothing, and a copied `.seclab/` doesn't carry them.
+on every run. It writes them from what `--notice-shown` and `--disposable`
+recorded in git's directory (`git rev-parse --git-path seclab`). Editing
+the lines changes nothing, and a copied `.seclab/` doesn't carry those
+records.
 
 ## `targets/<target>.md`
 
@@ -174,7 +176,7 @@ Configuration matrix: <harness: the configurations it covers>
 - **Inputs:** <n> (kept: crashes/<bucket>/inputs/; minimized: crashes/<bucket>/minimized)
 - **Reproduce:** `<command>`
 - **Verdict:** <verdict> · **Confidence:** high | medium | low
-- **State:** open | duplicate of <bucket> | non-reproducible | needs investigation
+- **State:** open | duplicate of <bucket> | introduced by our fix for <bucket> | non-reproducible | needs investigation
 - **Disclosure:** unreported | reported <date, channel> | public
 - **Fixed upstream:** no | <commit> (released in <version> | not yet released)
 

@@ -182,9 +182,30 @@ class TimedRunTests(LauncherTestCase):
 
     def test_files_written_after_the_stop_are_not_findings(self):
         # libFuzzer's exit hook saves the input in flight when a JVM is stopped: "fuzz target exited".
-        script = "trap 'echo x > \"{run}/artifacts/copy-{copy}/crash-at-exit\"; exit 1' TERM; sleep 30 & wait"
-        # 2 s: under load, a TERM after 1 s can reach sh before its trap is set.
-        code, out, _ = self.run_main("start", "--id", "r7-h", "--harness", "h", "--time", "2", "--", "sh", "-c", script)
+        # The stand-in saves its file in a TERM handler. Not an sh trap: when the TERM to the group also
+        # kills sh's child, sh's `wait` can return first, and sh exits 0 without running the trap.
+        # Under load, the TERM can come before the handler is set, and the KILL before the handler has
+        # run. So the stand-in inherits TERM blocked from this process, where the launcher runs, and
+        # unblocks it once the handler is set; the KILL waits 30 s.
+        script = (
+            "import signal, sys, time\n"
+            "def stop(*_):\n"
+            "    with open(sys.argv[1], 'w') as handle:\n"
+            "        handle.write('x')\n"
+            "    sys.exit(1)\n"
+            "signal.signal(signal.SIGTERM, stop)\n"
+            "signal.pthread_sigmask(signal.SIG_UNBLOCK, [signal.SIGTERM])\n"
+            "time.sleep(30)\n"
+        )
+        old = lc.STOP_GRACE_SECONDS
+        lc.STOP_GRACE_SECONDS = 30.0
+        mask = signal.pthread_sigmask(signal.SIG_BLOCK, [signal.SIGTERM])
+        try:
+            code, out, _ = self.run_main("start", "--id", "r7-h", "--harness", "h", "--time", "1", "--",
+                                         sys.executable, "-c", script, "{run}/artifacts/copy-{copy}/crash-at-exit")
+        finally:
+            signal.pthread_sigmask(signal.SIG_SETMASK, mask)
+            lc.STOP_GRACE_SECONDS = old
         self.assertEqual(code, 0)
         copy = self.meta("r7-h")["copies"][0]
         self.assertEqual((copy["state"], copy["new_findings"]), ("finished", []))
@@ -206,6 +227,29 @@ class TimedRunTests(LauncherTestCase):
                 copy = {"started": 1000.0, "returncode": code}
                 state = lc.copy_state(copy, {"time": 100}, 1099.0, findings, "exit", ran)
                 self.assertEqual(state, expected, (code, findings, ran))
+
+
+class LateCopyTests(LauncherTestCase):
+    def test_each_copy_gets_its_time_from_its_own_start(self):
+        # Starting the copies can take longer than the grace: a copy that starts late still gets its time.
+        real = lc.Supervisor.spawn
+
+        def slow(supervisor, index, entry):
+            if index:
+                time.sleep(1.5)
+            real(supervisor, index, entry)
+
+        lc.Supervisor.spawn = slow
+        try:
+            for run_id, kind, seconds, state in (("r9-h", "--time", "0.5", "finished"),
+                                                 ("repro-h-9", "--timeout", "1", "timed out")):
+                self.run_main("start", "--id", run_id, "--harness", "h", kind, seconds, "--copies", "2",
+                              "--skip-cpu-check", "--", "sleep", "30")
+                copies = self.meta(run_id)["copies"]
+                self.assertEqual([c["state"] for c in copies], [state, state], run_id)
+                self.assertGreaterEqual(copies[1]["ended"] - copies[1]["started"], 0.9, run_id)
+        finally:
+            lc.Supervisor.spawn = real
 
 
 class CopyEnvironmentTests(LauncherTestCase):

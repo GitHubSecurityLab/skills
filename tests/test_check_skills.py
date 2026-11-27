@@ -289,6 +289,26 @@ class CheckSkillsTests(unittest.TestCase):
         self.assertIn("fuzz-triage/SKILL.md", errors[1])
         self.assertIn("has 0", errors[1])
 
+    def test_standalone_skills_have_the_same_start_section(self):
+        start = "## Start\n\nRun:\n\n```sh\n## not a heading\npython3 init.py\n```\n\n- Exit 2: rerun.\n"
+        self.add("fuzzing", "fuzz-harness", skill("fuzz-harness", body="# H\n\n" + start + "\n## Reads\n\nH only.\n"))
+        self.add("fuzzing", "fuzz-coverage", skill("fuzz-coverage", body="# C\n\n" + start + "\n## Reads\n\nC only.\n"))
+        self.add("fuzzing", "fuzz-triage", skill("fuzz-triage", body="# T\n\n" + start.replace("rerun", "run again")
+                                                 + "\n## Reads\n\nT only.\n"))
+        errors = [e for e in cs.check(self.root).errors if "'## Start'" in e]
+        self.assertEqual(len(errors), 1, errors)
+        self.assertIn("fuzz-triage/SKILL.md", errors[0])
+        self.assertIn("differs", errors[0])
+
+    def test_reads_and_writes_open_with_their_sentence(self):
+        reads = cs.SECTION_INTROS["Reads"].replace(" are relative", "\nare relative")
+        self.add("fuzzing", "fuzz-harness", skill("fuzz-harness", body="# H\n\n## Reads\n\n" + reads
+                                                  + "\n- `CAMPAIGN.md`.\n\n## Writes\n\n- `CAMPAIGN.md`.\n"))
+        self.add("shared", "security-threat-model", skill("security-threat-model", body="# T\n\n## Reads\n\n- x\n"))
+        errors = [e for e in cs.check(self.root).errors if "must open with" in e]
+        self.assertEqual(len(errors), 1, errors)
+        self.assertIn("'## Writes'", errors[0])
+
     def test_standalone_skills_have_the_same_before_stopping_check(self):
         line = "- **Before stopping,** check the Done when items that this request's steps produce.\n"
         self.add("fuzzing", "fuzz-harness", skill("fuzz-harness", body="# H\n\n## Next\n\n" + line))
@@ -354,7 +374,7 @@ class CheckSkillsTests(unittest.TestCase):
         self.assertIn("references/b.md", errors[0])
 
     def test_blocking_bug_rule_stated_once(self):
-        rule = "A property violation is filtered by\ndefault: a narrow precondition.\n"
+        rule = "The harness never filters a\nbug's inputs.\n"
         self.add("fuzzing", "fuzz-triage", skill("fuzz-triage", body=rule))
         self.add("fuzzing", "fuzz-harness")
         write(os.path.join(self.root, "skills", "fuzzing", "fuzz-harness", "references", "gate.md"), rule)
@@ -462,6 +482,17 @@ class CheckSkillsTests(unittest.TestCase):
         errors = [e for e in cs.check(self.root).errors if "brace expansion" in e]
         self.assertEqual(len(errors), 1, errors)
         self.assertIn("references/group.md:2", errors[0])
+
+    def test_indented_commands_have_no_heredoc(self):
+        # A list item's block keeps its indent when copied: the closing "   EOF" doesn't end the heredoc.
+        self.add("fuzzing", "fuzz-triage")
+        path = os.path.join(self.root, "skills", "fuzzing", "fuzz-triage", "references", "group.md")
+        write(path, "```sh\ncat > a <<'EOF'\nx\nEOF\n```\n1. Step:\n   ```sh\n   cat <<- \"EOF\" > b\n   x\n   EOF\n"
+                    "   cat <<\\EOF > c\n   EOF\n   cat <<< x; echo $((1 << 2))\n   ```\n")
+        errors = [e for e in cs.check(self.root).errors if "heredoc" in e]
+        self.assertEqual(len(errors), 2, errors)
+        self.assertIn("references/group.md:8", errors[0])
+        self.assertIn("references/group.md:11", errors[1])
 
     def test_repository_passes(self):
         report = cs.check(ROOT)

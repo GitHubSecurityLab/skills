@@ -1,9 +1,9 @@
 # Verdicts
 
 Assign exactly one verdict per bucket, with a confidence (high, medium,
-low) and the evidence behind it. The verdict says what the bug is. Where
-the finding stands is its State (below), and whether upstream fixed it is
-its Fixed upstream field.
+low) and the evidence behind it. The verdict says what the bug is. The
+State (below) says where the finding stands, and the Fixed upstream field
+says whether upstream fixed it.
 
 | Verdict | Meaning | Evidence needed |
 |---|---|---|
@@ -22,26 +22,35 @@ its Fixed upstream field.
 |---|---|---|
 | `open` | the default | |
 | `duplicate of <bucket>` | same root cause as another bucket; it takes that bucket's verdict | the shared root cause |
+| `introduced by our fix for <bucket>` | the bug is in our fix for that bucket: the reproducer passes without our fixes and on upstream's HEAD (`SKILL.md`, "Rule out our own fixes") | the `base` run, the fix commit after which the reproducer fails, and the run on upstream's HEAD |
 | `non-reproducible` | the inputs don't crash in `SKILL.md`'s "Reproduce" attempts | the suspected cause (threads, time, state) |
 | `needs investigation` | unresolved: needs a human | what was tried and what is unclear |
 
-The verdict and Kind stay what they are in every state; a finding without
-a verdict yet has its crash type's default. **Fixed upstream** records the
-fixing commit, from the reproducer passing on upstream HEAD, and whether
-the latest release is still affected (raise "fixed upstream, not yet
-released" with the user): being fixed isn't being public, so nothing
-else changes. Once the hold-back rule (`fuzz-campaign`, safety rules)
-covers a finding, a later triage never reclassifies it out of the rule
-until it's public and fixed upstream; it adds a note instead. Our own
-local fixes (fix.md) go in the bucket's Fix section.
+A State doesn't change a bucket's Kind (its crash type) or its verdict,
+except that a duplicate takes the verdict of the bucket it duplicates. A
+bucket without a verdict yet, such as a `non-reproducible` one, has `-`;
+its Kind still counts for the hold-back rule.
+
+**Fixed upstream** records the fixing commit, from the reproducer passing
+on upstream HEAD, and whether the latest release is still affected. If
+the release is still affected, raise "fixed upstream, not yet released"
+with the user. Being fixed isn't being public, so nothing else changes.
+
+Once the hold-back rule (`fuzz-campaign`, safety rules) covers a finding,
+a later triage never reclassifies the finding out of the rule until it's
+public and fixed upstream; it adds a note instead. The rule's one
+exception is a bug in our own fix that upstream's code doesn't have.
+
+Our own local fixes (fix.md) go in the bucket's Fix section.
 
 ## Impact by crash type
 
-The starting point for step 5 and for the report's severity, following
-ClusterFuzz's default classification (memory corruption is a security
-bug; near-null dereferences, stack overflows, OOMs, timeouts, aborts and
-leaks aren't). ASan's `SCARINESS` line gives a similar first hint. Read the
-report, not only its title: a `SEGV` on a wild address can be a write.
+The table below is the starting point for step 5 of "Deciding" and for
+the report's severity. It follows ClusterFuzz's default classification:
+memory corruption is a security bug; near-null dereferences, stack
+overflows, OOMs, timeouts, aborts and leaks aren't. ASan's `SCARINESS`
+line gives a similar first hint. Read the report, not only its title: a
+`SEGV` on a wild address can be a write.
 
 | Crash type | Default impact | Questions |
 |---|---|---|
@@ -56,34 +65,42 @@ report, not only its title: a `SEGV` on a wild address can be a write.
 
 1. **Is it our harness?** The crash is in harness code, or the harness
    breaks a documented precondition (wrong length, non-terminated string,
-   freed object, call order). → `harness_bug`. Whether the data is trusted
-   is step 5's question, not this one. For example, a harness passing 3
-   bytes to `parse_header(buf, len)`, documented to need at least 4, has
-   a `harness_bug`. A harness fuzzing the configuration file parser while
-   the threat model says only administrators write that file doesn't: it
-   respects the API, so a crash is a real bug without an attacker path
-   (`library_hardening`, or the type-specific verdict).
+   freed object, call order) → `harness_bug`. Whether the data is trusted
+   is step 5's question, not this one. For example, a harness that passes
+   3 bytes to `parse_header(buf, len)`, documented to need at least 4, has
+   a `harness_bug`. A harness that fuzzes the configuration file parser,
+   while the threat model says only administrators write that file, has
+   no `harness_bug`: it respects the API. A crash there is a real bug
+   without an attacker path (`library_hardening`, or the type-specific
+   verdict).
 2. **Does it reproduce?** No after `SKILL.md`'s "Reproduce" attempts →
    State `non-reproducible`.
-3. **Same root cause as a known bucket?** → State `duplicate of <bucket>`.
+3. **Same root cause as a known bucket?** → State `duplicate of <bucket>`
+   (which bucket keeps its State: `SKILL.md`, "Find the root cause").
 4. **Type of failure:** memory error, detector finding, property, exception,
    resource exhaustion, assertion.
-5. **Attacker path:** using the threat model, name the real entry point and
-   deployment. A path exists and the impact (table above) matters there →
-   `vulnerability`, whatever the crash type, which the bucket's Kind keeps:
-   memory corruption, injection findings, confirmed impact; an
-   availability-only bug only where a DoS matters (a server or shared
-   service that parses untrusted input, triggered by a small input).
-   Otherwise `library_hardening` for memory errors, or the type-specific
-   verdict.
-   **Before `vulnerability`:** the bug's reproducer (`SKILL.md`, "Write the reproducer")
-   calls the project's CLI or public API, on a build without fuzzing-only
-   patches (C/C++ with such patches: also against a build without the
-   fuzzing-mode macro, like the project's regression tests), and still
-   fails. Then ask three devil's-advocate questions, and write down the
-   answers: would a real caller ever pass these values? Does a check
-   before this entry point already reject them? Is the impact more than a
-   crash of a process the attacker already controls?
+5. **Attacker path:** using the threat model, name the real entry point
+   and deployment.
+   - A path exists and the impact (table above) matters there →
+     `vulnerability`, whatever the crash type; the bucket's Kind keeps
+     the crash type. That covers memory corruption, injection findings
+     and confirmed impact. An availability-only bug is a `vulnerability`
+     only where a DoS matters: a small input triggers it in a server or
+     shared service that parses untrusted input.
+   - Otherwise → `library_hardening` for memory errors, or the
+     type-specific verdict.
+
+   **Before `vulnerability`:** the bug's reproducer (`SKILL.md`, "Write
+   the reproducer") calls the project's CLI or public API, and still
+   fails on a build without fuzzing-only code. For C/C++, that's a build
+   without the fuzzing-mode macro, like the project's regression tests:
+   the macro turns on our fuzzing-only patches and the project's own
+   `FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION` blocks. Then ask three
+   devil's-advocate questions, and write down the answers:
+   - Would a real caller ever pass these values?
+   - Does a check before this entry point already reject them?
+   - Is the impact more than a crash of a process the attacker already
+     controls?
 6. **Unsure after this?** → State `needs investigation`, with the open
    question; the verdict says what's known so far.
 
@@ -99,5 +116,6 @@ report, not only its title: a `SEGV` on a wild address can be a write.
 - **C/C++ reports that change the verdict** (a C++ standard-library
   check's abort, MSan, UBSan integer checks): `fuzz-c-cpp`'s triage.md,
   "Reading reports".
-- **Dependencies:** if the root cause is in a dependency (vendored or not),
-  the verdict stands, but the report goes to that project (report.md).
+- **Dependencies:** if the root cause is in a dependency, vendored or
+  not, the verdict stands, but the report goes to that project
+  (report.md).

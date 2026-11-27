@@ -10,7 +10,7 @@ Commands:
                 files are never combined; merge the .exec files instead)
   merge         combine several lcov files
   summary       branch/line/function coverage, optionally limited to scope
-                files and compared with a previous snapshot
+                files and compared with a previous snapshot of the same code
   gaps          functions with branches never taken, ranked
   show          source of one file annotated with hit counts (one function,
                 or a line range for functions the data doesn't name)
@@ -489,6 +489,19 @@ def cmd_merge(args) -> int:
     return 0
 
 
+def _same_code(a: FileCov, b: FileCov) -> bool:
+    """Whether two snapshots have matching line, branch and function layouts."""
+    return (
+        set(a.lines) == set(b.lines)
+        and set(a.branches) == set(b.branches)
+        and {name: values[:2] for name, values in a.functions.items()}
+        == {name: values[:2] for name, values in b.functions.items()}
+        and a.line_counts()[1] == b.line_counts()[1]
+        and a.branch_counts()[1] == b.branch_counts()[1]
+        and a.function_counts()[1] == b.function_counts()[1]
+    )
+
+
 def cmd_summary(args) -> int:
     mapper = PathMapper(args.root)
     scope = load_scope(args.scope)
@@ -496,9 +509,14 @@ def cmd_summary(args) -> int:
     prev_files = {}
     if args.prev:
         prev_files, _ = filter_scope(_load(args, [args.prev]), mapper, scope)
+    differs = sorted(d for d in set(files) & set(prev_files) if not _same_code(files[d], prev_files[d]))
+    # A file only the new snapshot has counts as reached (JS loads files lazily); one only the
+    # previous snapshot has would drop its coverage from the totals.
+    gone = sorted(set(prev_files) - set(files))
+    compare = bool(args.prev) and not differs and not gone
 
     totals = _totals(files)
-    prev_totals = _totals(prev_files) if args.prev else None
+    prev_totals = _totals(prev_files) if compare else None
     label = "%d files in scope" % len(files) if scope else "%d files" % len(files)
     if unmatched:
         label += "; incomplete"
@@ -521,6 +539,22 @@ def cmd_summary(args) -> int:
             % (len(unmatched), ", ".join(unmatched)),
             file=sys.stderr,
         )
+    if differs:
+        print(
+            "**Different code:** %d %s other lines or branches than the previous snapshot (%s): "
+            "they come from different builds, so there's no change; this snapshot is a new baseline"
+            % (len(differs), "file has" if len(differs) == 1 else "files have", ", ".join(differs))
+        )
+        print()
+        print("warning: different code than the previous snapshot: %s" % ", ".join(differs), file=sys.stderr)
+    if gone:
+        print(
+            "**Missing:** %d %s of the previous snapshot %s no data in this one (%s): the totals don't compare, "
+            "so there's no change; this snapshot is a new baseline"
+            % (len(gone), "file" if len(gone) == 1 else "files", "has" if len(gone) == 1 else "have", ", ".join(gone))
+        )
+        print()
+        print("warning: files missing since the previous snapshot: %s" % ", ".join(gone), file=sys.stderr)
     for key, name in (("br", "Branches"), ("ln", "Lines"), ("fn", "Functions")):
         hit, total = totals[key]
         text = "- **%s:** %s" % (name, _ratio(hit, total))
@@ -537,7 +571,7 @@ def cmd_summary(args) -> int:
         ln_hit, ln_total = cov.line_counts()
         fn_hit, fn_total = cov.function_counts()
         change = ""
-        if args.prev:
+        if compare:
             prev = prev_files.get(display)
             if prev is None:
                 change = "new"
@@ -557,14 +591,14 @@ def cmd_summary(args) -> int:
         )
     rows.sort(key=lambda row: (-row[0], row[1]))
     print()
-    if args.prev:
+    if compare:
         print("| File | Branches | Change (points) | Lines | Functions |")
         print("|---|---|---|---|---|")
     else:
         print("| File | Branches | Lines | Functions |")
         print("|---|---|---|---|")
     for row in rows[: args.top]:
-        if args.prev:
+        if compare:
             print("| %s | %s | %s | %s | %s |" % (row[1], row[2], row[3], row[4], row[5]))
         else:
             print("| %s | %s | %s | %s |" % (row[1], row[2], row[4], row[5]))
@@ -1542,6 +1576,24 @@ def cmd_overlap(args) -> int:
 TO_CONFIRM = "reached (line; a branch on it is untaken: confirm)"
 
 
+def _locate(path: str, line: int, code: str) -> tuple:
+    """Where a site's code is now: (its line, 1) if the source still has `code`
+    on `line` or on exactly one other line, else (None, how many lines have
+    it). Whitespace doesn't count. Without code or a readable source: (line, 1)."""
+    want = "".join(code.split())
+    if not want:
+        return line, 1
+    try:
+        with open(path, encoding="utf-8", errors="replace") as handle:
+            source = ["".join(text.split()) for text in handle]
+    except OSError:
+        return line, 1
+    if 0 < line <= len(source) and want in source[line - 1]:
+        return line, 1
+    found = [number for number, text in enumerate(source, 1) if want in text]
+    return (found[0], 1) if len(found) == 1 else (None, len(found))
+
+
 def cmd_sites(args) -> int:
     mapper = PathMapper(args.root)
     files, _ = filter_scope(_load(args, args.lcov), mapper, [])
@@ -1556,13 +1608,18 @@ def cmd_sites(args) -> int:
         sites = list(reader)
     results = []
     groups: dict = {}
+    moved = []
     for index, site in enumerate(sites, 1):
         path = (site.get("file") or "").strip()
         try:
             line = int((site.get("line") or "").strip())
         except ValueError:
             continue
-        matches = [d for d in files if _entry_matches(d, path)]
+        now, count = _locate(os.path.join(args.root or ".", path), line, site.get("code") or "")
+        if now is not None and now != line:
+            moved.append("%s %d → %d" % ((site.get("id") or str(index)).strip(), line, now))
+            line = now
+        matches = [d for d in files if _entry_matches(d, path)] if now is not None else []
         hits = None
         untaken = False
         for display in matches:
@@ -1572,7 +1629,9 @@ def cmd_sites(args) -> int:
             untaken = untaken or any(
                 not h for (branch_line, _block, _branch), h in files[display].branches.items() if branch_line == line
             )
-        if matches and hits is not None:
+        if now is None:
+            state = "unknown (its code is on %s: find the site again)" % ("no line" if not count else "%d lines" % count)
+        elif matches and hits is not None:
             # Coverage is per line: in `if (x == 42) sink();` the line runs without the call.
             state = "not reached" if not hits else (TO_CONFIRM if untaken else "reached")
         elif matches:
@@ -1591,6 +1650,11 @@ def cmd_sites(args) -> int:
     confirm = sum(1 for r in results if r[4] == TO_CONFIRM)
     print("## Sink sites: %d of %d reached%s"
           % (reached, len(results), " (%d to confirm)" % confirm if confirm else ""))
+    if moved:
+        print()
+        print("**Moved:** %d %s code is on another line now (%s); update the %s in %s."
+              % (len(moved), "site's" if len(moved) == 1 else "sites'", ", ".join(moved),
+                 "line" if len(moved) == 1 else "lines", args.sites))
     if groups:
         print()
         print("| Group | Sites reached |")
@@ -1730,7 +1794,10 @@ def build_parser() -> argparse.ArgumentParser:
     with_root(p)
     with_sf_base(p)
     with_scope(p)
-    p.add_argument("--prev", help="previous lcov snapshot to compare with")
+    p.add_argument(
+        "--prev",
+        help="previous lcov snapshot to compare with (no change if its code differs or it has a file this one lacks)",
+    )
     p.add_argument("--top", type=int, default=40, help="max files listed (default 40)")
     p.set_defaults(func=cmd_summary)
 
@@ -1790,7 +1857,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--sites",
         required=True,
-        help="TSV with a header; needs 'file' and 'line', optional 'id' and 'group'",
+        help="TSV with a header; needs 'file' and 'line', optional 'id', 'group' and 'code' (text on the "
+        "site's line in the source under --root, to find the line again after an edit)",
     )
     p.set_defaults(func=cmd_sites)
     return parser

@@ -9,18 +9,21 @@ the installed plugin (the agent shows each skill's directory):
 
 It is idempotent. Each run:
   - refuses Windows and Python before 3.9, with a clear error;
-  - checks that the current directory is inside a git repository, and warns
-    about a repository path that libFuzzer's merges can't use;
+  - checks that the current directory is inside a git repository; refuses
+    a repository path with whitespace, where every $L command splits, and
+    warns about other characters that libFuzzer's merges can't use;
   - refuses a repository that tracks files under .seclab/, in any case
     (macOS's file system ignores it): their ledger, threat model and Next
     actions would come from the repository, not from the user; and refuses
-    a .seclab/ that is a symbolic link, or whose fuzz/, env.sh, ledger or
-    threat model is;
+    a .seclab/ that is a symbolic link, or whose fuzz/, env.sh, ledger,
+    threat model or .gitignore is;
   - creates .seclab/fuzz/ and its directories (bin, build, targets, sinks,
     corpus, dict, coverage, crashes, reports: an agent's file tools may not
-    create parents), and adds .seclab/ and .cifuzz-corpus/ to git's exclude
-    file (never to .gitignore); a read-only .git is an error that asks for
-    the user's approval;
+    create parents); writes .seclab/.gitignore, which ignores everything in
+    .seclab/ even where the repository's .gitignore un-ignores it (a rule
+    such as !.seclab/ or !.*); and adds .seclab/ and .cifuzz-corpus/ to
+    git's exclude file (never to the repository's .gitignore). A read-only
+    .git is an error that asks for the user's approval;
   - writes .seclab/fuzz/env.sh, which every command sources (an agent's
     commands don't keep shell variables), with a line that makes zsh split
     unquoted variables like bash, F and L kept current, and the language
@@ -72,7 +75,11 @@ EXCLUDES = (".seclab/", ".cifuzz-corpus/")
 SUBDIRS = ("bin", "build", "targets", "sinks", "corpus", "dict", "coverage", "crashes", "reports")
 LEDGER = os.path.join(".seclab", "fuzz", "CAMPAIGN.md")
 ENV_FILE = os.path.join(".seclab", "fuzz", "env.sh")
-WORKSPACE_LINKS = (".seclab", os.path.join(".seclab", "fuzz"), ENV_FILE, LEDGER, os.path.join(".seclab", "threat-model.md"))
+SELF_IGNORE = os.path.join(".seclab", ".gitignore")
+WORKSPACE_LINKS = (
+    ".seclab", os.path.join(".seclab", "fuzz"), ENV_FILE, LEDGER, os.path.join(".seclab", "threat-model.md"),
+    SELF_IGNORE,
+)
 ENV_HEADER = """\
 # Every command starts with `. .seclab/fuzz/env.sh;`: an agent's commands
 # don't keep shell variables. init.py keeps F and L up to date; the language
@@ -141,6 +148,10 @@ def plugin_version() -> str:
 
 
 def ensure_excludes() -> None:
+    # A rule such as !.seclab/ or !.* in the repository's .gitignore beats git's exclude file; a .gitignore
+    # inside .seclab/ beats both.
+    with open(SELF_IGNORE, "w", encoding="utf-8") as handle:
+        handle.write("*\n")
     path = git("rev-parse", "--git-path", "info/exclude")
     try:
         os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
@@ -352,7 +363,7 @@ def check_checkout() -> None:
         raise InitError(
             "%s, and the campaign's work is there. Don't change the ledger or the branch yourself: ask the user "
             "whether to switch back (git switch %s) or to start a new campaign from here (fuzz-campaign, "
-            "analyze.md: a new release)." % (problem, branch)
+            "new-release.md)." % (problem, branch)
         )
 
 
@@ -456,7 +467,13 @@ def run(args: argparse.Namespace) -> int:
         raise InitError("run init.py from the repository to fuzz, not from the plugin")
     refuse_foreign_workspace()
     print("repository: %s" % root)
-    bad = SHELL_UNSAFE.search(root)
+    bad = re.search(r"\s", root) or SHELL_UNSAFE.search(root)
+    if bad and bad.group(0).isspace():
+        raise InitError(
+            "the repository path contains whitespace (%r): every launcher command ($L) splits there, so no "
+            "run, replay or gate can start. Tell the user to move or clone the checkout to a path without "
+            "whitespace." % bad.group(0)
+        )
     if bad:
         print(
             "warning: the repository path contains %r: libFuzzer's merges and minimizing can't run "
@@ -475,7 +492,7 @@ def run(args: argparse.Namespace) -> int:
             "the ledger already records the branch (%s) and base commit (%s), and earlier work is on that "
             "branch; they don't change here (a standalone ledger moves to a new branch only once, before its "
             "first commit). Run init.py again without --branch and --base. To work from another base, start a new "
-            "campaign (fuzz-campaign, analyze.md: a new release)."
+            "campaign (fuzz-campaign, new-release.md)."
             % (ledger_line("- **Branch:**"), ledger_line("- **Base commit:**"))
         )
     state = State()

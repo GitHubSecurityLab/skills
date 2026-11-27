@@ -21,9 +21,15 @@ Errors (exit code 1):
   - a shared skill that uses the fuzzing workspace (.seclab/fuzz)
   - a line several skills state alike (SHARED_LINES: the Jazzer status, the
     workflow skills' "Run every step", the standalone skills' "Before
-    stopping") differs
-  - a term in another meaning (TERMS: "leak check" for the state-leak
-    check, an action's "target" for its aim)
+    stopping" and "Standalone: stop") differs
+  - a section several skills state alike (SHARED_SECTIONS: the standalone
+    skills' Start) differs
+  - a fuzzing skill's Reads or Writes section that doesn't open with its
+    sentence (SECTION_INTROS: what the section lists, and that paths are
+    relative to .seclab/fuzz/ unless they start with .seclab/)
+  - a term in another meaning or a retired one (TERMS: "leak check" for the
+    state-leak check, an action's "target" for its aim, "hand-off" for upstreaming,
+    "directed inputs" for targeted inputs, "crash ledger" for the crash buckets)
   - a rule stated without its exception (QUALIFIED_PHRASES: constant
     arguments, unless the object called on comes from input)
   - a reference file its SKILL.md doesn't link
@@ -87,17 +93,17 @@ LANGUAGE_LINES = 150
 # Language-skill files past LANGUAGE_LINES, with the reason: path -> (lines allowed, why).
 # A new overrun, or a listed file growing past its cap, still warns.
 LONG_FILES = {
-    "skills/fuzzing/fuzz-c-cpp/references/build.md": (180, "variants, build-system recipes, in-tree builds, instrumentation checks"),
-    "skills/fuzzing/fuzz-c-cpp/references/aflpp.md": (215, "AFL++'s builds, checks and long runs, read only for AFL++ long runs"),
+    "skills/fuzzing/fuzz-c-cpp/references/build.md": (265, "variants, build-system recipes, in-tree builds, instrumentation checks"),
+    "skills/fuzzing/fuzz-c-cpp/references/aflpp.md": (251, "AFL++'s builds, checks and long runs, read only for AFL++ long runs"),
     "skills/fuzzing/fuzz-c-cpp/references/run.md": (165, "libFuzzer and AFL++ commands for each kind of run"),
-    "skills/fuzzing/fuzz-c-cpp/references/fuzztest.md": (260, "FuzzTest's whole path, coverage included, read only for FuzzTest projects"),
-    "skills/fuzzing/fuzz-java/references/build.md": (175, "Maven, and Gradle with one module or several"),
-    "skills/fuzzing/fuzz-java/references/harness.md": (194, "parameter styles, seeds, the bug-detector table and the hook API"),
-    "skills/fuzzing/fuzz-java/references/run.md": (200, "standalone runs and JUnit runs"),
-    "skills/fuzzing/fuzz-java/references/triage.md": (160, "reproduction, minimization, the typed-input decoder"),
-    "skills/fuzzing/fuzz-java/references/coverage.md": (190, "JaCoCo setup, replay, export and combining"),
-    "skills/fuzzing/fuzz-js/references/harness.md": (197, "ES modules, HTTP-handler and object targets, the bug-detector table and the hook API"),
-    "skills/fuzzing/fuzz-js/references/jest.md": (340, "the whole Jest path, read only when the Jest probe passes"),
+    "skills/fuzzing/fuzz-c-cpp/references/fuzztest.md": (387, "FuzzTest's whole path, coverage and triage included, read only for FuzzTest projects"),
+    "skills/fuzzing/fuzz-java/references/build.md": (190, "Maven, and Gradle with one module or several"),
+    "skills/fuzzing/fuzz-java/references/harness.md": (241, "parameter styles, seeds, the bug-detector table and the hook API"),
+    "skills/fuzzing/fuzz-java/references/run.md": (261, "standalone runs and JUnit runs"),
+    "skills/fuzzing/fuzz-java/references/triage.md": (184, "reproduction, minimization, the typed-input decoder"),
+    "skills/fuzzing/fuzz-java/references/coverage.md": (170, "JaCoCo setup, replay, export and combining"),
+    "skills/fuzzing/fuzz-js/references/harness.md": (223, "ES modules, HTTP-handler and object targets, the bug-detector table and the hook API"),
+    "skills/fuzzing/fuzz-js/references/jest.md": (385, "the whole Jest path, read only when the Jest probe passes"),
 }
 LINK_RE = re.compile(r"\[[^\]]*\]\(([^)\s]+)(?:\s+\"[^\"]*\")?\)")
 FENCE_RE = re.compile(r"^\s*(```|~~~)")
@@ -110,6 +116,8 @@ DENY_RULES = {
 }
 # Brace expansion in an sh block: bash and zsh only; sh (dash) passes {1..3} on as it is.
 BRACE_RANGE_RE = re.compile(r"\{[^{}\s]+\.\.[^{}\s]+\}")
+# A heredoc (<<EOF, <<-'EOF', <<\EOF; not <<< or a shift by a number).
+HEREDOC_RE = re.compile(r"(?<!<)<<-?\s*\\?(['\"]?)[A-Za-z_]\w*\1")
 # Pointers the link check doesn't see: `fuzz-harness`'s build.md, init.py by its path next to the skill,
 # and the scripts init.py copies to .seclab/fuzz/bin/.
 POINTER_RE = re.compile(r"`((?:fuzz|security)-[a-z0-9-]+)`'s ([A-Za-z0-9_.-]+\.md)")
@@ -148,9 +156,17 @@ SINGLE_SOURCES = {
         os.path.join("skills", "fuzzing", "fuzz-campaign", "SKILL.md"),
         "the hold-back rule (`fuzz-campaign`, safety rules)",
     ),
-    "filtered by default": (
+    "never filters a bug's inputs": (
         os.path.join("skills", "fuzzing", "fuzz-triage", "SKILL.md"),
-        "the blocking-bug rule (`fuzz-triage`, blocking bugs)",
+        "the blocking-bug rule (`fuzz-triage`, \"Blocking bugs\")",
+    ),
+    "relevant part of the input": (
+        os.path.join("skills", "fuzzing", "fuzz-triage", "SKILL.md"),
+        "the timeout growth test (`fuzz-triage`, \"Find the root cause\")",
+    ),
+    "from the end of the input": (
+        os.path.join("skills", "fuzzing", "fuzz-harness", "SKILL.md"),
+        "the FuzzedDataProvider layout (`fuzz-harness`, \"Design the harness\")",
     ),
     "cost only breaks ties": (
         os.path.join("skills", "fuzzing", "fuzz-coverage", "references", "diagnosis.md"),
@@ -160,7 +176,11 @@ SINGLE_SOURCES = {
         os.path.join("skills", "shared", "security-threat-model", "SKILL.md"),
         "the sink drop rule (`security-threat-model`, \"Find sinks\")",
     ),
-    "only from the fuzzing engine": (
+    "or `sizeof": (
+        os.path.join("skills", "shared", "security-threat-model", "references", "c-cpp.md"),
+        "the C/C++ drop rule (`security-threat-model`'s c-cpp.md)",
+    ),
+    "but none of the project or the harness": (
         os.path.join("skills", "fuzzing", "fuzz-triage", "SKILL.md"),
         "the engine-leak rule (`fuzz-triage`, \"Group\")",
     ),
@@ -196,8 +216,11 @@ QUALIFIED_PHRASES = {
 
 # One meaning per term: a phrase of another use (case-insensitive, outside HTML comments) -> what to write instead.
 TERMS = {
-    r"(?<!state-)\bleak[- ]check": "state-leak check (gate check 4; LeakSanitizer finds leaks)",
+    r"(?<!state-)\bleak[- ]check": "state-leak check (gate.md, \"No state leaking between inputs\"; LeakSanitizer finds leaks)",
     r"\bits target\b|\btarget (?:becomes|became) covered": "aim (what an action should cover; a target is an entry point)",
+    r"\bhand-?offs?\b": "upstreaming (fuzz-campaign's upstreaming.md)",
+    r"\bdirected inputs?\b": "targeted inputs (fuzz-coverage's corpus.md)",
+    r"\bcrash ledger\b": "the crash buckets (crashes/, CAMPAIGN.md's Open crashes)",
 }
 
 # The ledger's Open crashes columns whose values other skills set: each value set must be in the legend.
@@ -212,7 +235,19 @@ SHARED_LINES = (
                      os.path.join("skills", "fuzzing", "fuzz-js", "SKILL.md"))),
     ("**Run every step**", tuple(os.path.join("skills", "fuzzing", name, "SKILL.md") for name in _WORKFLOW_SKILLS)),
     ("- **Before stopping,**", tuple(os.path.join("skills", "fuzzing", name, "SKILL.md") for name in sorted(STANDALONE_SKILLS))),
+    ("- Standalone: stop", tuple(os.path.join("skills", "fuzzing", name, "SKILL.md") for name in sorted(STANDALONE_SKILLS))),
 )
+SHARED_SECTIONS = (
+    ("Start", tuple(os.path.join("skills", "fuzzing", name, "SKILL.md") for name in sorted(STANDALONE_SKILLS))),
+)
+# The sentence that opens every Reads and Writes section of the fuzzing skills: what the section lists, and
+# what its paths are relative to. Shared skills don't use the fuzzing workspace, so they're left out.
+SECTION_INTROS = {
+    "Reads": "What the steps in this file read. Paths are relative to `.seclab/fuzz/` unless they start with "
+             "`.seclab/`:",
+    "Writes": "What the steps in this file write or change. Paths are relative to `.seclab/fuzz/` unless they "
+              "start with `.seclab/`:",
+}
 
 
 def strip_code(text: str) -> str:
@@ -453,6 +488,8 @@ def check(root: str) -> Report:
     check_terms(report, root)
     check_shared_skills(report, root)
     check_shared_lines(report, root)
+    check_shared_sections(report, root)
+    check_section_intros(report, root)
     check_failure_tables(report, root)
     check_launcher_commands(report, root)
     check_pointers(report, root, skills)
@@ -509,17 +546,25 @@ def check_qualified_phrases(report: Report, root: str) -> None:
 
 
 def check_sh_blocks(report: Report, root: str) -> None:
-    """Commands run in any POSIX shell."""
+    """Commands run in any POSIX shell, and as copied from the file. In a block indented under a list item, a
+    heredoc's closing line keeps the indent and never ends it; run_doc_blocks.py strips the indent, so CI
+    doesn't see that."""
     for path in sorted(glob.glob(os.path.join(root, "skills", "**", "*.md"), recursive=True)):
-        in_sh = False
+        rel = os.path.relpath(path, root)
+        in_sh = indented = False
         with open(path, encoding="utf-8") as handle:
             for number, line in enumerate(handle, 1):
+                where = "%s:%d" % (rel, number)
                 if line.strip().startswith("```"):
                     in_sh = not in_sh and line.strip() == "```sh"
+                    indented = line[:1].isspace()
                 elif in_sh:
                     for match in BRACE_RANGE_RE.finditer(line):
-                        report.error("%s:%d" % (os.path.relpath(path, root), number),
-                                     "brace expansion %r runs only in bash and zsh: list the arguments" % match.group(0))
+                        report.error(where, "brace expansion %r runs only in bash and zsh: list the arguments"
+                                     % match.group(0))
+                    if indented and HEREDOC_RE.search(line):
+                        report.error(where, "heredoc in an indented sh block: copied as it is, its closing line "
+                                            "keeps the indent and doesn't end it; use printf or a quoted argument")
 
 
 def check_pointers(report: Report, root: str, skills: list) -> None:
@@ -687,6 +732,61 @@ def check_shared_lines(report: Report, root: str) -> None:
                 first = (rel, found[0])
             elif found[0] != first[1]:
                 report.error(rel, "its %s line differs from %s's" % (prefix, first[0]))
+
+
+def _sections(text: str, title: str) -> list:
+    """The lines of each `## <title>` section; a `## ` line in a code block doesn't end one."""
+    sections, current, fence = [], None, None
+    for line in text.splitlines():
+        match = FENCE_RE.match(line)
+        if match:
+            fence = match.group(1) if fence is None else (None if match.group(1) == fence else fence)
+        elif fence is None and line.startswith("## "):
+            current = [] if line[3:].strip() == title else None
+            if current is not None:
+                sections.append(current)
+            continue
+        if current is not None:
+            current.append(line)
+    return sections
+
+
+def check_shared_sections(report: Report, root: str) -> None:
+    """Sections several skills state alike (the standalone skills' Start)."""
+    for title, paths in SHARED_SECTIONS:
+        present = [rel for rel in paths if os.path.exists(os.path.join(root, rel))]
+        if len(present) < 2:
+            continue
+        first = None
+        for rel in present:
+            with open(os.path.join(root, rel), encoding="utf-8") as handle:
+                found = _sections(handle.read(), title)
+            if len(found) != 1:
+                report.error(rel, "needs exactly one '## %s' section, has %d" % (title, len(found)))
+            elif first is None:
+                first = (rel, found[0])
+            elif found[0] != first[1]:
+                report.error(rel, "its '## %s' section differs from %s's" % (title, first[0]))
+
+
+def check_section_intros(report: Report, root: str) -> None:
+    """Every Reads and Writes section of the fuzzing skills opens with its SECTION_INTROS sentence."""
+    for path in sorted(glob.glob(os.path.join(root, "skills", "fuzzing", "**", "*.md"), recursive=True)):
+        with open(path, encoding="utf-8") as handle:
+            text = handle.read()
+        for title, intro in SECTION_INTROS.items():
+            for lines in _sections(text, title):
+                first = []
+                for line in lines:
+                    if not line.strip():
+                        if first:
+                            break
+                        continue
+                    if re.match(r"\s*(?:[-*]|\d+\.)\s", line):
+                        break
+                    first.append(line.strip())
+                if " ".join(first) != intro:
+                    report.error(os.path.relpath(path, root), "its '## %s' section must open with: %s" % (title, intro))
 
 
 def check_failure_tables(report: Report, root: str) -> None:

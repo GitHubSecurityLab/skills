@@ -183,6 +183,36 @@ class SummaryTests(unittest.TestCase):
         self.assertIn("src/missing.c", out)
         self.assertNotIn("harness.c", out)
 
+    def test_summary_gives_no_change_against_different_code(self):
+        prev = "SF:/w/a.c\nDA:1,1\nDA:2,0\nend_of_record\nSF:/w/b.c\nDA:1,0\nend_of_record\n"
+        new = "SF:/w/a.c\nDA:1,1\nDA:2,1\nDA:3,0\nend_of_record\nSF:/w/b.c\nDA:1,1\nend_of_record\n"
+        new += "SF:/w/c.c\nDA:1,1\nend_of_record\n"  # in one snapshot only, like a JS file loaded later
+        with tempfile.TemporaryDirectory() as tmp:
+            paths = []
+            for name, text in (("prev.lcov", prev), ("new.lcov", new)):
+                paths.append(os.path.join(tmp, name))
+                with open(paths[-1], "w") as handle:
+                    handle.write(text)
+            _, out, err = run("summary", paths[1], "--prev", paths[0], "--root", "/w")
+        self.assertIn("**Different code:** 1 file has other lines or branches than the previous snapshot (a.c)", out)
+        self.assertNotIn("; previous", out)
+        self.assertNotIn("Change (points)", out)
+        self.assertIn("different code", err)
+
+    def test_summary_gives_no_change_when_a_file_is_gone(self):
+        prev = "SF:/w/a.c\nDA:1,1\nDA:2,0\nend_of_record\nSF:/w/b.c\nDA:1,1\nDA:2,1\nend_of_record\n"
+        new = "SF:/w/a.c\nDA:1,1\nDA:2,1\nend_of_record\n"  # a.c gained a line, b.c is gone
+        with tempfile.TemporaryDirectory() as tmp:
+            paths = []
+            for name, text in (("prev.lcov", prev), ("new.lcov", new)):
+                paths.append(os.path.join(tmp, name))
+                with open(paths[-1], "w") as handle:
+                    handle.write(text)
+            _, out, err = run("summary", paths[1], "--prev", paths[0], "--root", "/w")
+        self.assertIn("**Missing:** 1 file of the previous snapshot has no data in this one (b.c)", out)
+        self.assertNotIn("; previous", out)
+        self.assertIn("missing", err)
+
     def test_scope_entries_match_from_the_root_not_by_suffix(self):
         text = (
             "SF:/w/src/parse.c\nDA:1,1\nend_of_record\n"
@@ -919,6 +949,30 @@ class SitesTests(unittest.TestCase):
         self.assertIn("## Sink sites: 2 of 4 reached (1 to confirm)", out)
         self.assertIn("| s1 | hdr.len | src/parse.c:9 | reached (line; a branch on it is untaken: confirm) | 2 |", out)
         self.assertIn("| s2 | hdr.len | src/parse.c:11 | reached | 4 |", out)
+
+    def test_sites_find_a_site_again_by_its_code(self):
+        # A fix above the sinks shifted them: s1's call moved from line 3 to 5; s2 is still on line 6.
+        source = "int f(char *o, const char *d, int n) {\n  if (n < 1) return 0;\n  if (n > 8) return 0;\n" \
+                 "  // copy\n  memcpy(o, d, n);\n  memmove(o, d, 1);\n  free(o);\n  free(o);\n}\n"
+        sites = ("id\tfile\tline\tcode\tgroup\n"
+                 "s1\tsrc/a.c\t3\tmemcpy(o,d,  n)\tcopy\n"
+                 "s2\tsrc/a.c\t6\tmemmove(o, d, 1)\tcopy\n"
+                 "s3\tsrc/a.c\t7\tstrcpy(o, d)\tcopy\n"
+                 "s4\tsrc/a.c\t1\tfree(o)\tfree\n")
+        with tempfile.TemporaryDirectory() as tmp:
+            os.makedirs(os.path.join(tmp, "src"))
+            files = {"src/a.c": source, "sites.tsv": sites,
+                     "r.lcov": "SF:%s/src/a.c\nDA:5,2\nDA:6,0\nDA:7,0\nend_of_record\n" % tmp}
+            for name, text in files.items():
+                with open(os.path.join(tmp, name), "w") as handle:
+                    handle.write(text)
+            _, out, _ = run("sites", os.path.join(tmp, "r.lcov"), "--root", tmp, "--sites", os.path.join(tmp, "sites.tsv"))
+        self.assertIn("**Moved:** 1 site's code is on another line now (s1 3 → 5); update the line in", out)
+        self.assertIn("| s1 | copy | src/a.c:5 | reached | 2 |", out)
+        self.assertIn("| s2 | copy | src/a.c:6 | not reached | 0 |", out)
+        self.assertIn("| s3 | copy | src/a.c:7 | unknown (its code is on no line: find the site again) | - |", out)
+        self.assertIn("| s4 | free | src/a.c:1 | unknown (its code is on 2 lines: find the site again) | - |", out)
+        self.assertIn("| copy | 1/3 |", out)
 
     def test_sites_requires_header(self):
         with tempfile.NamedTemporaryFile("w", suffix=".tsv", delete=False) as handle:

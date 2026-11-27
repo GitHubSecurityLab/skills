@@ -3,15 +3,10 @@
 Fuzzing builds should come from the project's own build system, so
 harnesses can be contributed upstream and maintainers can rebuild them.
 
-## When to use
-
-- Setup of a campaign, a new target needing a different build, a harness
-  change that needs build changes, or "build this with ASan and libFuzzer".
-
-Not for writing harnesses (`SKILL.md`) or running them (runs.md).
-
 ## Reads
 
+What the steps in this file read. Paths are relative to `.seclab/fuzz/`
+unless they start with `.seclab/`:
 - `CAMPAIGN.md`: Settings, Disposable environment, Harnesses.
 - The language skill for exact flags and commands: `fuzz-c-cpp`,
   `fuzz-java` or `fuzz-js`.
@@ -32,18 +27,25 @@ Not for writing harnesses (`SKILL.md`) or running them (runs.md).
    "Setup card").
 2. **Toolchain.** Check what the language skill requires (compilers,
    engine versions, build tools) with the check in its `install.md`, which
-   runs no project code, and record the versions in the target file.
+   runs no project code. Record the versions in the target file, in the
+   block of the harness being built. At campaign setup, no target file
+   exists yet: the check then only makes the install plan.
    - **Install plan** from the language skill's `install.md`: only what's
      missing for this project, each item with the command for this OS and
      the expected time. Record what was installed in `decisions.md`.
    - Installs go to user level where possible: Homebrew, `~/.local`, fnm,
-     SDKMAN, or project-local Maven and npm dependencies.
-   - **Build changes checkpoint** in interactive mode: show the install plan
-     and which build files will change, and ask once.
-   - `sudo` and system settings changes (package installs,
-     `afl-system-config`) only when the environment is disposable. On the
-     user's own machine, print the command for the user to run, or use the
-     engine's documented environment workaround.
+     SDKMAN, or project-local Maven and npm dependencies. The agent runs
+     these itself, in interactive mode only after the user approves the
+     plan at the build changes checkpoint (below).
+   - **Build changes checkpoint** in interactive mode: show the install
+     plan and ask before installing; a campaign asks first in its setup
+     card (`fuzz-campaign`, "Setup card"). Changes to build files are
+     asked about after step 4 chooses them.
+   - `sudo` and system settings changes (system package installs such as
+     `apt-get`, installing Homebrew itself, `afl-system-config`) only when
+     the environment is disposable. On the user's own machine, print the
+     command for the user to run, or use the engine's documented
+     environment workaround.
 3. **Understand the project's build.** Find the build system, existing
    fuzzing or sanitizer options (e.g. a CMake `*_FUZZ*` or `*_SANITIZE*`
    option, an existing `fuzz/` target, OSS-Fuzz's `build.sh`), and how the
@@ -54,21 +56,43 @@ Not for writing harnesses (`SKILL.md`) or running them (runs.md).
       adds the fuzz targets, or a test-scoped dependency;
    3. a standalone script `.seclab/fuzz/build/<variant>.sh` when changing the
       build isn't practical.
+
+   In interactive mode, before changing a project build file, show which
+   files change and how, and ask: the build changes checkpoint comes
+   again for every such change.
 5. **Build each variant in its own directory** under
    `.seclab/fuzz/build/<variant>/`: CMake `-B`, a Meson build directory, an
    autotools build directory (`../configure` from there), or the build tool's
-   output option. Use the same compiler and flags for the library across
-   variants, link statically where possible, and don't build the project's
-   CLI tools or tests with fuzzer flags.
+   output option. Use the same compiler and flags for the library in
+   every variant, and build libraries static where possible. Don't build
+   the project's CLI tools or tests with fuzzer flags.
+   - **Before the first build,** fill in the block from the language
+     skill's run.md, "Environment (`--env`)", and add it to
+     `.seclab/fuzz/env.sh`, below `F` and `L`. Every command from here on
+     starts with `. .seclab/fuzz/env.sh;`: an agent's commands don't keep
+     shell variables.
    - If the project can only build in-tree: build each variant in its own
      git worktree outside the checkout, synced to the checkout's working
      tree before each rebuild (`fuzz-c-cpp`'s build.md, "In-tree builds").
+   - If the build is for another worktree `<tree>` (for a long run,
+     `base` or the freshness check), its builds go into that worktree's
+     own `.seclab/fuzz/build/` (`<tree_build>`). The checkout's builds stay
+     as they are. Start each build command with this line instead of
+     `. .seclab/fuzz/env.sh;`, and in JS also set `P` to the package
+     directory in that worktree. The line also writes the worktree's
+     `.seclab/.gitignore`, which keeps its `.seclab/` out of git, as
+     `init.py` does in the checkout:
+     <!-- ci: worktree-build -->
+     ```sh
+     . .seclab/fuzz/env.sh && cd "<tree>" && F="$PWD/.seclab/fuzz" && mkdir -p "$F/build" && printf '*\n' > .seclab/.gitignore || exit 1;
+     ```
+     If the project builds only in-tree: `fuzz-c-cpp`'s build.md, "In-tree
+     builds".
 6. **Verify each variant.** The fuzz binary or test class exists, and the
    target library itself is instrumented: C/C++ by its object files'
    symbols, Java by plain `INFO: Instrumented <class>` lines (not
-   `with custom hooks only`), JS by the target's files in the lcov
-   (language skill). A counter in the fuzz binary's start-up output
-   doesn't show it: the harness alone has counters.
+   `with custom hooks only`), JS by the target's files in the lcov (the
+   language skill's build.md, "Instrumentation checks").
 7. **Fuzzing-only patches,** when coverage analysis finds a blocker that
    fuzzing can't pass (checksums, signatures, random seeds, time checks):
    - C/C++: guard the change with
@@ -81,22 +105,49 @@ Not for writing harnesses (`SKILL.md`) or running them (runs.md).
      with a valid checksum or signature during triage.
 8. **Commit and record.** Build changes become `fuzz(build): <what>`
    commits on the campaign branch. Record the variants and their build
-   commands in the target file (Harness, Build variants), and after each
-   build the commit it came from:
+   commands in the target file (Harness, Build variants).
+
+   After each build, record the commit it came from, and whether the
+   checkout had uncommitted changes:
    <!-- ci: build-record -->
    ```sh
-   git rev-parse HEAD > .seclab/fuzz/build/<variant>/built-from
+   c=$(git rev-parse HEAD); [ -z "$(git status --porcelain)" ] || c="$c+uncommitted"
+   echo "$c" > .seclab/fuzz/build/<variant>/built-from
    ```
+   `<variant>` is the build's directory under `.seclab/fuzz/build/`:
+   - C/C++: the variant's directory;
+   - Java: `jazzer/`; write it after the project's build and its classpath
+     file;
+   - TypeScript: `ts/`;
+   - plain JS builds nothing there.
+
+   A build of uncommitted changes, such as a new harness, records
+   `<sha>+uncommitted`, which step 9 always calls stale: by then the
+   changes may have been reverted or deleted. Once they're committed, and
+   nothing changed since the build, record it again (`SKILL.md`, "Record
+   and commit").
+
+   After a build change, including a fuzzing-only patch (step 7), each
+   harness built with it goes through the gate before any other run
+   (gate.md next to this file).
 9. **Before reusing builds** (Resume, or after anything switched or reset
-   the checkout), rebuild every variant this check calls stale; builds are
-   incremental, so it's cheap:
+   the checkout), rebuild every variant this check calls stale. A build is
+   current only if it was recorded at the current commit with no
+   uncommitted changes, and the checkout still has none. A directory
+   without `built-from`, from a build that failed or wasn't recorded, is
+   stale too. `bin/` and `jacoco/` hold tools, not builds:
    <!-- ci: build-stale -->
    ```sh
-   for v in .seclab/fuzz/build/*/; do
-     [ "$(cat "$v/built-from" 2>/dev/null)" = "$(git rev-parse HEAD)" ] &&
-       [ -z "$(git status --porcelain --untracked-files=no)" ] || echo "stale: $v"
+   find -L .seclab/fuzz/build -mindepth 1 -maxdepth 1 -type d ! -name bin ! -name jacoco | while IFS= read -r d; do
+     [ "$(cat "$d/built-from" 2>/dev/null)" = "$(git rev-parse HEAD)" ] &&
+       [ -z "$(git status --porcelain)" ] || echo "stale: $d/"
    done
    ```
+   While the checkout has uncommitted changes, such as a harness not yet
+   committed, the check calls every build stale, including the ones just
+   rebuilt: rebuild each variant once. Rebuilding is cheap: C/C++ and Java
+   builds are incremental, and the TypeScript build compiles only what the
+   target imports.
 
 ## When the build fails
 
@@ -111,7 +162,8 @@ to the next target.
 ## Done when
 
 - Every variant the next steps need builds from a recorded command and passes
-  its instrumentation check.
+  its instrumentation check, and the commit it was built from is recorded
+  (step 8).
 - Build changes are committed separately; tool versions are recorded.
 
 ## Pitfalls and shortcuts to reject
@@ -127,6 +179,8 @@ to the next target.
 
 ## Writes
 
-- `targets/<id>.md`: Harness (build variants and commands), tool versions.
+What the steps in this file write or change. Paths are relative to
+`.seclab/fuzz/` unless they start with `.seclab/`:
+- `targets/<id>.md`: Harness (build variants, commands and tool versions).
 - `CAMPAIGN.md`: Targets status (`set-aside` when it applies).
 - `decisions.md`: integration choice, installs.

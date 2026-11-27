@@ -3,11 +3,12 @@
 ## Check without running project code
 
 The check runs before the first-build notice, so it must not run the
-project's code or apply its settings. The wrappers are project code
-(`gradlew` runs the committed `gradle-wrapper.jar`; `mvnw` runs the Maven
-its `distributionUrl` names), and inside the repository even `mvn -v` loads
-`.mvn/jvm.config`. So run the system tools from outside the repository, and
-only test that the wrappers exist (in the build's root directory):
+project's code or apply its settings. The wrappers are project code:
+`gradlew` runs the committed `gradle-wrapper.jar`, and `mvnw` runs the
+Maven that its `distributionUrl` names. Inside the repository, even
+`mvn -v` loads `.mvn/jvm.config`. So run the system tools from outside
+the repository, and only test that the wrappers exist (in the build's
+root directory):
 
 <!-- ci: java-toolchain-check -->
 ```sh
@@ -16,17 +17,20 @@ for wrapper in mvnw gradlew; do test -x "$wrapper" && echo "$wrapper: run it onl
 ```
 
 After the notice, the project's wrappers replace `mvn` and `gradle` in every
-command; `./mvnw -v` and `./gradlew -v` then show the JDK they use.
+command, and `./mvnw -v` and `./gradlew -v` show the JDK the wrappers use.
+Through the launcher, the wrappers run from the build's root, with the real
+tool caches (`run.md`, "JUnit runs (regression, CI, upstreaming)").
 
-Which JDK Maven and Gradle use, and choosing the JDK for Jazzer:
-`build.md`, "JDK".
+`build.md`, "JDK", covers which JDK Maven and Gradle use, and how to
+choose the JDK for Jazzer.
 
 ## Install plan
 
-List only what's missing. Use `sudo` only in a disposable environment
-(`fuzz-harness`'s build.md); otherwise print the command for the user, or
-use SDKMAN (`sdk list java` shows the versions). On Ubuntu, run
-`sudo apt-get update` before the first install.
+List only what's missing. Who runs each command, and when `sudo` is
+allowed: `fuzz-harness`'s build.md, "Toolchain". Without `sudo`, SDKMAN
+installs a JDK at user level (`sdk list java` shows the versions). On
+Ubuntu, `sudo apt-get update` goes before the first `apt-get install`, in
+the same command.
 
 | What | When | Ubuntu 24.04 | macOS (Homebrew) | Time |
 |---|---|---|---|---|

@@ -1,79 +1,57 @@
 # Report
 
-A report is useful when a maintainer can confirm the bug in minutes, see why
-it matters, and apply a tested fix. It must not be stale (already fixed),
-already known, or sent to the wrong project. This skill never sends
-anything: the user reports it, through the project's private channel for
-a vulnerability.
-
-## When to use
-
-- After the fix (`fuzz-triage`; or after triage when no safe fix exists) for buckets with
-  a real-bug verdict.
-- "Write an advisory/report for this crash."
-
-Not for triage or the fix itself (`SKILL.md`, fix.md).
+A report is useful when a maintainer can confirm the bug in minutes, see
+why it matters, and apply a tested fix. It must not be stale (already
+fixed), already known, or sent to the wrong project. The user sends the
+report; for a vulnerability, through the project's private channel. The
+one exception is step 10: a report the user approved goes out through the
+project's private vulnerability reporting.
 
 ## Reads
 
+What the steps in this file read. Paths are relative to `.seclab/fuzz/`
+unless they start with `.seclab/`:
 - `crashes/<bucket>.md` and `crashes/<bucket>/`: verdict, root cause,
-  minimized input, reproducer, regression test, fix commit and validation.
+  minimized input, reproducer, regression test, fix commit and validation,
+  Fixed upstream.
 - `.seclab/threat-model.md`: deployment and attacker, for the impact.
 - `CAMPAIGN.md`: Settings (`report_format`), base commit.
 
 ## Steps
 
-1. **Freshness,** before any fix work, and again here if upstream moved
-   since. Run the bug's reproducer (`fuzz-triage`; the language
-   skill's regression.md, "The bug's reproducer") on current upstream HEAD and on the
-   latest release, each in a worktree next to the
-   campaign's others, built with what the reproducer needs
-   (`fuzz-harness`'s build.md and runs.md). The reproducer doesn't need
-   our harness, which these trees don't have. Take the latest release
-   from release metadata
-   (`gh release list --limit 5 --json tagName,publishedAt` covers every
-   branch; or the project's changelog, or tags sorted by date):
-   `git describe` on HEAD misses releases cut from maintenance branches.
-   The project's remote is `upstream` in a fork's clone, else `origin`:
-   <!-- ci: fresh-worktrees -->
-   ```sh
-   R=origin; git remote get-url upstream > /dev/null 2>&1 && R=upstream
-   git fetch --tags "$R" && git remote set-head "$R" -a > /dev/null
-   W="<checkout>/../<repo>.seclab-worktrees"
-   [ -d "$W/fresh-head" ] || git worktree add --detach "$W/fresh-head" "$R/HEAD"
-   git -C "$W/fresh-head" checkout -q --detach "$R/HEAD"
-   [ -d "$W/fresh-release" ] || git worktree add --detach "$W/fresh-release" <release_tag>
-   git -C "$W/fresh-release" checkout -q --detach <release_tag>
-   ```
-   Later reports reuse both worktrees at the new commits. Record the
-   affected versions.
-   - If the reproducer passes on HEAD: find the fixing commit (`git log`
-     on the files involved) and record it (Fixed upstream). The verdict
-     stays: being fixed isn't being public, so a held-back bug's report
-     and hold-back still apply (`fuzz-campaign`, safety rules). If the
-     latest release is still affected, raise "fixed upstream, not yet
-     released" at the report checkpoint; it may be a silent security fix
-     that users don't have yet.
+1. **Freshness:** run fix.md's check ("Check the precondition, then
+   freshness") again if upstream moved since it last ran. If it never ran,
+   as for a report asked for before any fix, run it now. Here the check
+   only records what it finds; it never leads to a fix or a commit. If
+   upstream fixed the bug, step 5 says what the draft gives as the fix.
 2. **Known-bug search** in:
    - public issues and pull requests
      (`gh search issues --repo OWNER/REPO "<function>"`, the same with
      `gh search prs`);
    - recent commits touching the function;
-   - OSV
-     (`curl -s -d '{"package":{"name":"<pkg>","ecosystem":"<ecosystem>"}}' https://api.osv.dev/v1/query`;
-     for C/C++ libraries without a package ecosystem, query by commit:
-     `curl -s -d '{"commit":"<tested sha>"}' https://api.osv.dev/v1/query`);
+   - OSV:
+     `curl -s -d '{"package":{"name":"<pkg>","ecosystem":"<ecosystem>"}}' https://api.osv.dev/v1/query`.
+     For C/C++ libraries without a package ecosystem, query by commit:
+     `curl -s -d '{"commit":"<tested sha>"}' https://api.osv.dev/v1/query`;
    - GitHub Security Advisories
      (`gh api 'advisories?ecosystem=<ecosystem>&affects=<pkg>'`).
 
    If the project is in OSS-Fuzz: note that OSS-Fuzz issues stay private
    until fixed, so a shallow bug may already be known to the maintainers.
-3. **Ownership.** If the root cause is in a dependency (vendored or not), the
-   report goes to that project; note the downstream impact on this one.
+3. **Ownership.** If the root cause is in a dependency, vendored or not,
+   the report goes to that project; note the downstream impact on this
+   one.
 4. **Project rules.** Read `SECURITY.md`, CONTRIBUTING and any policy on
-   AI-assisted reports or contributions, and follow them (reporting channel,
-   required details, language rules). Some projects ask for reports written
-   in the reporter's own words; raise such rules at the report checkpoint.
+   AI-assisted reports or contributions, and follow them (reporting
+   channel, required details, language rules). Some projects ask for
+   reports written in the reporter's own words; raise such rules at the
+   report checkpoint. For a project on GitHub:
+   - Without a `SECURITY.md` of its own (in the root, `docs/` or
+     `.github/`), it may use its owner's:
+     `gh api -H 'Accept: application/vnd.github.raw' repos/<owner>/.github/contents/SECURITY.md`.
+   - Check whether it takes private vulnerability reports:
+     `gh api repos/<owner>/<repo>/private-vulnerability-reporting` prints
+     `{"enabled":true}` if it does.
 5. **Write the draft** to `.seclab/fuzz/reports/<id>.md`. A
    `vulnerability` gets a security report:
    - default (`report_format: advisory`): the fields of a GitHub Security
@@ -81,72 +59,161 @@ Not for triage or the fix itself (`SKILL.md`, fix.md).
    - `report_format: ghsl`: GitHub Security Lab's report format, see
      ghsl.md next to this file.
 
-   Every other real bug goes into one "bugs found by fuzzing" draft per
-   project, an ordinary bug report without CVSS: sent privately anyway
-   when the hold-back rule covers the bug (`fuzz-campaign`, safety rules;
-   step 9's channels), since the attacker-path judgment can be wrong, and
-   otherwise as an issue or pull request, following the project's rules.
-   All drafts draw on the same facts. Keep it short and factual: what,
-   where, how to reproduce, impact, fix. No long generated prose. A fix
-   the user hasn't reviewed is labeled "mechanically validated; semantic
-   review pending". Include the removable disclosure line, e.g. "Found
-   with AI-assisted fuzzing; reproduced and reviewed by <name>."
-6. **Severity** (vulnerabilities). Start from the crash type's impact
-   (`verdicts.md`), then write a CVSS 3.1 vector based on the threat
-   model's deployment (attack vector, privileges, user interaction), with
-   each choice justified in one line. The score follows from the vector
-   (FIRST calculator: https://www.first.org/cvss/calculator/3.1).
-   - If the project uses CVSS 4.0: use it; GitHub advisories also accept
-     it.
-7. **Reproducer package** in `crashes/<bucket>/`, referenced from the draft.
-   It leads with the harness-independent reproducer, which a maintainer
-   can build and run against the tested commit without our harness (C/C++:
-   with a short build script that builds the library and the reproducer
-   with the campaign's sanitizer flags, `fuzz-c-cpp`'s regression.md), and
-   its output. Then the tested commit, the harness and how to build it,
-   and the crashing input as a file and as hex or base64.
-8. **Report checkpoint** in interactive mode: show the draft, the patch
-   with the review's answers (fix.md, "Review what the patch means"), the
-   open points (fixed upstream but unreleased, project rules, severity
-   choices) and the next steps. Once the user has reviewed the patch, drop the label and record
-   the review in the bucket's Fix section.
-   - If the mode is autonomous: list them in the end-of-campaign summary;
-     the label stays.
-9. **Next steps for the user** (in the summary, not in the draft):
-   - maintainers of the project: create a draft repository security advisory
-     (https://docs.github.com/en/code-security/how-tos/report-and-fix-vulnerabilities/fix-reported-vulnerabilities/create-repository-advisory),
-     and develop the fix in its temporary private fork
-     (https://docs.github.com/en/code-security/tutorials/fix-reported-vulnerabilities/collaborate-in-a-fork),
-     not in the public repository: the `fuzz(fix)` commit from the
-     `seclab/held-back/<bucket>` branch goes there. Release the fix and
-     publish the advisory; the held-back harnesses and tests land after
-     that (`fuzz-campaign`'s handoff.md);
-   - everyone else: the project's private vulnerability reporting
-     (https://docs.github.com/en/code-security/how-tos/report-and-fix-vulnerabilities/report-privately)
-     or the `SECURITY.md` contact, following GitHub Security Lab's
-     coordinated disclosure policy (https://securitylab.github.com/advisories/#policy)
-     as a reference.
+   Every other real bug goes into a "bugs found by fuzzing" draft for its
+   project: an ordinary bug report without CVSS. A project gets at most
+   two such drafts, one for the bugs sent privately and one for those sent
+   in public:
+   - If the hold-back rule (`fuzz-campaign`, safety rules) covers the
+     bug, the report is still sent privately, through step 9's channels,
+     since the attacker-path judgment can be wrong.
+   - Otherwise it's sent in public, through step 9's channels.
 
+   All drafts draw on the same facts. Keep each one short and factual:
+   what, where, how to reproduce, impact, fix. No long generated prose.
+   Include the removable disclosure line, e.g. "Found with AI-assisted
+   fuzzing; reproduced and reviewed by <name>." The draft's fix:
+   - A fix of ours that the user hasn't reviewed is labeled "mechanically
+     validated; semantic review pending".
+   - If the bucket is Fixed upstream, the fix is upstream's commit, not a
+     patch of ours, and gets no review label. Give that commit where the
+     draft has the fix (advisory.md: Suggested fix; ghsl.md:
+     Remediation), with the fix tested by the reproducer failing on the
+     tested commit and passing on HEAD. Give the first release with the
+     fix as the patched version, or "none yet". If no release has the
+     fix, ask the maintainers to release it. In a security report, ask
+     them to publish an advisory.
+   - If the bug has no fix of ours and isn't Fixed upstream, the draft's
+     fix is one of these:
+     - "Suggested fix: none" and the reason, when fix.md found no safe
+       fix;
+     - otherwise "Suggested fix: not attempted", as for a report asked
+       for before any fix.
+6. **Severity** (vulnerabilities). Start from the crash type's impact in
+   `verdicts.md`. Then write a CVSS 3.1 vector based on the threat
+   model's deployment (attack vector, privileges, user interaction), and
+   justify each choice in one line. The score follows from the vector
+   (FIRST calculator: https://www.first.org/cvss/calculator/3.1).
+   - If the project uses CVSS 4.0, use it; GitHub advisories also accept
+     it.
+7. **Reproducer package** in `crashes/<bucket>/`, referenced from the
+   draft. It holds, in this order:
+   - the harness-independent reproducer and its output. A maintainer can
+     build and run the reproducer against the tested commit without our
+     harness. For C/C++, it comes with a short build script that builds
+     the library and the reproducer with the campaign's sanitizer flags
+     (`fuzz-c-cpp`'s regression.md);
+   - the tested commit;
+   - the harness and how to build it;
+   - the crashing input, as a file and as hex or base64.
+8. **Report checkpoint** in interactive mode. Show the user:
+   - the draft;
+   - the patch with the review's answers (fix.md, "Review what the patch
+     means");
+   - the open points, such as fixed upstream but unreleased, project
+     rules and severity choices;
+   - the next steps.
+
+   Once the user has reviewed the patch, drop the draft's review label
+   and record the review in the bucket's Fix section.
+   - If the mode is autonomous: list these items in the end-of-campaign
+     summary instead; the label stays.
+   - If the draft's fix is "not attempted": offer the fix ("fix this
+     crash", fix.md), then update the draft.
+9. **Next steps for the user** (in the summary, not in the draft). For a
+   vulnerability, or another bug sent privately (step 5):
+   - For maintainers of the project: create a draft repository security
+     advisory
+     (https://docs.github.com/en/code-security/how-tos/report-and-fix-vulnerabilities/fix-reported-vulnerabilities/create-repository-advisory).
+     Develop the fix in the advisory's temporary private fork
+     (https://docs.github.com/en/code-security/tutorials/fix-reported-vulnerabilities/collaborate-in-a-fork),
+     not in the public repository. The `fuzz(fix)` commit from the
+     `seclab/held-back/<bucket>` branch goes there. A bug fixed upstream
+     needs no fork: its fix is already public. Once the fix is merged,
+     publish a new release that contains it, unless a release already
+     does. Then publish the advisory, or close it if the maintainers don't
+     judge the bug a vulnerability: a bug sent as an ordinary bug report
+     may not be one. The held-back harnesses and tests land once the bug
+     is public and fixed upstream (`fuzz-campaign`'s upstreaming.md).
+   - For everyone else: report through the first of these the project
+     has:
+     - the channel its `SECURITY.md` names (step 4). Private
+       vulnerability reporting counts only if step 4 found it enabled;
+     - private vulnerability reporting
+       (https://docs.github.com/en/code-security/how-tos/report-and-fix-vulnerabilities/report-privately),
+       if enabled;
+     - a private contact the maintainers give when asked, in an issue or
+       message with no details of the bug.
+
+     Follow GitHub Security Lab's coordinated disclosure policy
+     (https://securitylab.github.com/advisories/#policy) as a reference.
+     If the channel is private vulnerability reporting, offer to submit
+     the report (step 10).
+
+   For a bug sent in public: the user files its draft as an issue or pull
+   request, following the project's rules. Each fix of ours goes upstream
+   on its own branch, which `fuzz-campaign`'s upstreaming.md prepares.
+
+   Record each bug's Disclosure in its bucket file from what the user
+   says: `reported <date, channel>` once they sent the report, and
+   `public` once the bug is public. That's when its advisory or issue is
+   published, the release notes name it, or the maintainers agree that it
+   can be discussed openly. A fix in the public repository alone doesn't
+   make it public.
+10. **Submit through private vulnerability reporting,** in interactive
+    mode only, when step 9's channel is the project's private
+    vulnerability reporting and the user wants the agent to send it. The
+    user approves each report after seeing what is sent and where;
+    approval for the campaign or for several reports doesn't count. Don't
+    submit if step 4 found a rule against AI-assisted reports, or one
+    asking for the reporter's own words, or if the repository isn't the
+    bug's own project (step 3).
+    - Write the request body to `.seclab/fuzz/reports/<id>.json`, from
+      the draft:
+      - `summary`: the draft's title, at most 1024 characters;
+      - `description`: the rest of the draft in Markdown, at most 65535
+        characters. A report takes no attachments: put the reproducer and
+        the crashing input (as hex or base64) inline, or, if they don't
+        fit, say they're available on request;
+      - `vulnerabilities`: one entry per affected package, e.g.
+        `{"package": {"ecosystem": "npm", "name": "<package>"}, "vulnerable_version_range": "<= 1.4.2", "patched_versions": null}`.
+        The ecosystem is one of GitHub's (`npm`, `maven`, `pip`, ...), or
+        `other`, as for a C/C++ library. `patched_versions` is `null`
+        while no release has the fix;
+      - `cvss_vector_string`: the draft's CVSS vector, if it has one;
+      - `cwe_ids`: the draft's CWEs, e.g. `["CWE-787"]`.
+    - Show the user the body and the repository, and submit only on their
+      yes. The command prints the report's URL:
+      `gh api --method POST repos/<owner>/<repo>/security-advisories/reports --input .seclab/fuzz/reports/<id>.json --jq .html_url`.
+    - Record the bug's Disclosure as `reported <date, private
+      vulnerability reporting>`, with that URL.
+    - Leave out `start_private_fork`: pushing our fix to the advisory's
+      private fork is the user's step, once the maintainers invite them.
 
 ## Done when
 
 - Freshness, known-bug search and ownership are checked and recorded.
-- The draft exists in the chosen format with severity, reproducer package and
-  fix (or "Suggested fix: none" and the reason), and the user has the next
-  steps.
+- The draft exists, with reproducer package and fix. The fix is one of
+  these: ours, upstream's commit, "Suggested fix: not attempted", or
+  "Suggested fix: none" and the reason.
+- A vulnerability's draft is in the chosen format, with severity.
+- The user has the next steps.
 
 ## Pitfalls and shortcuts to reject
 
 - Skipping the freshness check.
 - Inflating severity. Justify each CVSS metric from the threat model.
 - Long, generic text.
-- Sending, posting or filing anything. The user does that, privately.
+- Sending, posting or filing anything, apart from step 10's approved
+  report. The user does that.
 - Putting a held-back bug's regression test or fix (`fuzz-campaign`,
-  safety rules) into a public pull request before it's public and fixed
-  upstream.
+  safety rules) into a public pull request before the bug is public and
+  fixed upstream.
 
 ## Writes
 
-- `reports/<id>.md`, the reproducer package in `crashes/<bucket>/`.
+What the steps in this file write or change. Paths are relative to
+`.seclab/fuzz/` unless they start with `.seclab/`:
+- `reports/<id>.md`, the reproducer package in `crashes/<bucket>/`;
+  with step 10, `reports/<id>.json` and the report on GitHub.
 - `crashes/<bucket>.md`: Report, Disclosure. `CAMPAIGN.md`: Open crashes
   (Report `drafted`).

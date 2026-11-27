@@ -9,11 +9,11 @@ license: MIT
 
 # Fuzzing C and C++
 
-One `LLVMFuzzerTestOneInput` harness serves libFuzzer
-and AFL++, so switching engines needs no harness changes. When unsure
-of an option, check the installed tool first
-(`<fuzzer> -help=1`, `afl-fuzz -hh`, `<fuzztest binary> --helpfull`), then
-the linked docs.
+One `LLVMFuzzerTestOneInput` harness serves libFuzzer and AFL++, so
+switching engines needs no harness changes. When unsure of an option,
+check the tool's own help first, then the linked docs: `afl-fuzz -hh`
+for AFL++; for libFuzzer and FuzzTest, a built fuzz binary's
+`<binary> -help=1` or `<test_binary> --helpfull`.
 
 ## When to use
 
@@ -24,6 +24,8 @@ Not for deciding what to do next; that's the workflow skills.
 
 ## Reads
 
+What the steps in this file read. Paths are relative to `.seclab/fuzz/`
+unless they start with `.seclab/`:
 - `targets/<id>.md`: Harness (format, engine, build variants).
 - `CAMPAIGN.md`: Settings (`memory_mb`, `input_timeout_s`).
 
@@ -36,18 +38,18 @@ Not for deciding what to do next; that's the workflow skills.
    |---|---|---|---|
    | `LLVMFuzzerTestOneInput` harnesses (in-tree or in its OSS-Fuzz folder) | keep it | libFuzzer | AFL++ on Linux (when installed), libFuzzer copies otherwise and on macOS |
    | `FUZZ_TEST`s | keep them | FuzzTest | FuzzTest |
-   | Only native AFL++ harnesses (`__AFL_LOOP`, or a `main()` reading a file) | `LLVMFuzzerTestOneInput` for the same code (`aflpp.md`) | libFuzzer | as above |
+   | Only native AFL++ harnesses (`__AFL_LOOP`, or a `main()` reading a file) | `LLVMFuzzerTestOneInput` for the same code (`aflpp.md`) | libFuzzer | as in the first row |
    | No harnesses, and the user names an engine | that engine's | that engine | that engine |
    | No harnesses, GoogleTest with Bazel or CMake | `FUZZ_TEST` | FuzzTest | FuzzTest |
-   | No harnesses | `LLVMFuzzerTestOneInput` | libFuzzer | as above |
+   | No harnesses | `LLVMFuzzerTestOneInput` | libFuzzer | as in the first row |
 
    - If the user names an engine that the existing format supports: only
-     the engine changes, e.g. "use AFL++" on `LLVMFuzzerTestOneInput`
-     harnesses keeps them and runs AFL++ on them.
+     the engine changes. For example, "use AFL++" on
+     `LLVMFuzzerTestOneInput` harnesses keeps them and runs AFL++ on them.
 
 2. **Check the toolchain** with
    [references/install.md](references/install.md) and propose installs for
-   what's missing. Record the versions in the target file.
+   what's missing. Record the versions.
 3. **Look up the command** for the step in its reference:
 
    | Step | Reference |
@@ -68,19 +70,18 @@ Not for deciding what to do next; that's the workflow skills.
 | AFL++ | 5.03c (Homebrew; built with LLVM 20 on Linux) | ran on macOS arm64 and Linux arm64 |
 | FuzzTest | tag `2026-06-29` (Bazel module `20260629.0`) | CMake build, corpus, UBSan and replay ran on macOS arm64 (Homebrew LLVM 23, `--rss_limit_mb=0`) and Linux arm64 (clang 20); not yet run in a campaign |
 
-Install the engine versions in this table (AFL++, FuzzTest) unless the
-project already pins one; a newer release only when the user asks, after
-checking its license. Compilers come from the package manager
-(`install.md`). Record the installed versions; say so when they differ
-from this table. AFL++ is
-AGPL-3.0-or-later since 5.00c: invoke installed copies only, never copy its
-code or commit files it generates.
+Install the engine versions in this table (AFL++, FuzzTest), unless the
+project already pins one: then keep its version. Install a newer release
+only when the user asks, after checking its license. Compilers come from
+the package manager (`install.md`). Say so when the installed versions
+differ from this table. AFL++ is AGPL-3.0-or-later since 5.00c: invoke
+installed copies only; never copy its code or commit files it generates.
 
 ## Engine output locations in the project tree
 
-For the gate's working-tree comparison: none, when every run goes through
-the launcher with the paths in [references/run.md](references/run.md).
-Watch for:
+For the gate's working-tree comparison: there are none when every run
+goes through the launcher with the paths in
+[references/run.md](references/run.md). Watch for:
 - libFuzzer crash files in the working directory when `-artifact_prefix`
   is missing;
 - `default.profraw` when `LLVM_PROFILE_FILE` isn't set;
@@ -96,21 +97,23 @@ Watch for:
 
 ## Pitfalls and shortcuts to reject
 
-- On macOS with `detect_leaks=1`, libFuzzer reports a false leak in its RSS
-  thread at exit. Fuzz with leaks off there; replaying a leak there:
-  [references/triage.md](references/triage.md), "Reproduce".
-- libFuzzer `-fork` or `-jobs` for parallel runs: they share one scratch
-  directory, and `-fork`'s exit status differs between macOS and Linux.
-  Run N copies through the launcher instead.
+- On macOS with `detect_leaks=1`, libFuzzer reports a false leak in its
+  RSS thread at exit. Run libFuzzer with leaks off there. To replay a leak
+  there: [references/triage.md](references/triage.md), "Reproduce".
+- libFuzzer `-fork` or `-jobs` for parallel runs: run N copies through
+  the launcher instead ([references/run.md](references/run.md), "Long
+  runs").
 - A merge's or replay's exit status as a crash signal: libFuzzer's merges
   exit 0 after crashes. Read the launcher's findings.
 - One `ASAN_OPTIONS` for both engines: AFL++ needs `symbolize=0`, libFuzzer
   wants `symbolize=1`.
 - Building with `NDEBUG` (CMake's Release and RelWithDebInfo): assertions
-  vanish and with them `assertion_failure` findings.
+  vanish, and with them the `assertion_failure` findings.
 
 ## Writes
 
+What the steps in this file write or change. Paths are relative to
+`.seclab/fuzz/` unless they start with `.seclab/`:
 - `targets/<id>.md`: tool versions, build commands (through the calling
   skill).
 
